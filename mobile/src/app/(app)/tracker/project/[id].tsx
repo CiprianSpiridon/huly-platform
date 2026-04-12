@@ -49,7 +49,10 @@ export default function IssueListScreen(): React.ReactNode {
 
   const handleCreatePress = useCallback(() => {
     // Set project context so create screen knows which project to create in
-    useTrackerStore.getState().setSelectedProjectId(id as Ref<Space>)
+    const store = useTrackerStore.getState()
+    store.setSelectedProjectId(id as Ref<Space>)
+    // Also set projectId in draft so it persists across app restarts
+    store.updateDraft({ projectId: id as Ref<Space> })
     router.push('/(app)/tracker/create' as Href)
   }, [id])
 

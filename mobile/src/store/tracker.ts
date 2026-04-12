@@ -129,6 +129,7 @@ export const useTrackerStore = create<TrackerState>()(
         issueSort: state.issueSort,
         viewMode: state.viewMode,
         issueDraft: state.issueDraft,
+        selectedProjectId: state.selectedProjectId,
       }),
     }
   )
