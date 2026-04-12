@@ -616,6 +616,11 @@
       "shouldPublish": true
     },
     {
+      "packageName": "@hcengineering/mobile-design-tokens",
+      "projectFolder": "packages/mobile-design-tokens",
+      "shouldPublish": true
+    },
+    {
       "packageName": "@hcengineering/ui",
       "projectFolder": "packages/ui",
       "shouldPublish": true
@@ -2104,6 +2109,11 @@
     {
       "packageName": "@hcengineering/model-server-training",
       "projectFolder": "models/server-training",
+      "shouldPublish": false
+    },
+    {
+      "packageName": "@hcengineering/mobile",
+      "projectFolder": "mobile",
       "shouldPublish": false
     },
     {

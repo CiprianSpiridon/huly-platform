@@ -1,0 +1,198 @@
+{
+  "plan": "mobile-scaffold",
+  "mode": "HOLD",
+  "review": "claude",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Init Expo project",
+      "type": "scaffold",
+      "priority": "P0",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": [],
+      "description": "Run npx create-expo-app@latest mobile --template default@sdk-55 from repo root. Strip template boilerplate. Keep root _layout.tsx and single index.tsx.",
+      "writeScope": ["mobile/"],
+      "validateCommand": "cd mobile && npx expo start --no-dev --non-interactive 2>&1 | head -20",
+      "acceptanceCriteria": [
+        "mobile/package.json contains expo ~55.0.0 and react-native 0.83.1",
+        "npx expo start launches without errors",
+        "Template boilerplate removed — single root layout + placeholder screen"
+      ]
+    },
+    {
+      "id": "TASK-002",
+      "title": "Register in rush.json",
+      "type": "config",
+      "priority": "P1",
+      "effort": "XS",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-001"],
+      "description": "Set mobile/package.json name to @hcengineering/mobile. Add rush.json entry with shouldPublish false. Run rush update.",
+      "writeScope": ["rush.json", "mobile/package.json"],
+      "validateCommand": "grep -A3 '@hcengineering/mobile' rush.json",
+      "acceptanceCriteria": [
+        "rush.json has @hcengineering/mobile with shouldPublish false",
+        "rush update completes without errors",
+        "rush build -t @hcengineering/mobile runs"
+      ]
+    },
+    {
+      "id": "TASK-003",
+      "title": "Add scaffold-safe Huly dependencies",
+      "type": "config",
+      "priority": "P1",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-002"],
+      "description": "Add @hcengineering/core and @hcengineering/platform as workspace:^ deps. Only scaffold-safe packages (no svelte, no tiptap chain).",
+      "writeScope": ["mobile/package.json"],
+      "validateCommand": "cd mobile && grep -c 'workspace:' package.json",
+      "acceptanceCriteria": [
+        "@hcengineering/core and @hcengineering/platform in deps with workspace:^",
+        "rush update resolves without errors",
+        "import type { Doc, Ref } from @hcengineering/core compiles",
+        "Metro does not encounter svelte, tiptap, or Node.js module errors"
+      ]
+    },
+    {
+      "id": "TASK-004",
+      "title": "Install and configure NativeWind v4",
+      "type": "config",
+      "priority": "P1",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-003"],
+      "description": "Install nativewind@^4.1.0, tailwindcss@^3.4.17, reanimated, safe-area-context. Create tailwind.config.ts, global.css, update metro.config.js with withNativeWind, update babel.config.js.",
+      "writeScope": [
+        "mobile/package.json",
+        "mobile/tailwind.config.ts",
+        "mobile/global.css",
+        "mobile/metro.config.js",
+        "mobile/babel.config.js"
+      ],
+      "validateCommand": "cd mobile && npx tailwindcss --help | head -3",
+      "acceptanceCriteria": [
+        "className bg-red-500 text-white p-4 renders on View/Text",
+        "metro.config.js uses withNativeWind wrapper",
+        "dark:bg-black applies when colorScheme is dark"
+      ]
+    },
+    {
+      "id": "TASK-005",
+      "title": "Configure metro for monorepo",
+      "type": "config",
+      "priority": "P1",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-003", "TASK-004"],
+      "description": "Extend metro.config.js: watchFolders for monorepo root, nodeModulesPaths for common/temp/node_modules, single React instance, resolverMainFields excluding svelte field, block server-only modules.",
+      "writeScope": ["mobile/metro.config.js"],
+      "validateCommand": "cd mobile && node -e \"const m = require('./metro.config.js'); console.log('ok')\"",
+      "acceptanceCriteria": [
+        "import type Doc from @hcengineering/core resolves in Metro",
+        "No duplicate React or module resolution errors",
+        "Hot reload works on mobile/ file changes",
+        "Metro does not resolve svelte field from @hcengineering/* package.json files"
+      ]
+    },
+    {
+      "id": "TASK-006a",
+      "title": "Create @hcengineering/mobile-design-tokens shared package",
+      "type": "scaffold",
+      "priority": "P1",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-002"],
+      "description": "Create packages/mobile-design-tokens/ as shared Rush package. Zero deps, plain TS as-const objects. Port Huly design tokens from _colors.scss and _vars.scss. Register in rush.json with shouldPublish true.",
+      "writeScope": [
+        "packages/mobile-design-tokens/package.json",
+        "packages/mobile-design-tokens/tsconfig.json",
+        "packages/mobile-design-tokens/src/colors.ts",
+        "packages/mobile-design-tokens/src/spacing.ts",
+        "packages/mobile-design-tokens/src/typography.ts",
+        "packages/mobile-design-tokens/src/radii.ts",
+        "packages/mobile-design-tokens/src/avatars.ts",
+        "packages/mobile-design-tokens/src/shadows.ts",
+        "packages/mobile-design-tokens/src/index.ts",
+        "rush.json"
+      ],
+      "validateCommand": "rush build -t @hcengineering/mobile-design-tokens 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "rush.json has @hcengineering/mobile-design-tokens entry",
+        "rush update && rush build -t @hcengineering/mobile-design-tokens succeeds",
+        "import { colors, spacing } from @hcengineering/mobile-design-tokens works",
+        "Package has zero dependencies"
+      ]
+    },
+    {
+      "id": "TASK-006b",
+      "title": "Wire design tokens into mobile tailwind config",
+      "type": "config",
+      "priority": "P1",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-004", "TASK-006a"],
+      "description": "Add @hcengineering/mobile-design-tokens as workspace:^ dep. Import tokens into tailwind.config.ts theme.extend. Zero hardcoded values.",
+      "writeScope": ["mobile/package.json", "mobile/tailwind.config.ts"],
+      "validateCommand": "cd mobile && grep 'mobile-design-tokens' tailwind.config.ts",
+      "acceptanceCriteria": [
+        "tailwind.config.ts imports from @hcengineering/mobile-design-tokens, zero hardcoded values",
+        "bg-surface renders #161719 in dark mode",
+        "bg-primary renders #205DC2",
+        "p-1=8px p-2=16px p-3=24px"
+      ]
+    },
+    {
+      "id": "TASK-007",
+      "title": "Bundle IBM Plex Sans fonts",
+      "type": "feature",
+      "priority": "P1",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-006b"],
+      "description": "Download IBM Plex Sans TTF files. Place in mobile/assets/fonts/. Load with useFonts() in root layout. Add fontFamily to tailwind.config.ts.",
+      "writeScope": ["mobile/assets/fonts/", "mobile/tailwind.config.ts", "mobile/app/_layout.tsx"],
+      "validateCommand": "ls mobile/assets/fonts/*.ttf 2>/dev/null | wc -l",
+      "acceptanceCriteria": [
+        "font-sans renders IBM Plex Sans Regular on both platforms",
+        "font-sans-bold renders IBM Plex Sans Bold",
+        "Fonts load before splash screen hides"
+      ]
+    },
+    {
+      "id": "TASK-008",
+      "title": "Create scaffold directory structure",
+      "type": "scaffold",
+      "priority": "P1",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-001"],
+      "description": "Create convention-compliant directory structure with tsconfig.json. Dirs: client, repositories, hooks, store, components/ui, components/features, lib, theme, test. Route groups: (auth), (app).",
+      "writeScope": ["mobile/src/", "mobile/app/", "mobile/tsconfig.json"],
+      "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "All convention directories exist (client, repositories, hooks, store, components/ui, components/features, lib)",
+        "tsconfig.json has strict true, noUncheckedIndexedAccess, path alias @/*",
+        "npx tsc --noEmit passes"
+      ]
+    },
+    {
+      "id": "TASK-009",
+      "title": "Create placeholder app with Huly styling",
+      "type": "feature",
+      "priority": "P2",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-005", "TASK-006b", "TASK-007", "TASK-008"],
+      "description": "Wire everything: root layout with dark theme, SafeAreaProvider, font loading, splash screen. Index screen with Huly dark bg, IBM Plex Sans, primary blue accent.",
+      "writeScope": ["mobile/app/_layout.tsx", "mobile/app/index.tsx"],
+      "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "App launches: dark bg #161719, white text IBM Plex Sans, blue #205DC2 accent",
+        "Dark/light theme toggle works via useColorScheme",
+        "No yellow box warnings or red screen errors"
+      ]
+    }
+  ]
+}

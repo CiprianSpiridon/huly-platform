@@ -1,0 +1,17 @@
+{
+  "name": "@hcengineering/mobile-design-tokens",
+  "version": "0.1.0",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib/**/*"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf lib"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "~5.9.2"
+  }
+}
