@@ -58,7 +58,20 @@ export default function OtpScreen(): React.ReactNode {
 
   const handleValidateOtp = useCallback(async () => {
     try {
-      await validateOtp(email, code)
+      const loginInfo = await validateOtp(email, code)
+
+      if (loginInfo.tfaRequired === true) {
+        // OTP validated but account has 2FA — route to TOTP screen
+        router.replace('/(auth)/two-factor')
+        return
+      }
+
+      if (loginInfo.token == null) {
+        // Unconfirmed email — show message, don't navigate
+        Alert.alert('Email not confirmed', 'Please confirm your email before signing in.')
+        return
+      }
+
       router.replace('/(auth)/workspace-select')
     } catch {
       Alert.alert('Error', 'Invalid verification code. Please try again.')

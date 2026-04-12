@@ -45,6 +45,13 @@ export function useLogin(): {
           return loginInfo
         }
 
+        // Server can return token: undefined for unconfirmed email identities.
+        // Do NOT call setAuth() -- surface this as a distinct state.
+        if (loginInfo.token == null) {
+          setError('Please confirm your email before signing in.')
+          return loginInfo
+        }
+
         await setAuth(loginInfo)
         return loginInfo
       } catch (err) {
@@ -74,6 +81,7 @@ export function useOtpLogin(): {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const setAuth = useAuthStore((s) => s.setAuth)
+  const setTfaToken = useAuthStore((s) => s.setTfaToken)
 
   const requestOtp = useCallback(async (email: string): Promise<OtpInfo> => {
     setIsLoading(true)
@@ -97,6 +105,20 @@ export function useOtpLogin(): {
       try {
         const client = await getOrCreateAccountClient()
         const loginInfo = await client.validateOtp(email, code)
+
+        // OTP validation can also return tfaRequired — mirror useLogin() logic
+        if (loginInfo.tfaRequired === true) {
+          if (loginInfo.token != null) {
+            setTfaToken(loginInfo.token)
+          }
+          return loginInfo
+        }
+
+        if (loginInfo.token == null) {
+          setError('Please confirm your email before signing in.')
+          return loginInfo
+        }
+
         await setAuth(loginInfo)
         return loginInfo
       } catch (err) {
@@ -107,7 +129,7 @@ export function useOtpLogin(): {
         setIsLoading(false)
       }
     },
-    [setAuth],
+    [setAuth, setTfaToken],
   )
 
   return { requestOtp, validateOtp, isLoading, error }

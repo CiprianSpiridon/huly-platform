@@ -83,12 +83,22 @@ export const useAuthStore = create<AuthState>((set) => ({
           isBootstrapping: false,
         })
       } catch {
-        // Token expired or revoked — clear and redirect to login
+        // Token expired or revoked — clear auth AND workspace to prevent
+        // stale workspace state from redirecting into /(app) on next login
         await SecureStore.deleteItemAsync('auth_token')
         await SecureStore.deleteItemAsync('account_id')
+        await SecureStore.deleteItemAsync('workspace_url')
+        await SecureStore.deleteItemAsync('workspace_id')
+        await SecureStore.deleteItemAsync('workspace_token')
+        await SecureStore.deleteItemAsync('workspace_endpoint')
         set({ isBootstrapping: false })
       }
     } else {
+      // No auth token at all — also clear any orphaned workspace keys
+      await SecureStore.deleteItemAsync('workspace_url')
+      await SecureStore.deleteItemAsync('workspace_id')
+      await SecureStore.deleteItemAsync('workspace_token')
+      await SecureStore.deleteItemAsync('workspace_endpoint')
       set({ isBootstrapping: false })
     }
   },
