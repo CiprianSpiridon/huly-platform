@@ -6,27 +6,14 @@ import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 
+import { queryClient } from '@/client/queryClient'
 import { useAuthStore } from '@/store/auth'
 import { useWorkspaceStore } from '@/store/workspace'
 
 // Prevent the splash screen from auto-hiding before assets are loaded.
 SplashScreen.preventAutoHideAsync()
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30_000,
-      gcTime: 5 * 60_000,
-      retry: 2,
-      refetchOnWindowFocus: false,
-    },
-    mutations: {
-      retry: 1,
-    },
-  },
-})
 
 export default function RootLayout(): React.ReactNode {
   const [isRestoring, setIsRestoring] = useState(true)
