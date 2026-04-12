@@ -63,6 +63,11 @@ rush docker:up                      # local docker stack
 - IBM Plex Sans font (matches web)
 - `import type` only for plugin packages (svelte dep chain)
 
+## Rules
+
+- **Never leave bugs behind.** If a review finds defects, fix them before moving to the next phase. No TODOs, no "known issues" deferred to nonexistent future plans. If it's broken, fix it now.
+- **Stay in the working directory.** Don't `cd` to other folders. Use absolute paths or `dev.sh` scripts.
+
 ## Tools
 
 - **codemap** — indexed with `.codemapignore`. Use `codemap search`, `codemap symbols`, `codemap deps` for codebase exploration.

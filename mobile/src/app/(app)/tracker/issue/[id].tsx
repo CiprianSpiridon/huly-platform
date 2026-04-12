@@ -1,15 +1,19 @@
-import { useCallback, useState } from 'react'
-import { View, Text, ScrollView, RefreshControl, ActivityIndicator, Pressable } from 'react-native'
+import { useCallback, useRef, useState } from 'react'
+import { View, Text, ScrollView, RefreshControl, ActivityIndicator, Pressable, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, router, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import type { Ref, Space } from '@hcengineering/core'
-import type { Issue } from '@hcengineering/tracker'
+import type { Issue, IssueStatus } from '@hcengineering/tracker'
 
 import { useIssue } from '@/hooks/useIssue'
 import { useUpdateIssue } from '@/hooks/useIssues'
 import { IssueDetailView } from '@/components/features/IssueDetail'
 import { IssueComments } from '@/components/features/IssueComments'
+import { StatusPicker } from '@/components/features/StatusPicker'
+import { PriorityPicker } from '@/components/features/PriorityPicker'
+import type { IssuePriorityValue } from '@/components/ui/PriorityIcon'
 
 /**
  * Issue detail screen.
@@ -23,6 +27,10 @@ export default function IssueDetailScreen(): React.ReactNode {
   const updateIssue = useUpdateIssue()
   const [refreshing, setRefreshing] = useState(false)
 
+  // Bottom sheet refs
+  const statusPickerRef = useRef<BottomSheetModal>(null)
+  const priorityPickerRef = useRef<BottomSheetModal>(null)
+
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
     await refetch()
@@ -30,16 +38,43 @@ export default function IssueDetailScreen(): React.ReactNode {
   }, [refetch])
 
   const handleStatusPress = useCallback(() => {
-    // TODO: Open status picker bottom sheet
+    statusPickerRef.current?.present()
   }, [])
 
   const handlePriorityPress = useCallback(() => {
-    // TODO: Open priority picker bottom sheet
+    priorityPickerRef.current?.present()
   }, [])
 
   const handleAssigneePress = useCallback(() => {
-    // TODO: Open assignee picker bottom sheet
+    Alert.alert(
+      'Coming soon',
+      'Assignee picker requires fetching workspace members and will be available in a future update.'
+    )
   }, [])
+
+  const handleStatusSelect = useCallback(
+    (statusId: Ref<IssueStatus>) => {
+      if (issue == null) return
+      updateIssue.mutate({
+        issueId: issue._id as Ref<Issue>,
+        projectId: issue.space as Ref<Space>,
+        update: { status: statusId },
+      })
+    },
+    [issue, updateIssue]
+  )
+
+  const handlePrioritySelect = useCallback(
+    (priority: IssuePriorityValue) => {
+      if (issue == null) return
+      updateIssue.mutate({
+        issueId: issue._id as Ref<Issue>,
+        projectId: issue.space as Ref<Space>,
+        update: { priority },
+      })
+    },
+    [issue, updateIssue]
+  )
 
   if (!id) {
     router.back()
@@ -119,10 +154,23 @@ export default function IssueDetailScreen(): React.ReactNode {
         <View className="h-px bg-divider mx-4" />
 
         <IssueComments
-          issueId={issue._id}
-          commentCount={issue.comments}
+          issueId={issue._id as string}
+          projectId={issue.space as string}
         />
       </ScrollView>
+
+      {/* Bottom sheet pickers */}
+      <StatusPicker
+        ref={statusPickerRef}
+        projectId={issue.space as string}
+        currentStatusId={issue.status as unknown as string}
+        onSelect={handleStatusSelect}
+      />
+      <PriorityPicker
+        ref={priorityPickerRef}
+        currentPriority={issue.priority}
+        onSelect={handlePrioritySelect}
+      />
     </SafeAreaView>
   )
 }
