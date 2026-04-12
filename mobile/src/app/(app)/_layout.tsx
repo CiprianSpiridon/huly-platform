@@ -3,15 +3,16 @@ import { Ionicons } from '@expo/vector-icons'
 
 import { useAuthStore } from '@/store/auth'
 import { useWorkspaceStore } from '@/store/workspace'
+import { useChatStore } from '@/store/chat'
+import { useInboxStore } from '@/store/inbox'
 
 /**
  * Authenticated app layout with bottom tab navigator.
  *
- * Replaces the Phase 1 placeholder Stack. Guards access behind auth +
- * workspace selection. Four tabs: Tracker, Chat, Inbox, Settings.
+ * Guards access behind auth + workspace selection.
+ * Four tabs: Tracker, Chat, Inbox, Settings.
  *
- * Badge counts read from future Zustand stores (useChatStore, useInboxStore)
- * via optional chaining -- they default to 0 until those phases create them.
+ * Badge counts read from Zustand stores (synced by polling hooks).
  */
 export default function AppLayout(): React.ReactNode {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
@@ -25,9 +26,8 @@ export default function AppLayout(): React.ReactNode {
     return <Redirect href="/(auth)/workspace-select" />
   }
 
-  // Future badge counts -- default to 0 until chat/inbox phases
-  const chatBadge = 0
-  const inboxBadge = 0
+  const chatBadge = useChatStore((s) => s.unreadTotal)
+  const inboxBadge = useInboxStore((s) => s.unreadTotal)
 
   return (
     <Tabs

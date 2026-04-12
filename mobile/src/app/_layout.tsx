@@ -14,6 +14,7 @@ import { queryClient } from '@/client/queryClient'
 import { useAuthStore } from '@/store/auth'
 import { useWorkspaceStore } from '@/store/workspace'
 import { useConnectionStore } from '@/store/connection'
+import { useSettingsStore } from '@/store/settings'
 
 // Prevent the splash screen from auto-hiding before assets are loaded.
 SplashScreen.preventAutoHideAsync()
@@ -32,11 +33,14 @@ export default function RootLayout(): React.ReactNode {
 
   const connect = useConnectionStore((s) => s.connect)
 
+  const restoreSettings = useSettingsStore((s) => s.restoreSettings)
+
   useEffect(() => {
     async function restore(): Promise<void> {
       try {
         await restoreAuth()
         await restoreWorkspace()
+        await restoreSettings()
 
         // If both auth and workspace restored, connect the data layer
         const { token } = useAuthStore.getState()
@@ -58,7 +62,7 @@ export default function RootLayout(): React.ReactNode {
       }
     }
     void restore()
-  }, [restoreAuth, restoreWorkspace, connect])
+  }, [restoreAuth, restoreWorkspace, restoreSettings, connect])
 
   useEffect(() => {
     if (fontsLoaded && !isRestoring) {

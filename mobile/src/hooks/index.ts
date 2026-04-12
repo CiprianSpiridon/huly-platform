@@ -18,3 +18,19 @@ export type { CreateIssueDraft, UpdateIssueParams } from './useIssues'
 export { useIssue } from './useIssue'
 export { useComments, useCreateComment } from './useComments'
 export type { CreateCommentParams } from './useComments'
+
+export { useChannels } from './useChannels'
+export type { ChannelListData } from './useChannels'
+export { useMessages, useSendMessage, useToggleReaction } from './useMessages'
+export { useThread, useSendThreadReply } from './useThread'
+export type { ThreadData } from './useThread'
+
+export {
+  useNotifications,
+  useMarkAsRead,
+  useArchiveNotifications,
+  useMarkAllAsRead,
+  useArchiveAll,
+  notificationKeys,
+} from './useNotifications'
+export { useUnreadCount } from './useUnreadCount'
