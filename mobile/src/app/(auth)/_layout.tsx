@@ -1,21 +1,16 @@
-import { Redirect } from 'expo-router'
+import { Redirect, Stack } from 'expo-router'
 
 import { useAuthStore } from '@/store/auth'
 import { useWorkspaceStore } from '@/store/workspace'
 
-/**
- * Root index route.
- *
- * Redirects to the appropriate flow based on authentication state.
- * The actual auth guard logic lives in the (auth) and (app) layouts.
- */
-export default function IndexScreen(): React.ReactNode {
+export default function AuthLayout(): React.ReactNode {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const hasWorkspace = useWorkspaceStore((s) => s.selectedWorkspace)
 
+  // Already authenticated with a workspace -- redirect to the app
   if (isAuthenticated && hasWorkspace !== null) {
     return <Redirect href="/(app)" />
   }
 
-  return <Redirect href="/(auth)/login" />
+  return <Stack screenOptions={{ headerShown: false }} />
 }
