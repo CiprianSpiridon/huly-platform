@@ -1,0 +1,1927 @@
+{
+  "version": 2,
+  "agents": {
+    "devops-aws-senior-engineer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/devops-aws-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/devops-aws-senior-engineer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/devops-aws-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/devops-aws-senior-engineer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/devops-aws-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/devops-aws-senior-engineer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/devops-aws-senior-engineer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "devops-aws-senior-engineer-reviewer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/devops-aws-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/devops-aws-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/devops-aws-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/devops-aws-senior-engineer-reviewer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/devops-aws-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/devops-aws-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/devops-aws-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "devops-docker-senior-engineer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/devops-docker-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/devops-docker-senior-engineer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/devops-docker-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/devops-docker-senior-engineer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/devops-docker-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/devops-docker-senior-engineer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/devops-docker-senior-engineer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "devops-docker-senior-engineer-reviewer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/devops-docker-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/devops-docker-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/devops-docker-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/devops-docker-senior-engineer-reviewer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/devops-docker-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/devops-docker-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/devops-docker-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "expo-react-native-engineer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/expo-react-native-engineer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/expo-react-native-engineer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/expo-react-native-engineer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/expo-react-native-engineer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/expo-react-native-engineer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/expo-react-native-engineer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/expo-react-native-engineer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "expo-react-native-engineer-reviewer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/expo-react-native-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/expo-react-native-engineer-reviewer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/expo-react-native-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/expo-react-native-engineer-reviewer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/expo-react-native-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/expo-react-native-engineer-reviewer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/expo-react-native-engineer-reviewer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "express-senior-engineer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/express-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/express-senior-engineer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/express-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/express-senior-engineer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/express-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/express-senior-engineer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/express-senior-engineer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "express-senior-engineer-reviewer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/express-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/express-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/express-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/express-senior-engineer-reviewer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/express-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/express-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/express-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "go-cli-senior-engineer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/go-cli-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/go-cli-senior-engineer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/go-cli-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/go-cli-senior-engineer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/go-cli-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/go-cli-senior-engineer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/go-cli-senior-engineer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "go-cli-senior-engineer-reviewer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/go-cli-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/go-cli-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/go-cli-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/go-cli-senior-engineer-reviewer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/go-cli-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/go-cli-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/go-cli-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "go-senior-engineer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/go-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/go-senior-engineer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/go-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/go-senior-engineer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/go-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/go-senior-engineer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/go-senior-engineer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "go-senior-engineer-reviewer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/go-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/go-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/go-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/go-senior-engineer-reviewer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/go-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/go-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/go-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "ios-senior-engineer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/ios-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/ios-senior-engineer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/ios-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/ios-senior-engineer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/ios-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/ios-senior-engineer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/ios-senior-engineer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "ios-senior-engineer-reviewer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/ios-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/ios-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/ios-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/ios-senior-engineer-reviewer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/ios-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/ios-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/ios-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "laravel-senior-engineer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/laravel-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/laravel-senior-engineer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/laravel-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/laravel-senior-engineer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/laravel-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/laravel-senior-engineer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/laravel-senior-engineer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "laravel-senior-engineer-reviewer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/laravel-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/laravel-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/laravel-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/laravel-senior-engineer-reviewer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/laravel-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/laravel-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/laravel-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "macos-senior-engineer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/macos-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/macos-senior-engineer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/macos-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/macos-senior-engineer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/macos-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/macos-senior-engineer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/macos-senior-engineer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "macos-senior-engineer-reviewer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/macos-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/macos-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/macos-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/macos-senior-engineer-reviewer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/macos-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/macos-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/macos-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "nextjs-senior-engineer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/nextjs-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/nextjs-senior-engineer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/nextjs-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/nextjs-senior-engineer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/nextjs-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/nextjs-senior-engineer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/nextjs-senior-engineer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "nextjs-senior-engineer-reviewer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/nextjs-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/nextjs-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/nextjs-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/nextjs-senior-engineer-reviewer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/nextjs-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/nextjs-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/nextjs-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "nodejs-cli-senior-engineer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/nodejs-cli-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/nodejs-cli-senior-engineer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/nodejs-cli-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/nodejs-cli-senior-engineer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/nodejs-cli-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/nodejs-cli-senior-engineer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/nodejs-cli-senior-engineer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "nodejs-cli-senior-engineer-reviewer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/nodejs-cli-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/nodejs-cli-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/nodejs-cli-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/nodejs-cli-senior-engineer-reviewer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/nodejs-cli-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/nodejs-cli-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/nodejs-cli-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "python-fastapi-senior-engineer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/python-fastapi-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/python-fastapi-senior-engineer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/python-fastapi-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/python-fastapi-senior-engineer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/python-fastapi-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/python-fastapi-senior-engineer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/python-fastapi-senior-engineer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "python-fastapi-senior-engineer-reviewer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/python-fastapi-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/python-fastapi-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/python-fastapi-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/python-fastapi-senior-engineer-reviewer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/python-fastapi-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/python-fastapi-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/python-fastapi-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "python-senior-engineer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/python-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/python-senior-engineer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/python-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/python-senior-engineer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/python-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/python-senior-engineer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/python-senior-engineer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "python-senior-engineer-reviewer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/python-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/python-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/python-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/python-senior-engineer-reviewer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/python-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/python-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/python-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "react-vite-tailwind-engineer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/react-vite-tailwind-engineer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/react-vite-tailwind-engineer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/react-vite-tailwind-engineer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/react-vite-tailwind-engineer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/react-vite-tailwind-engineer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/react-vite-tailwind-engineer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/react-vite-tailwind-engineer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "react-vite-tailwind-engineer-reviewer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/react-vite-tailwind-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/react-vite-tailwind-engineer-reviewer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/react-vite-tailwind-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/react-vite-tailwind-engineer-reviewer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/react-vite-tailwind-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/react-vite-tailwind-engineer-reviewer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/react-vite-tailwind-engineer-reviewer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "rust-architecture-reviewer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/rust-architecture-reviewer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/rust-architecture-reviewer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/rust-architecture-reviewer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/rust-architecture-reviewer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/rust-architecture-reviewer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/rust-architecture-reviewer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/rust-architecture-reviewer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "rust-senior-engineer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/rust-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/rust-senior-engineer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/rust-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/rust-senior-engineer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/rust-senior-engineer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/rust-senior-engineer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/rust-senior-engineer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    },
+    "rust-senior-engineer-reviewer": {
+      "source": "github.com/ulpi-io/agents",
+      "sourceType": "github",
+      "computedHash": "90c61d6f13724b3db862b90d49ef2c37d3e6580dc1855e4c2fc7926206b25b03",
+      "sourceUrl": "https://github.com/ulpi-io/agents.git",
+      "agentPath": "agents/AGENT.md",
+      "agentFolderHash": "87d8cdf8fc1e19a42e0ab80f6ff35748d2c9069d",
+      "installs": {
+        "claude-code": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.claude/agents/rust-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "codex": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cursor": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "droid": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.factory/agents/rust-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "gemini-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.gemini/agents/rust-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "kiro-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.kiro/agents/rust-senior-engineer-reviewer.json",
+          "format": "json"
+        },
+        "opencode": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.opencode/agents/rust-senior-engineer-reviewer.md",
+          "format": "flat-md"
+        },
+        "trae-cn": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.trae/agents/rust-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "windsurf": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "amp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "cline": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        },
+        "kimi-cli": {
+          "path": "/Users/ciprian/work_cip/huly-platform/.agents/agents/rust-senior-engineer-reviewer",
+          "format": "none"
+        },
+        "warp": {
+          "path": "/Users/ciprian/work_cip/huly-platform/AGENTS.md",
+          "format": "agents-md"
+        }
+      }
+    }
+  }
+}

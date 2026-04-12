@@ -1,0 +1,235 @@
+{
+  "version": 1,
+  "skills": {
+    "ast-grep": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "56d4b358b8d25f577060ca42dc9d5d62c347b16f676fbe6a3b898fdf44f48555"
+    },
+    "branch-review-before-pr": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "82afa1852d8be66904d234aa210bdb1f4f1a6ec5cd012cbb56eeebea1d9fcfed"
+    },
+    "browse": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "e2408c2807941380db58dd7e19430f92aa5157480438771180fecf90b9db6835"
+    },
+    "browse-qa": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "77f0d1a8548bffa05cf4ae9daa6ff0b96b56ef668c79000d421e0c3765dd93e0"
+    },
+    "bugfix": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "2efe3102b55efe9d46843aea44d29abe3f1809b1ba1ac0a2d884fae8740bfdb7"
+    },
+    "bugfix-crate": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "27cd46deb4dc12d67135d0fbb993932233bd67904fb650405f434b21f5676fc2"
+    },
+    "build-dmg": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "dbc4c76c0f491df1c59a488098302543f2431dbb087800d4b87b186481e58e90"
+    },
+    "claude-review": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "ec4945f77a0ef2918975de24a87255c74092a65d2a4867551fa0e37965fbb75f"
+    },
+    "code-simplify": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "a1fa93e9ac62d0987ce5b2910aa700c535754bb2e04fef68b8bde5dbe5463e38"
+    },
+    "codemap": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "546bc0b5042b7bd5368fd3f160d9aeef1bacb7794a4a0d0daa46ae3a2864caae"
+    },
+    "codex-review": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "54a4adaefe0facd4d2acd8a79b43f2e09dac585f97e12c4393c4b8192e7e48e2"
+    },
+    "commit": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "e14933622a95f21efcacdbcd03cf1e948860981b6f6c4c72e5e68a045e1d7afc"
+    },
+    "cost-estimate": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "f74d54988934bb568dd95fa594e576f7dbaed4e2684618aea76904956ea09553"
+    },
+    "create-pr": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "b3cec48eb9ed6c7f2c3c34335161261d976dd32114ba0be849cfd0bd8cfc1fcf"
+    },
+    "create-tests-extract": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "66058cd6d352b57171d1571d1ed7dad42836239cb27433f454997528224b7afa"
+    },
+    "docker": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "a264d0e6fa95b70f6305ddc5075dddd2d50c8664e75a41527f99132d4972d6a5"
+    },
+    "expo-tailwind-setup": {
+      "source": "expo/skills",
+      "sourceType": "github",
+      "computedHash": "d39e806942fe880347f161056729b588a3cb0f1796270eebf52633fe11cfdce1"
+    },
+    "find-agents": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "3efae36178e773e29d6cb8c032f2bae1fa58439edb4bac1974dcf83f98474420"
+    },
+    "find-bugs": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "b533231c96c2f2c5233a371fefb513710d700ed1bfa4a9da2e968f380cfe6ea7"
+    },
+    "frontend-design-ui-ux": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "30f899e46aa0bbfeec9aa29a9016dfff8c58c30fbd1dccf138d826e342028c6b"
+    },
+    "git-merge-expert": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "bfafc17e95a1323d6268d79977a1d145d58f1b2bdc56f70c0a0af4fe243a7dc7"
+    },
+    "git-merge-expert-worktree": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "79665be44bbbb7407591caa9466ed23bea5caf8120572bdda82f899378eca12c"
+    },
+    "kiro-review": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "7c62c78a63fda398844efb7fbc8278a5823718d701062e47092aa4c3d63b5e5a"
+    },
+    "laravel": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "37ea00c262a03c2006ca120b4b65a11e576ab9417b3167dfda809288b4c3af0d"
+    },
+    "laravel-filament": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "892a85ebc36eb4af265fcdf1d8e4312d1de4299edf5aeb2d5193c91e2c93cc98"
+    },
+    "lokei": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "8eebf57f6fd74a37c7b4e052fdd8f0f9c963f36d927a7ad77f4f324e92a2ca25"
+    },
+    "map-project": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "f044ac05a77404a68cd542971f6147d3a3e32f051ff1e90726d75aea15981291"
+    },
+    "map-project-monorepo": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "f73d93744a1ea371df186bfaaf701bf3e079cb604bc3e4cdea19c13813ce3ae3"
+    },
+    "nestjs": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "7ae44796a856120369f889ed07e6594286f541da48c3971e8a1632d452fd1c01"
+    },
+    "nextjs": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "adc7e5a16b9d97e2e851605c057003dcca28c34eaa0dc672c54266c4bc2515ce"
+    },
+    "nodejs": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "1cb35d77fb73ece802d3affa7dc0dc4cd6e0c23f98dd8ec3ca204b6ccd774752"
+    },
+    "normalize-agent-for-claude": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "0cf2e684c06d8f3867ea9b09a63af42931fdd9891e0bafe19e621e68c7c77f1a"
+    },
+    "normalize-skill-for-claude": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "dd7fdece62e821a687c8539cb17e21e9868998dad8f4e66ba41599f211e75e66"
+    },
+    "plan-founder-review": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "cb532128459ae2d1d4bc4573dffc5b988663750ea4a64033371c7f9c67d8bedf"
+    },
+    "plan-to-task-list-with-dag": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "dafd320a5541d1751aa7c513377d47d6e13cd2f071fe837ff0bd4998364afc57"
+    },
+    "pr-retro": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "a9562078d0e4b62f812c808c61afc1b336e8f890339ed1539ac55f3efae00564"
+    },
+    "review-crate": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "b430892d9b498c4589c29a26a408a024a6ba5b344ef41422debd82f810525957"
+    },
+    "run-parallel-agents-feature-build": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "eb2ec891f0e5c42a68c290fc85f7092e4aacd0ae20a5e261e7d31a31a4be59fa"
+    },
+    "run-parallel-agents-feature-debug": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "09c4db0125d6e5175d2f5b78c2976bb1ff2be61717eab67515ca981f77fca2d8"
+    },
+    "rust": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "da0fe33190f0ef885bab1b1fbf4ec2ea8e86fd0d96ace0b4193b11c12e6ed7e1"
+    },
+    "secrets": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "67884f158841023e0aad3d6d55477aa03360ab7ebaa3282e2e2fdf3f01bea804"
+    },
+    "start": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "3cf0835e7a3d9dd7ba24f86c8be7a5458d2746e7db996bf076f2ecc2ccfd9a00"
+    },
+    "update-agent-learnings": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "7a23a46c0ac8c3852d550ec73a399113b74292111ddf6cb7dec0ed63b53fe560"
+    },
+    "update-claude-learnings": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "764854e1117089145f06a50f9f4c082359800d96a4afefc40b6485233e31823b"
+    },
+    "update-claude-settings": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "6ecdb57dbf62895debec194d584399961252584da183e8afd3924c9952309e2b"
+    },
+    "update-skill-learnings": {
+      "source": "ulpi-io/skills",
+      "sourceType": "github",
+      "computedHash": "514ceb67b8973ec46d3e072c18de047cbef4516ec3e803d415b9a0771b2827da"
+    }
+  }
+}
