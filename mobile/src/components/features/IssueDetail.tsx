@@ -34,6 +34,11 @@ function IssueDetailView({
   onAssigneePress,
   testID,
 }: IssueDetailViewProps): React.ReactNode {
+  // Read from $lookup if available (populated by REST lookup expansion)
+  const lookup = (issue as unknown as Record<string, unknown>).$lookup as Record<string, Record<string, string>> | undefined
+  const lookupStatusName = lookup?.status?.name ?? 'Unknown'
+  const lookupAssigneeName = lookup?.assignee?.name
+
   return (
     <View className="px-4 py-3" testID={testID}>
       {/* Title */}
@@ -54,10 +59,10 @@ function IssueDetailView({
             className="bg-surface-tertiary rounded-sm px-2 py-1 min-h-[32px] items-center justify-center"
             onPress={onStatusPress}
             accessibilityRole="button"
-            accessibilityLabel={`Status: ${issue.status as unknown as string}`}
+            accessibilityLabel={`Status: ${lookupStatusName}`}
           >
             <Text className="font-sans-medium text-xs text-caption">
-              {issue.status as unknown as string}
+              {lookupStatusName}
             </Text>
           </Pressable>
         </PropertyRow>
@@ -83,13 +88,13 @@ function IssueDetailView({
             className="flex-row items-center gap-2 min-h-[32px]"
             onPress={onAssigneePress}
             accessibilityRole="button"
-            accessibilityLabel={issue.assignee ? 'Change assignee' : 'Set assignee'}
+            accessibilityLabel={lookupAssigneeName != null ? `Assignee: ${lookupAssigneeName}` : 'Set assignee'}
           >
-            {issue.assignee ? (
+            {lookupAssigneeName != null ? (
               <>
-                <AvatarCircle name={issue.assignee as unknown as string} size={24} />
+                <AvatarCircle name={lookupAssigneeName} size={24} />
                 <Text className="font-sans text-sm text-caption">
-                  {issue.assignee as unknown as string}
+                  {lookupAssigneeName}
                 </Text>
               </>
             ) : (

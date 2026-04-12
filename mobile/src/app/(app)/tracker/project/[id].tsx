@@ -166,7 +166,16 @@ export default function IssueListScreen(): React.ReactNode {
             identifier={item.identifier}
             title={item.title}
             priority={item.priority}
-            statusName={item.status as unknown as string}
+            statusName={
+              (item as unknown as Record<string, unknown>).$lookup != null
+                ? ((item as unknown as Record<string, unknown>).$lookup as Record<string, Record<string, string>>)?.status?.name ?? 'Unknown'
+                : 'Unknown'
+            }
+            assigneeName={
+              (item as unknown as Record<string, unknown>).$lookup != null
+                ? ((item as unknown as Record<string, unknown>).$lookup as Record<string, Record<string, string>>)?.assignee?.name
+                : undefined
+            }
             onPress={handleIssuePress}
           />
         )}

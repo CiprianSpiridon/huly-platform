@@ -41,7 +41,13 @@ export default function RootLayout(): React.ReactNode {
         const { workspaceEndpoint, selectedWorkspace, workspaceToken } =
           useWorkspaceStore.getState()
         if (token != null && workspaceEndpoint != null && selectedWorkspace != null && workspaceToken != null) {
-          await connect(workspaceEndpoint, selectedWorkspace, workspaceToken)
+          try {
+            await connect(workspaceEndpoint, selectedWorkspace, workspaceToken)
+          } catch {
+            // Connection failed — clear workspace so user re-selects
+            // (auth stays valid, but workspace connection is broken)
+            await useWorkspaceStore.getState().clearWorkspace()
+          }
         }
       } catch {
         // Token expired or invalid -- user will be redirected to login

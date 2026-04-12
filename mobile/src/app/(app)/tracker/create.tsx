@@ -7,6 +7,7 @@ import type { IssueStatus } from '@hcengineering/tracker'
 
 import { useTrackerStore } from '@/store/tracker'
 import { useCreateIssue } from '@/hooks/useIssues'
+import { useProjects } from '@/hooks/useProjects'
 import { IssueForm } from '@/components/features/IssueForm'
 
 /**
@@ -22,6 +23,11 @@ export default function CreateIssueScreen(): React.ReactNode {
   const selectedProjectId = useTrackerStore((s) => s.selectedProjectId)
   const createIssue = useCreateIssue()
 
+  // Get project's default status for new issues
+  const { data: projects } = useProjects()
+  const currentProject = projects?.find((p) => (p._id as string) === (selectedProjectId as string | null))
+  const defaultStatus = (currentProject as Record<string, unknown> | undefined)?.defaultIssueStatus as Ref<IssueStatus> | undefined
+
   const isDirty = draft.title.length > 0 || draft.description.length > 0 || draft.priority !== 0
 
   const handleSubmit = useCallback(() => {
@@ -36,7 +42,7 @@ export default function CreateIssueScreen(): React.ReactNode {
         title: draft.title,
         description: draft.description,
         priority: draft.priority,
-        status: (draft.statusId ?? '') as Ref<IssueStatus>,
+        status: (draft.statusId ?? defaultStatus ?? '') as Ref<IssueStatus>,
         assignee: draft.assigneeId,
         projectId: projectId as Ref<Space>,
       },
