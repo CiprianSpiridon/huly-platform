@@ -27,6 +27,11 @@ export default function LoginScreen(): React.ReactNode {
         return
       }
 
+      // Unconfirmed email — token is null, useLogin() already set the error message
+      if (result.token == null) {
+        return
+      }
+
       router.replace('/(auth)/workspace-select')
     } catch {
       Alert.alert('Error', 'Login failed. Please check your credentials and try again.')
