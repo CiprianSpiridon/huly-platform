@@ -1,0 +1,194 @@
+/**
+ * Issue detail view component.
+ *
+ * Renders all issue fields: title, description, status, priority,
+ * assignee, component, milestone, time tracking, and sub-issues.
+ */
+
+import { View, Text, Pressable } from 'react-native'
+import type { Issue } from '@hcengineering/tracker'
+
+import { PriorityIcon, ISSUE_PRIORITY } from '@/components/ui/PriorityIcon'
+import { AvatarCircle } from '@/components/ui/AvatarCircle'
+
+interface IssueDetailViewProps {
+  issue: Issue
+  onStatusPress?: () => void
+  onPriorityPress?: () => void
+  onAssigneePress?: () => void
+  testID?: string
+}
+
+const PRIORITY_LABELS: Record<number, string> = {
+  [ISSUE_PRIORITY.NoPriority]: 'No priority',
+  [ISSUE_PRIORITY.Urgent]: 'Urgent',
+  [ISSUE_PRIORITY.High]: 'High',
+  [ISSUE_PRIORITY.Medium]: 'Medium',
+  [ISSUE_PRIORITY.Low]: 'Low',
+}
+
+function IssueDetailView({
+  issue,
+  onStatusPress,
+  onPriorityPress,
+  onAssigneePress,
+  testID,
+}: IssueDetailViewProps): React.ReactNode {
+  return (
+    <View className="px-4 py-3" testID={testID}>
+      {/* Title */}
+      <Text className="font-sans-bold text-xl text-caption mb-1">
+        {issue.title}
+      </Text>
+
+      {/* Identifier */}
+      <Text className="font-sans-medium text-sm text-content-secondary mb-4">
+        {issue.identifier}
+      </Text>
+
+      {/* Property rows */}
+      <View className="gap-3">
+        {/* Status */}
+        <PropertyRow label="Status">
+          <Pressable
+            className="bg-surface-tertiary rounded-sm px-2 py-1 min-h-[32px] items-center justify-center"
+            onPress={onStatusPress}
+            accessibilityRole="button"
+            accessibilityLabel={`Status: ${issue.status as unknown as string}`}
+          >
+            <Text className="font-sans-medium text-xs text-caption">
+              {issue.status as unknown as string}
+            </Text>
+          </Pressable>
+        </PropertyRow>
+
+        {/* Priority */}
+        <PropertyRow label="Priority">
+          <Pressable
+            className="flex-row items-center gap-2 min-h-[32px]"
+            onPress={onPriorityPress}
+            accessibilityRole="button"
+            accessibilityLabel={`Priority: ${PRIORITY_LABELS[issue.priority] ?? 'Unknown'}`}
+          >
+            <PriorityIcon priority={issue.priority} size={16} />
+            <Text className="font-sans text-sm text-caption">
+              {PRIORITY_LABELS[issue.priority] ?? 'Unknown'}
+            </Text>
+          </Pressable>
+        </PropertyRow>
+
+        {/* Assignee */}
+        <PropertyRow label="Assignee">
+          <Pressable
+            className="flex-row items-center gap-2 min-h-[32px]"
+            onPress={onAssigneePress}
+            accessibilityRole="button"
+            accessibilityLabel={issue.assignee ? 'Change assignee' : 'Set assignee'}
+          >
+            {issue.assignee ? (
+              <>
+                <AvatarCircle name={issue.assignee as unknown as string} size={24} />
+                <Text className="font-sans text-sm text-caption">
+                  {issue.assignee as unknown as string}
+                </Text>
+              </>
+            ) : (
+              <Text className="font-sans text-sm text-content-tertiary">Unassigned</Text>
+            )}
+          </Pressable>
+        </PropertyRow>
+
+        {/* Component */}
+        {issue.component ? (
+          <PropertyRow label="Component">
+            <Text className="font-sans text-sm text-caption">
+              {issue.component as unknown as string}
+            </Text>
+          </PropertyRow>
+        ) : null}
+
+        {/* Milestone */}
+        {issue.milestone ? (
+          <PropertyRow label="Milestone">
+            <Text className="font-sans text-sm text-caption">
+              {issue.milestone as unknown as string}
+            </Text>
+          </PropertyRow>
+        ) : null}
+
+        {/* Due date */}
+        {issue.dueDate ? (
+          <PropertyRow label="Due date">
+            <Text className="font-sans text-sm text-caption">
+              {new Date(issue.dueDate).toLocaleDateString()}
+            </Text>
+          </PropertyRow>
+        ) : null}
+
+        {/* Estimation */}
+        {issue.estimation > 0 ? (
+          <PropertyRow label="Estimation">
+            <Text className="font-sans text-sm text-caption">
+              {issue.estimation}h
+            </Text>
+          </PropertyRow>
+        ) : null}
+
+        {/* Reported time */}
+        {issue.reportedTime > 0 ? (
+          <PropertyRow label="Time spent">
+            <Text className="font-sans text-sm text-caption">
+              {issue.reportedTime}h
+            </Text>
+          </PropertyRow>
+        ) : null}
+
+        {/* Sub-issues count */}
+        {issue.subIssues > 0 ? (
+          <PropertyRow label="Sub-issues">
+            <Text className="font-sans text-sm text-caption">
+              {issue.subIssues}
+            </Text>
+          </PropertyRow>
+        ) : null}
+      </View>
+
+      {/* Description */}
+      {issue.description ? (
+        <View className="mt-6">
+          <Text className="font-sans-semibold text-sm text-content-secondary mb-2">
+            Description
+          </Text>
+          <View className="bg-surface-secondary rounded-md p-3">
+            <Text className="font-sans text-sm text-content">
+              {issue.description as unknown as string}
+            </Text>
+          </View>
+        </View>
+      ) : null}
+    </View>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Property row helper
+// ---------------------------------------------------------------------------
+
+interface PropertyRowProps {
+  label: string
+  children: React.ReactNode
+}
+
+function PropertyRow({ label, children }: PropertyRowProps): React.ReactNode {
+  return (
+    <View className="flex-row items-center justify-between">
+      <Text className="font-sans text-sm text-content-secondary w-28">
+        {label}
+      </Text>
+      <View className="flex-1 items-end">{children}</View>
+    </View>
+  )
+}
+
+export { IssueDetailView }
+export type { IssueDetailViewProps }

@@ -111,6 +111,45 @@ module.exports = {
         'accent-solid': darkColors.accentColorSolid,
         'caption-solid': darkColors.captionColorSolid,
         notify: darkColors.inboxNotify,
+
+        // Issue priority colors
+        priority: {
+          urgent: '#FF5630',
+          high: '#FF8B00',
+          medium: '#FACC15',
+          low: '#36B37E',
+        },
+
+        // Accent / brand
+        accent: {
+          primary: '#205DC2',
+          'primary-hover': '#3575DE',
+          subtle: 'rgba(32, 93, 194, 0.15)',
+        },
+
+        // Status feedback
+        'status-success': '#34DB80',
+        'status-warning': '#FACC15',
+        'status-error': '#EF4444',
+        'status-info': '#3B82F6',
+
+        // On-accent (text on colored backgrounds)
+        'on-accent': '#FFFFFF',
+
+        // Content hierarchy (aliased for readability)
+        'content-primary': '#FFFFFF',
+        'content-secondary': darkColors.contentColor,
+        'content-tertiary': darkColors.darkColor,
+        'content-disabled': darkColors.darkerColor,
+
+        // Surface hierarchy
+        'surface-primary': darkColors.bgColor,
+        'surface-secondary': darkColors.listRowColor,
+        'surface-tertiary': darkColors.accentBgColor,
+
+        // Border tokens
+        'border-primary': darkColors.dividerColor,
+        'border-accent': '#205DC2',
       },
       spacing: spacingPx,
       borderRadius: radiiPx,

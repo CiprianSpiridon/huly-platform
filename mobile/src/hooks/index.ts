@@ -11,3 +11,8 @@ export type {
   HulyUpdateParams,
   HulyRemoveParams,
 } from './useHulyMutation'
+
+export { useProjects } from './useProjects'
+export { useIssues, useSearchIssues, useCreateIssue, useUpdateIssue } from './useIssues'
+export type { CreateIssueDraft, UpdateIssueParams } from './useIssues'
+export { useIssue } from './useIssue'

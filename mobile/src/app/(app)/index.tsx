@@ -1,19 +1,10 @@
-import { View, Text, ActivityIndicator } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { Redirect, type Href } from 'expo-router'
 
 /**
- * Placeholder screen for the authenticated app area.
- * Will be replaced by the tracker/tabs phase.
+ * Root (app) index -- redirects to the default tab.
+ * This file exists because expo-router requires an index.tsx in route groups.
+ * The Tabs layout hides this screen via href: null.
  */
-export default function AppHomeScreen(): React.ReactNode {
-  return (
-    <SafeAreaView className="flex-1 bg-surface">
-      <View className="flex-1 items-center justify-center gap-4 px-4">
-        <ActivityIndicator size="large" color="#205DC2" />
-        <Text className="font-sans text-base text-content">
-          Loading workspace...
-        </Text>
-      </View>
-    </SafeAreaView>
-  )
+export default function AppIndex(): React.ReactNode {
+  return <Redirect href={'/(app)/tracker' as Href} />
 }
