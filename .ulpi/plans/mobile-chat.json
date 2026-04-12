@@ -62,12 +62,11 @@
       "effort": "S",
       "agent": "expo-react-native-engineer",
       "dependencies": [],
-      "description": "Create chat/ route group with Stack navigator. Tab entry already exists from tracker phase. Wire unread badge from useChatStore into existing tab config.",
+      "description": "Create chat/ route group with Stack navigator. Tab entry and badge already handled by tracker phase's tab shell (which reads useChatStore.unreadTotal when the store exists).",
       "writeScope": ["mobile/src/app/(app)/chat/_layout.tsx", "mobile/src/app/(app)/chat/index.tsx"],
       "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
       "acceptanceCriteria": [
-        "Chat tab shows message icon with unread badge when count > 0",
-        "Badge disappears when all channels read",
+        "Chat route group has Stack navigator with headerShown false",
         "Tab navigation preserves each stack's navigation state"
       ]
     },

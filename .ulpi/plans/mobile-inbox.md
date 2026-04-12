@@ -87,11 +87,10 @@ Depends on auth (Phase 1) and API client (Phase 2) being complete.
 - **Agent:** expo-react-native-engineer
 - **Dependencies:** none (assumes Phase 3 TASK-004 tab layout exists with Inbox tab entry)
 - **writeScope:** [`mobile/src/app/(app)/inbox/_layout.tsx`, `mobile/src/app/(app)/inbox/index.tsx`]
-- **Description:** Create `inbox/` route group with Stack navigator. Tab entry already exists from tracker phase. Wire badge showing `unreadTotal` from `useInboxStore` into the existing tab config. Uses the `notify` color token for the badge dot.
+- **Description:** Create `inbox/` route group with Stack navigator. Tab entry and badge already handled by tracker phase's tab shell (which reads `useInboxStore.unreadTotal` when the store exists).
 - **Acceptance Criteria:**
-  1. Inbox tab shows bell icon with numeric badge from `useInboxStore.unreadTotal`
-  2. Badge uses `bg-notify` color token from Huly design system
-  3. Badge hides when unread count is 0 (not "0" badge)
+  1. Inbox route group has a Stack navigator with `headerShown: false`
+  2. Tab navigation between Inbox and other tabs preserves each stack's navigation state
 - **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5`
 
 ### TASK-005: Notification list screen

@@ -28,7 +28,7 @@
       "effort": "XS",
       "agent": "expo-react-native-engineer",
       "dependencies": ["TASK-100"],
-      "description": "Implement server config loading in src/client/config.ts. Self-contained fetch of {url}/config.json (do NOT import from @hcengineering/api-client). Export getServerUrl(), loadServerConfig(), getConfig(), clearConfig(). Memory-cache config after first load.",
+      "description": "Implement server config loading in src/client/config.ts. Self-contained fetch of {url}/config.json (do NOT import from @hcengineering/api-client). Export getServerUrl(), loadServerConfig(), getConfig(), clearConfig(). Memory-cache config after first load. Define the full ServerConfig interface: { ACCOUNTS_URL: string, COLLABORATOR_URL: string, FILES_URL: string, UPLOAD_URL: string }.",
       "writeScope": ["mobile/src/client/config.ts"],
       "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | grep -c 'error' || echo 0",
       "acceptanceCriteria": [
@@ -129,13 +129,13 @@
       "priority": "P1",
       "effort": "XS",
       "agent": "expo-react-native-engineer",
-      "dependencies": [],
-      "description": "Create app/(auth)/_layout.tsx. Stack navigator with headerShown false. If user already authenticated with workspace redirect to /(app)/tracker.",
+      "dependencies": ["TASK-103", "TASK-104"],
+      "description": "Create app/(auth)/_layout.tsx. Stack navigator with headerShown false. If user already authenticated with workspace redirect to /(app) (the app group root -- NOT /(app)/tracker, which does not exist until the tracker phase).",
       "writeScope": ["mobile/src/app/(auth)/_layout.tsx"],
       "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | grep -c 'error' || echo 0",
       "acceptanceCriteria": [
         "(auth)/_layout.tsx exports Stack with headerShown false",
-        "Authenticated users with workspace redirected to app",
+        "Authenticated users with workspace redirected to /(app)",
         "No tab bar visible on auth screens"
       ]
     },
@@ -147,13 +147,14 @@
       "effort": "XS",
       "agent": "expo-react-native-engineer",
       "dependencies": ["TASK-103", "TASK-104"],
-      "description": "Create app/(app)/_layout.tsx with auth guard. Check isAuthenticated and selectedWorkspace. Redirect to /(auth)/login or /(auth)/workspace-select via declarative <Redirect>. Render the tab navigator and modals when authenticated. The tab navigator lives directly at (app)/_layout.tsx -- no nested (tabs) group.",
+      "description": "Create app/(app)/_layout.tsx with auth guard. Check isAuthenticated and selectedWorkspace. Redirect to /(auth)/login or /(auth)/workspace-select via declarative <Redirect>. When authenticated with workspace, render a minimal placeholder layout: a simple Stack navigator (no tabs) with a 'Loading workspace...' screen. Tracker phase TASK-004 will later REPLACE this file with the full tab navigator. This ensures the auth phase works standalone without tracker routes.",
       "writeScope": ["mobile/src/app/(app)/_layout.tsx"],
       "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | grep -c 'error' || echo 0",
       "acceptanceCriteria": [
         "Unauthenticated access to (app) route redirects to /(auth)/login",
         "Authenticated without workspace redirects to /(auth)/workspace-select",
-        "Authenticated with workspace renders Stack with no flicker"
+        "Authenticated with workspace renders Stack with placeholder 'Loading workspace...' screen (no flicker)",
+        "Layout uses simple Stack navigator (no tabs) -- tracker phase TASK-004 will later replace with tab navigator"
       ]
     },
     {
@@ -180,7 +181,7 @@
       "priority": "P1",
       "effort": "M",
       "agent": "expo-react-native-engineer",
-      "dependencies": ["TASK-102", "TASK-103", "TASK-107"],
+      "dependencies": ["TASK-102", "TASK-103", "TASK-107", "TASK-109"],
       "description": "Create app/(auth)/otp.tsx. Two-step: email -> loginOtp() -> OTP input -> validateOtp() -> setAuth() -> workspace-select. Countdown timer from OtpInfo.retryOn. textContentType oneTimeCode for autofill. Extend use-auth.ts with requestOtp and validateOtp.",
       "writeScope": ["mobile/src/app/(auth)/otp.tsx", "mobile/src/hooks/use-auth.ts"],
       "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | grep -c 'error' || echo 0",
@@ -215,7 +216,7 @@
       "effort": "M",
       "agent": "expo-react-native-engineer",
       "dependencies": ["TASK-102", "TASK-104", "TASK-107"],
-      "description": "Create app/(auth)/workspace-select.tsx and src/hooks/use-workspace.ts. Fetch workspace list via getUserWorkspaces() with TanStack Query. Render list of active workspaces. On tap call selectWorkspace(url), store in workspace Zustand store, navigate to /(app)/tracker. Handle loading, error, empty states. Filter disabled/non-active workspaces.",
+      "description": "Create app/(auth)/workspace-select.tsx and src/hooks/use-workspace.ts. Fetch workspace list via getUserWorkspaces() with TanStack Query. Render list of active workspaces. On tap call selectWorkspace(url), store in workspace Zustand store, navigate to /(app) (the app group root -- NOT /(app)/tracker, which does not exist until the tracker phase). Handle loading, error, empty states. Filter disabled/non-active workspaces.",
       "writeScope": ["mobile/src/app/(auth)/workspace-select.tsx", "mobile/src/hooks/use-workspace.ts"],
       "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | grep -c 'error' || echo 0",
       "acceptanceCriteria": [

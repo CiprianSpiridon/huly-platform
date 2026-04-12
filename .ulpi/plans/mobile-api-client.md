@@ -100,8 +100,9 @@ Since Metro resolves at runtime and `import type` is erased by TypeScript, Metro
 
 ### AD-6: TanStack Query integration
 
-**Decision:** Use `@tanstack/react-query` v5 with:
-- `QueryClientProvider` in root `_layout.tsx`
+**Decision:** QueryClientProvider and `@tanstack/react-query` are installed and configured in the auth phase (TASK-105). This phase does NOT re-install them. TASK-015 only extracts the queryClient to a dedicated module if needed.
+
+Configuration:
 - Default staleTime: 30s, gcTime: 5min (mobile-appropriate)
 - `useHulyQuery` custom hook wrapping `useQuery` with Huly-typed queries
 - Query keys follow `['huly', domain, class, queryHash]` convention

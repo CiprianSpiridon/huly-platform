@@ -88,11 +88,10 @@ and API client (Phase 2) being complete.
 - **Agent:** expo-react-native-engineer
 - **Dependencies:** none (assumes Phase 3 TASK-004 tab layout exists with Chat tab entry)
 - **writeScope:** [`mobile/src/app/(app)/chat/_layout.tsx`, `mobile/src/app/(app)/chat/index.tsx`]
-- **Description:** Create `chat/` route group with Stack navigator for channel list -> channel detail -> thread. Tab entry already exists from tracker phase. Wire unread badge from `useChatStore` into the existing tab config.
+- **Description:** Create `chat/` route group with Stack navigator for channel list -> channel detail -> thread. Tab entry and badge already handled by tracker phase's tab shell (which reads `useChatStore.unreadTotal` when the store exists).
 - **Acceptance Criteria:**
-  1. Chat tab shows message bubble icon with unread badge when count > 0
-  2. Badge disappears when all channels are read (count = 0)
-  3. Tab navigation between Tracker and Chat preserves each stack's navigation state
+  1. Chat route group has a Stack navigator with `headerShown: false`
+  2. Tab navigation between Tracker and Chat preserves each stack's navigation state
 - **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5`
 
 ### TASK-005: Channel list screen

@@ -62,13 +62,14 @@
       "effort": "S",
       "agent": "expo-react-native-engineer",
       "dependencies": [],
-      "description": "Create (app) tab layout with bottom tabs. Add all 4 tabs: Tracker (active), Chat, Inbox, Settings. Each tab points to its route group. Chat/Inbox/Settings use placeholder screens for now. Create tracker/ route group with Stack navigator.",
+      "description": "REPLACE the placeholder (app)/_layout.tsx created by auth phase (TASK-108) with full tab layout using bottom tabs. Add all 4 tabs: Tracker (active), Chat, Inbox, Settings. Each tab points to its route group. Chat/Inbox/Settings use placeholder screens for now. Create tracker/ route group with Stack navigator. Tab shell reads badge counts from useChatStore.unreadTotal and useInboxStore.unreadTotal Zustand stores when they exist (optional chaining or default 0). When chat/inbox phases create those stores, badges automatically appear.",
       "writeScope": ["mobile/src/app/(app)/_layout.tsx", "mobile/src/app/(app)/tracker/_layout.tsx", "mobile/src/app/(app)/tracker/index.tsx", "mobile/src/app/(app)/chat/index.tsx", "mobile/src/app/(app)/inbox/index.tsx", "mobile/src/app/(app)/settings/index.tsx"],
       "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
       "acceptanceCriteria": [
         "Bottom tab bar shows all 4 tabs: Tracker, Chat, Inbox, Settings",
         "Tab bar uses Huly design tokens: bg-surface inactive, text-primary active",
-        "Tab bar remains visible when navigating within the tracker stack"
+        "Tab bar remains visible when navigating within the tracker stack",
+        "Tab shell reads badge counts from useChatStore and useInboxStore Zustand stores when they exist (defaults to 0 when stores not yet created)"
       ]
     },
     {

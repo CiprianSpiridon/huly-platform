@@ -100,6 +100,17 @@ interface ServerConfig {
 - **writeScope:** `mobile/src/client/config.ts`
 - **Description:** Implement server config loading. Cannot use `loadServerConfig` from `@hcengineering/api-client` (unsafe transitive deps). Re-implement the simple fetch logic: read `EXPO_PUBLIC_HULY_URL` env var (default `https://app.huly.io`), fetch `{url}/config.json`, parse JSON, return `ServerConfig` with at minimum `ACCOUNTS_URL`. Cache in memory (re-fetch only on explicit clear). Export `getServerUrl()`, `loadServerConfig()`, `getConfig()`, and `clearConfig()`.
 
+  The `ServerConfig` interface that must be defined in this file:
+
+  ```typescript
+  interface ServerConfig {
+    ACCOUNTS_URL: string
+    COLLABORATOR_URL: string
+    FILES_URL: string
+    UPLOAD_URL: string
+  }
+  ```
+
   ```typescript
   // WRONG -- importing from api-client pulls tiptap chain
   import { loadServerConfig } from '@hcengineering/api-client';
@@ -154,25 +165,30 @@ interface ServerConfig {
 - **Agent:** expo-react-native-engineer
 - **Dependencies:** TASK-100
 - **writeScope:** `mobile/src/store/auth.ts`
-- **Description:** Create Zustand auth store following the pattern from `state-management.md` reference. State: `token: string | null`, `account: AccountUuid | null`, `isAuthenticated: boolean`, `isBootstrapping: boolean`. Actions: `setAuth(loginInfo: LoginInfo)` persists token + account to expo-secure-store and updates state; `clearAuth()` deletes all secure store keys and resets state; `restoreAuth()` reads from secure store and populates state (called on app launch). Always guard against missing `loginInfo.token` in `setAuth()`.
+- **Description:** Create Zustand auth store following the pattern from `state-management.md` reference. State: `token: string | null`, `account: AccountUuid | null`, `tfaToken: string | null` (transient, for 2FA flow), `isAuthenticated: boolean`, `isBootstrapping: boolean`. Actions: `setAuth(loginInfo: LoginInfo)` persists token + account to expo-secure-store and updates state; `setTfaToken(token: string)` stores the restricted token for the 2FA screen (in-memory only, NOT persisted); `clearAuth()` deletes all secure store keys and resets state; `restoreAuth()` reads from secure store and populates state (called on app launch).
+
+  **Key insight:** When `tfaRequired: true`, the server DOES return a token — it's a restricted JWT for `NIL_UUID` with the real account in `extra.tfaAccount`. Do NOT call `setAuth()` with this token. Store it via `setTfaToken()` for the 2FA screen, then call `setAuth()` only after `verify2fa()` returns the full token.
 
   ```typescript
-  // WRONG -- not persisting to secure store
-  setAuth: (info) => set({ token: info.token, account: info.account, isAuthenticated: true });
+  // WRONG -- calling setAuth on tfaRequired response
+  const result = await accountClient.login(email, password);
+  setAuth(result); // Stores restricted token as if it's a real session!
 
-  // RIGHT -- persist first, then update in-memory state
-  setAuth: async (info) => {
-    if (!info.token) throw new Error('Login response missing token');
-    await SecureStore.setItemAsync('auth_token', info.token);
-    await SecureStore.setItemAsync('account_id', info.account);
-    set({ token: info.token, account: info.account, isAuthenticated: true });
-  };
+  // RIGHT -- branch on tfaRequired
+  const result = await accountClient.login(email, password);
+  if (result.tfaRequired) {
+    setTfaToken(result.token!); // transient, for 2FA screen only
+    router.push('/(auth)/two-factor');
+  } else {
+    await setAuth(result); // full token, persist to secure store
+    router.push('/(auth)/workspace-select');
+  }
   ```
 
 - **Acceptance Criteria:**
   1. `setAuth()` persists `auth_token` and `account_id` to expo-secure-store
   2. `restoreAuth()` reads from secure store and sets `isAuthenticated: true` when tokens exist
-  3. `setAuth()` throws if `loginInfo.token` is undefined (tfaRequired case)
+  3. When `tfaRequired: true`, `setTfaToken()` stores restricted token in-memory only — `isAuthenticated` remains `false`
 - **validateCommand:** `cd mobile && npx tsc --noEmit 2>&1 | grep -c 'error' || echo 0`
 
 ### TASK-104: Workspace Zustand store
@@ -249,13 +265,13 @@ interface ServerConfig {
 - **Priority:** P1
 - **Effort:** XS
 - **Agent:** expo-react-native-engineer
-- **Dependencies:** none (scaffold has `.gitkeep`)
+- **Dependencies:** TASK-103, TASK-104
 - **writeScope:** `mobile/src/app/(auth)/_layout.tsx`
-- **Description:** Create the `(auth)` route group layout. Simple Stack navigator with `headerShown: false`. This group contains login, OTP, 2FA, and workspace-select screens. No tab bar, no auth guard (this IS the unauthenticated zone). If user is already authenticated AND has a workspace, redirect to `(app)`.
+- **Description:** Create the `(auth)` route group layout. Simple Stack navigator with `headerShown: false`. This group contains login, OTP, 2FA, and workspace-select screens. No tab bar, no auth guard (this IS the unauthenticated zone). If user is already authenticated AND has a workspace, redirect to `/(app)` (the app group root -- NOT `/(app)/tracker`, which does not exist until the tracker phase).
 
 - **Acceptance Criteria:**
   1. `(auth)/_layout.tsx` exports a Stack with `headerShown: false`
-  2. Authenticated users with workspace are redirected to `/(app)/tracker`
+  2. Authenticated users with workspace are redirected to `/(app)`
   3. No tab bar visible on any (auth) screen
 - **validateCommand:** `cd mobile && npx tsc --noEmit 2>&1 | grep -c 'error' || echo 0`
 
@@ -267,7 +283,7 @@ interface ServerConfig {
 - **Agent:** expo-react-native-engineer
 - **Dependencies:** TASK-103, TASK-104
 - **writeScope:** `mobile/src/app/(app)/_layout.tsx`
-- **Description:** Create the `(app)` route group layout with auth guard. Check `isAuthenticated` from auth store and `selectedWorkspace` from workspace store. If not authenticated, `<Redirect href="/(auth)/login" />`. If authenticated but no workspace, `<Redirect href="/(auth)/workspace-select" />`. Otherwise render the tab navigator and modal routes. The tab navigator lives directly at `(app)/_layout.tsx` -- no nested `(tabs)` group. This is declarative -- no `useEffect` + `router.replace()`.
+- **Description:** Create the `(app)` route group layout with auth guard. Check `isAuthenticated` from auth store and `selectedWorkspace` from workspace store. If not authenticated, `<Redirect href="/(auth)/login" />`. If authenticated but no workspace, `<Redirect href="/(auth)/workspace-select" />`. Otherwise render a minimal placeholder layout: a simple Stack navigator (no tabs) with a "Loading workspace..." screen. This is declarative -- no `useEffect` + `router.replace()`. When the tracker phase (TASK-004) runs later, it will REPLACE this file with the full tab navigator. This ensures the auth phase can function standalone without requiring any tracker routes.
 
   ```typescript
   // WRONG -- imperative redirect in useEffect
@@ -280,7 +296,8 @@ interface ServerConfig {
 - **Acceptance Criteria:**
   1. Unauthenticated access to any `(app)` route redirects to `/(auth)/login`
   2. Authenticated user without workspace redirects to `/(auth)/workspace-select`
-  3. Authenticated user with workspace sees the Stack (no flicker)
+  3. Authenticated user with workspace sees a Stack layout with placeholder "Loading workspace..." screen (no flicker)
+  4. Layout uses a simple Stack navigator (no tabs) -- tracker phase TASK-004 will later replace this with the tab navigator
 - **validateCommand:** `cd mobile && npx tsc --noEmit 2>&1 | grep -c 'error' || echo 0`
 
 ### TASK-109: Login screen (email + password)
@@ -307,7 +324,7 @@ interface ServerConfig {
 - **Priority:** P1
 - **Effort:** M
 - **Agent:** expo-react-native-engineer
-- **Dependencies:** TASK-102, TASK-103, TASK-107
+- **Dependencies:** TASK-102, TASK-103, TASK-107, TASK-109
 - **writeScope:** `mobile/src/app/(auth)/otp.tsx`, `mobile/src/hooks/use-auth.ts`
 - **Description:** Create OTP login screen. Two-step UI: (1) email input -> calls `accountClient.loginOtp(email)` -> shows OTP code input, (2) OTP code input -> calls `accountClient.validateOtp(email, code)` -> on success calls `setAuth(loginInfo)` and navigates to workspace-select. Show countdown timer from `OtpInfo.retryOn` for resend. Show "Back to password login" link. `textContentType="oneTimeCode"` and `autoComplete="one-time-code"` for iOS/Android OTP autofill. Extend `useLogin` hook with `requestOtp` and `validateOtp` actions.
 
@@ -343,7 +360,7 @@ interface ServerConfig {
 - **Agent:** expo-react-native-engineer
 - **Dependencies:** TASK-102, TASK-104, TASK-107
 - **writeScope:** `mobile/src/app/(auth)/workspace-select.tsx`, `mobile/src/hooks/use-workspace.ts`
-- **Description:** Create workspace selection screen and `useWorkspaces` / `useSelectWorkspace` hooks. On mount, fetches workspace list via `accountClient.getUserWorkspaces()` using TanStack Query (`queryKey: ['workspaces']`, `staleTime: 5 * 60_000`). Renders list of workspaces (name, URL). On tap, calls `accountClient.selectWorkspace(workspace.url)`, stores result in workspace Zustand store via `setWorkspace(wsInfo)`, then navigates to `/(app)/tracker` via `router.replace()`. Handle loading, error, and empty (no workspaces) states per screen-checklist.md.
+- **Description:** Create workspace selection screen and `useWorkspaces` / `useSelectWorkspace` hooks. On mount, fetches workspace list via `accountClient.getUserWorkspaces()` using TanStack Query (`queryKey: ['workspaces']`, `staleTime: 5 * 60_000`). Renders list of workspaces (name, URL). On tap, calls `accountClient.selectWorkspace(workspace.url)`, stores result in workspace Zustand store via `setWorkspace(wsInfo)`, then navigates to `/(app)` via `router.replace()` (the app group root -- NOT `/(app)/tracker`, which does not exist until the tracker phase). Handle loading, error, and empty (no workspaces) states per screen-checklist.md.
 
   Filter out workspaces where `mode !== 'active'` or `isDisabled === true`.
 
@@ -394,8 +411,8 @@ TASK-100 (add deps) [P0]
 ├── TASK-101 (server config) [P0]
 │   └── TASK-102 (account client wrapper) [P0]
 │       ├── TASK-109 (login screen) [P1]
-│       │   └── TASK-111 (2FA screen) [P1]
-│       ├── TASK-110 (OTP screen) [P1]
+│       │   ├── TASK-111 (2FA screen) [P1]
+│       │   └── TASK-110 (OTP screen) [P1]  -- also needs TASK-109 (write serialization on use-auth.ts)
 │       ├── TASK-112 (workspace select) [P1]
 │       └── TASK-113 (logout) [P2]
 ├── TASK-103 (auth store) [P0]
@@ -413,7 +430,7 @@ TASK-100 (add deps) [P0]
 └── TASK-105 (query provider) [P0]
     └── TASK-106 (session restore) [P0]
 
-TASK-107 (auth stack layout) [P1]  -- no deps, can start immediately
+TASK-107 (auth stack layout) [P1]  -- depends on TASK-103 + TASK-104
 ├── TASK-109 (login screen) [P1]
 ├── TASK-110 (OTP screen) [P1]
 ├── TASK-111 (2FA screen) [P1]
@@ -424,8 +441,9 @@ TASK-107 (auth stack layout) [P1]  -- no deps, can start immediately
 
 **Parallelizable groups:**
 - After TASK-100: TASK-101, TASK-103, TASK-104, TASK-105 can all run in parallel
-- After TASK-102 + TASK-103 + TASK-107: TASK-109, TASK-110, TASK-112 can all run in parallel
-- TASK-107 has no dependencies -- can start immediately
+- TASK-107 depends on TASK-103 + TASK-104 (needs auth and workspace stores for redirect logic)
+- After TASK-102 + TASK-103 + TASK-107: TASK-109 and TASK-112 can run in parallel
+- TASK-110 must follow TASK-109 (both write `use-auth.ts`, must serialize)
 
 **Write scope serialization:**
 - `mobile/src/hooks/use-auth.ts` is written by TASK-109, extended by TASK-110, TASK-111, TASK-113. Execution order: TASK-109 first (creates file), then TASK-110/TASK-111 (extend), then TASK-113 (adds useLogout).

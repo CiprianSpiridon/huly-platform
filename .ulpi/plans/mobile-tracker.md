@@ -91,11 +91,12 @@ create/update issue, and search. Depends on auth (Phase 1) and API client (Phase
 - **Agent:** expo-react-native-engineer
 - **Dependencies:** none
 - **writeScope:** [`mobile/src/app/(app)/_layout.tsx`, `mobile/src/app/(app)/tracker/_layout.tsx`, `mobile/src/app/(app)/tracker/index.tsx`, `mobile/src/app/(app)/chat/index.tsx`, `mobile/src/app/(app)/inbox/index.tsx`, `mobile/src/app/(app)/settings/index.tsx`]
-- **Description:** Create the `(app)` tab layout with bottom tabs using `@react-navigation/bottom-tabs`. Add all 4 tabs: Tracker (active), Chat, Inbox, Settings. Each tab points to its route group. Chat/Inbox/Settings groups will be populated by their respective phases -- use placeholder screens for now. Create the `tracker/` route group with a Stack navigator inside for push navigation between project list, issue list, and issue detail. Placeholder screens initially for tracker too.
+- **Description:** REPLACE the placeholder `(app)/_layout.tsx` created by the auth phase (TASK-108) with the full tab layout using `@react-navigation/bottom-tabs`. Add all 4 tabs: Tracker (active), Chat, Inbox, Settings. Each tab points to its route group. Chat/Inbox/Settings groups will be populated by their respective phases -- use placeholder screens for now. Create the `tracker/` route group with a Stack navigator inside for push navigation between project list, issue list, and issue detail. Placeholder screens initially for tracker too. The tab shell reads badge counts from `useChatStore.unreadTotal` and `useInboxStore.unreadTotal` Zustand stores when they exist. Since these stores are created by later phases, use optional chaining or default to 0 when the stores are not yet available. When chat/inbox phases create those stores, badges automatically appear without changes to the tab shell.
 - **Acceptance Criteria:**
   1. Bottom tab bar shows all 4 tabs: Tracker, Chat, Inbox, Settings
   2. Tab bar uses Huly design tokens: `bg-surface`, `text-nav-icon` inactive, `text-primary` active
   3. Tab bar remains visible when navigating within the tracker stack (no layout flash)
+  4. Tab shell reads badge counts from `useChatStore` and `useInboxStore` Zustand stores when they exist (defaults to 0 when stores not yet created)
 - **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5`
 
 ### TASK-005: Project list screen
