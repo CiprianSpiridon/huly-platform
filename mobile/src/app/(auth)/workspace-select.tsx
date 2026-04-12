@@ -17,10 +17,10 @@ export default function WorkspaceSelectScreen(): React.ReactNode {
   const { data: workspaces, isLoading, error, refetch } = useWorkspaces()
   const { selectWorkspace, isSelecting } = useSelectWorkspace()
 
-  // Filter to only active workspaces
-  const activeWorkspaces = workspaces?.filter(
-    (ws) => ws.mode !== 'archived' && ws.mode !== 'pending-deletion',
-  )
+  // Filter to only active workspaces — Huly has many non-active modes:
+  // pending-creation, creating, upgrading, deleting, deleted, restoring, etc.
+  // Only show workspaces where mode === 'active'
+  const activeWorkspaces = workspaces?.filter((ws) => ws.mode === 'active')
 
   const handleSelect = useCallback(
     async (ws: WorkspaceInfoWithStatus) => {

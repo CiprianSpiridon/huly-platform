@@ -69,12 +69,25 @@ export const useAuthStore = create<AuthState>((set) => ({
     const account = await SecureStore.getItemAsync('account_id')
 
     if (token != null && account != null) {
-      set({
-        token,
-        account: account as AccountUuid,
-        isAuthenticated: true,
-        isBootstrapping: false,
-      })
+      // Validate the token is still valid before trusting it
+      try {
+        const { getOrCreateAccountClient } = await import('@/client/account')
+        const client = await getOrCreateAccountClient(token)
+        await client.getLoginInfoByToken()
+
+        // Token is valid — restore session
+        set({
+          token,
+          account: account as AccountUuid,
+          isAuthenticated: true,
+          isBootstrapping: false,
+        })
+      } catch {
+        // Token expired or revoked — clear and redirect to login
+        await SecureStore.deleteItemAsync('auth_token')
+        await SecureStore.deleteItemAsync('account_id')
+        set({ isBootstrapping: false })
+      }
     } else {
       set({ isBootstrapping: false })
     }
