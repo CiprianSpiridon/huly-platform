@@ -14,6 +14,7 @@ import {
   TxFactory,
   type Class,
   type Doc,
+  type DocumentQuery,
   type Ref,
   type Space,
 } from '@hcengineering/core'
@@ -225,11 +226,16 @@ export async function markAsRead(ids: string[]): Promise<void> {
     const account = await client.getAccount()
     const factory = new TxFactory(account.primarySocialId)
 
-    for (const id of ids) {
+    // Fetch notifications to get their real space (PersonSpace)
+    const notifications = await client.findAll(
+      NOTIFICATION_CLASS.InboxNotification as Ref<Class<Doc>>,
+      { _id: { $in: ids } as unknown as DocumentQuery<Doc>['_id'] }
+    )
+    for (const notif of notifications) {
       const tx = factory.createTxUpdateDoc(
         NOTIFICATION_CLASS.InboxNotification as Ref<Class<Doc>>,
-        '' as Ref<Space>, // PersonSpace -- server resolves
-        id as Ref<Doc>,
+        notif.space,
+        notif._id,
         { isViewed: true } as Record<string, unknown>
       )
       await client.tx(tx)
@@ -286,11 +292,16 @@ export async function archiveNotifications(ids: string[]): Promise<void> {
     const account = await client.getAccount()
     const factory = new TxFactory(account.primarySocialId)
 
-    for (const id of ids) {
+    // Fetch notifications to get their real space
+    const notifications = await client.findAll(
+      NOTIFICATION_CLASS.InboxNotification as Ref<Class<Doc>>,
+      { _id: { $in: ids } as unknown as DocumentQuery<Doc>['_id'] }
+    )
+    for (const notif of notifications) {
       const tx = factory.createTxUpdateDoc(
         NOTIFICATION_CLASS.InboxNotification as Ref<Class<Doc>>,
-        '' as Ref<Space>,
-        id as Ref<Doc>,
+        notif.space,
+        notif._id,
         { archived: true, isViewed: true } as Record<string, unknown>
       )
       await client.tx(tx)

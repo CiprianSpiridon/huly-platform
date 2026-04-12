@@ -46,17 +46,37 @@ export function useSwitchWorkspace(): {
       setIsSwitching(true)
       setError(null)
       try {
+        // Save old credentials for rollback
+        const oldWs = useWorkspaceStore.getState()
+        const oldEndpoint = oldWs.workspaceEndpoint
+        const oldWsId = oldWs.selectedWorkspace
+        const oldToken = oldWs.workspaceToken
+
         // 1. Call selectWorkspace to get WorkspaceLoginInfo
         const wsInfo = await switchWorkspace(workspaceUrl)
 
-        // 2. Update workspace Zustand store (all 4 keys)
-        await setWorkspace(wsInfo)
-
-        // 3. Disconnect existing API client
+        // 2. Disconnect existing API client
         disconnect()
 
+        // 3. Update workspace Zustand store (all 4 keys)
+        await setWorkspace(wsInfo)
+
         // 4. Reconnect with new workspace credentials
-        await connect(wsInfo.endpoint, wsInfo.workspace, wsInfo.token)
+        try {
+          await connect(wsInfo.endpoint, wsInfo.workspace, wsInfo.token)
+        } catch (connectErr) {
+          // Rollback: restore old workspace and reconnect
+          if (oldEndpoint != null && oldWsId != null && oldToken != null) {
+            await setWorkspace({
+              endpoint: oldEndpoint,
+              workspace: oldWsId,
+              token: oldToken,
+              workspaceUrl: oldWs.workspaceUrl ?? '',
+            } as import('@hcengineering/account-client').WorkspaceLoginInfo)
+            await connect(oldEndpoint, oldWsId, oldToken)
+          }
+          throw connectErr
+        }
 
         // 5. Clear all cached queries from previous workspace
         queryClient.clear()

@@ -15,6 +15,7 @@ import { BottomSheetModal } from '@gorhom/bottom-sheet'
 
 import { useThread, useSendThreadReply } from '@/hooks/useThread'
 import { useToggleReaction } from '@/hooks/useMessages'
+import { useAuthStore } from '@/store/auth'
 import { ThreadHeader } from '@/components/features/ThreadHeader'
 import { MessageBubble } from '@/components/features/MessageBubble'
 import { MessageInput } from '@/components/features/MessageInput'
@@ -27,6 +28,7 @@ import type { MessageItem } from '@/repositories/chat'
 
 export default function ThreadScreen(): React.ReactNode {
   const { id } = useLocalSearchParams<{ id: string }>()
+  const currentUserId = useAuthStore((s) => s.account) ?? 'unknown'
 
   if (!id) {
     router.back()
@@ -97,7 +99,7 @@ export default function ThreadScreen(): React.ReactNode {
     ({ item }: { item: MessageItem }) => (
       <MessageBubble
         message={item}
-        currentUserId="me"
+        currentUserId={currentUserId}
         onLongPress={handleLongPress}
         onReactionToggle={handleReactionToggle}
       />

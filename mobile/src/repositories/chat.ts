@@ -175,8 +175,10 @@ export async function getMessages(
       query.createdOn = { $lt: Number(pagination.cursor) }
     }
 
+    // Use ChatMessage class (not ActivityMessage) to exclude ThreadMessage replies
+    // from the main timeline. ThreadMessages are fetched separately in getThread().
     const result = await client.findAll<Doc>(
-      ACTIVITY_MESSAGE_CLASS,
+      CHUNTER_CLASS.ChatMessage,
       query as Record<string, unknown>,
       {
         sort: { createdOn: SortingOrder.Descending } as Record<string, SortingOrder>,
