@@ -63,6 +63,12 @@ rush docker:up                      # local docker stack
 - IBM Plex Sans font (matches web)
 - `import type` only for plugin packages (svelte dep chain)
 
+## Tools
+
+- **codemap** — indexed with `.codemapignore`. Use `codemap search`, `codemap symbols`, `codemap deps` for codebase exploration.
+- **browse** — use for iOS simulator screenshots and interaction: `browse --platform ios --app host.exp.Exponent screenshot /tmp/screenshot.png`
+- **expo-react-native skill** — load before any mobile work. Contains 17 references covering routing, styling, data access, auth, testing, etc.
+
 ## Per-Member Docs
 
 See `CLAUDE.md` in each package directory for local guidance.

@@ -157,11 +157,14 @@ module.exports = withNativeWind(config, { input: './global.css' });
 module.exports = function (api) {
   api.cache(true);
   return {
-    presets: ['babel-preset-expo'],
-    plugins: ['nativewind/babel'],
+    presets: [
+      ['babel-preset-expo', { jsxImportSource: 'nativewind' }],
+    ],
   };
 };
 ```
+
+**Important:** `nativewind/babel` is NOT a standard Babel plugin — it returns `{ plugins: [...] }` which `@babel/core@7.28+` rejects. Use `jsxImportSource: 'nativewind'` on `babel-preset-expo` instead.
 
 **tailwind.config.ts:**
 ```typescript

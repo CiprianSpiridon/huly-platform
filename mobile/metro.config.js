@@ -1,39 +1,75 @@
-// Learn more: https://docs.expo.dev/guides/customizing-metro/
 const { getDefaultConfig } = require('expo/metro-config')
 const { withNativeWind } = require('nativewind/metro')
 const path = require('path')
 
-const projectRoot = __dirname
-const monorepoRoot = path.resolve(projectRoot, '..')
+const monorepoRoot = path.resolve(__dirname, '..')
 
-const config = getDefaultConfig(projectRoot)
+const config = getDefaultConfig(__dirname)
 
-// ─── Monorepo watchFolders ────────────────────────────────────────────
-// Metro needs to watch the monorepo root to resolve workspace:^ packages.
+// -------------------------------------------------------------------
+// 1. Watch folders -- tell Metro about monorepo packages
+// -------------------------------------------------------------------
 config.watchFolders = [monorepoRoot]
 
-// ─── Resolver ─────────────────────────────────────────────────────────
-// 1. Tell Metro where to find node_modules installed by Rush/pnpm.
+// -------------------------------------------------------------------
+// 2. Node module resolution -- search local first, then Rush hoisted
+// -------------------------------------------------------------------
 config.resolver.nodeModulesPaths = [
-  path.resolve(projectRoot, 'node_modules'),
+  path.resolve(__dirname, 'node_modules'),
   path.resolve(monorepoRoot, 'common', 'temp', 'node_modules'),
 ]
 
-// 2. CRITICAL: Exclude 'svelte' from resolverMainFields.
-//    Every @hcengineering/* package.json has a "svelte" field pointing to
-//    raw src/ TypeScript files, which would break Metro bundling.
-config.resolver.resolverMainFields = ['react-native', 'browser', 'main']
-
-// 3. Ensure single React/React-Native instance across all workspace packages.
-//    Without this, workspace packages may resolve their own copy of react,
-//    causing the "Invalid hook call" error.
+// -------------------------------------------------------------------
+// 3. Deduplicate React -- ensure single copy across all packages
+// -------------------------------------------------------------------
 config.resolver.extraNodeModules = {
-  react: path.resolve(projectRoot, 'node_modules', 'react'),
-  'react-native': path.resolve(projectRoot, 'node_modules', 'react-native'),
-  'react-dom': path.resolve(projectRoot, 'node_modules', 'react-dom'),
+  react: path.resolve(__dirname, 'node_modules', 'react'),
+  'react-native': path.resolve(__dirname, 'node_modules', 'react-native'),
+  'react/jsx-runtime': path.resolve(__dirname, 'node_modules', 'react', 'jsx-runtime'),
 }
 
-// ─── NativeWind ───────────────────────────────────────────────────────
-module.exports = withNativeWind(config, {
-  input: './global.css',
-})
+// -------------------------------------------------------------------
+// 4. Block server-only / Svelte / Node builtin modules
+// -------------------------------------------------------------------
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  const blockedPrefixes = [
+    '@hcengineering/server-',
+    '@hcengineering/model-',
+    '@hcengineering/ui',
+    '@hcengineering/presentation',
+    '@hcengineering/theme',
+  ]
+
+  const blockedExact = [
+    'stream',
+    'fs',
+    'path',
+    'crypto',
+    'http',
+    'https',
+    'net',
+    'tls',
+    'os',
+    'child_process',
+  ]
+
+  if (blockedPrefixes.some((prefix) => moduleName.startsWith(prefix))) {
+    return { type: 'empty' }
+  }
+
+  if (blockedExact.includes(moduleName)) {
+    return { type: 'empty' }
+  }
+
+  return context.resolveRequest(context, moduleName, platform)
+}
+
+// -------------------------------------------------------------------
+// 5. Source extensions
+// -------------------------------------------------------------------
+config.resolver.sourceExts = [...config.resolver.sourceExts, 'mjs', 'cjs']
+
+// -------------------------------------------------------------------
+// 6. Apply NativeWind
+// -------------------------------------------------------------------
+module.exports = withNativeWind(config, { input: './global.css' })

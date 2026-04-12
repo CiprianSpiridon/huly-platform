@@ -1,5 +1,4 @@
-import type { Config } from 'tailwindcss'
-import {
+const {
   commonColors,
   darkColors,
   spacingPx,
@@ -7,19 +6,18 @@ import {
   fontSize,
   lineHeight,
   radiiPx,
-} from '@hcengineering/mobile-design-tokens'
+} = require('@hcengineering/mobile-design-tokens')
 
-export default {
+/** @type {import('tailwindcss').Config} */
+module.exports = {
   darkMode: 'class',
   content: [
-    './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
   ],
   presets: [require('nativewind/preset')],
   theme: {
     extend: {
       colors: {
-        // Common / shared colors
         primary: {
           DEFAULT: commonColors.primaryButtonDefault,
           hover: commonColors.primaryButtonHovered,
@@ -54,18 +52,20 @@ export default {
         },
         error: commonColors.systemError,
 
-        // Dark theme surface tokens (default)
-        surface: darkColors.bgColor,
-        'surface-back': darkColors.backColor,
-        'surface-accent': darkColors.accentBgColor,
-        'surface-overlay': darkColors.overlayColor,
-        'surface-popup': darkColors.popupColor,
-        'surface-popup-hover': darkColors.popupHover,
-        'surface-panel': darkColors.panelColor,
-        'surface-header': darkColors.compHeaderColor,
-        'surface-divider': darkColors.bgDividerColor,
-        'surface-list-row': darkColors.listRowColor,
-        'surface-button': darkColors.buttonContainerColor,
+        // Dark theme surface tokens
+        surface: {
+          DEFAULT: darkColors.bgColor,
+          back: darkColors.backColor,
+          accent: darkColors.accentBgColor,
+          overlay: darkColors.overlayColor,
+          popup: darkColors.popupColor,
+          'popup-hover': darkColors.popupHover,
+          panel: darkColors.panelColor,
+          header: darkColors.compHeaderColor,
+          divider: darkColors.bgDividerColor,
+          'list-row': darkColors.listRowColor,
+          button: darkColors.buttonContainerColor,
+        },
 
         // Dark theme text tokens
         caption: darkColors.captionColor,
@@ -90,37 +90,26 @@ export default {
           icon: darkColors.navpanelIconsColor,
         },
 
-        // Divider
         divider: darkColors.dividerColor,
-
-        // Highlight
         'highlight-hover': darkColors.highlightHover,
         'highlight-select': darkColors.highlightSelect,
         'highlight-select-border': darkColors.highlightSelectBorder,
         'highlight-select-hover': darkColors.highlightSelectHover,
-
-        // Status bar
         statusbar: darkColors.statusbarColor,
 
-        // Tooltip
         tooltip: {
           DEFAULT: darkColors.tooltipColor,
           bg: darkColors.tooltipBg,
         },
-
-        // Toggle
         toggle: {
           bg: darkColors.toggleBgColor,
           on: darkColors.toggleOnBgColor,
         },
 
-        // Solid text accents
         'dark-solid': darkColors.darkColorSolid,
         'content-solid': darkColors.contentColorSolid,
         'accent-solid': darkColors.accentColorSolid,
         'caption-solid': darkColors.captionColorSolid,
-
-        // Inbox
         notify: darkColors.inboxNotify,
       },
       spacing: spacingPx,
@@ -144,4 +133,4 @@ export default {
     },
   },
   plugins: [],
-} satisfies Config
+}

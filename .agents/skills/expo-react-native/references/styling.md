@@ -174,11 +174,14 @@ module.exports = withNativeWind(config, { input: './global.css' });
 module.exports = function (api) {
   api.cache(true);
   return {
-    presets: ['babel-preset-expo'],
-    plugins: ['nativewind/babel'],
+    presets: [
+      ['babel-preset-expo', { jsxImportSource: 'nativewind' }],
+    ],
   };
 };
 ```
+
+**Critical:** Do NOT use `'nativewind/babel'` as a plugin or preset. It returns `{ plugins: [...] }` which `@babel/core@7.28+` rejects as invalid. The `jsxImportSource: 'nativewind'` option on `babel-preset-expo` is the correct approach for NativeWind v4 with Expo SDK 55.
 
 ### global.css
 
