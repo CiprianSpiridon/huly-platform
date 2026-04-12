@@ -11,6 +11,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from '@/client/queryClient'
 import { useAuthStore } from '@/store/auth'
 import { useWorkspaceStore } from '@/store/workspace'
+import { useConnectionStore } from '@/store/connection'
 
 // Prevent the splash screen from auto-hiding before assets are loaded.
 SplashScreen.preventAutoHideAsync()
@@ -27,11 +28,21 @@ export default function RootLayout(): React.ReactNode {
     'IBMPlexSans-Bold': require('../../assets/fonts/IBMPlexSans-Bold.ttf'),
   })
 
+  const connect = useConnectionStore((s) => s.connect)
+
   useEffect(() => {
     async function restore(): Promise<void> {
       try {
         await restoreAuth()
         await restoreWorkspace()
+
+        // If both auth and workspace restored, connect the data layer
+        const { token } = useAuthStore.getState()
+        const { workspaceEndpoint, selectedWorkspace, workspaceToken } =
+          useWorkspaceStore.getState()
+        if (token != null && workspaceEndpoint != null && selectedWorkspace != null && workspaceToken != null) {
+          await connect(workspaceEndpoint, selectedWorkspace, workspaceToken)
+        }
       } catch {
         // Token expired or invalid -- user will be redirected to login
       } finally {
@@ -39,7 +50,7 @@ export default function RootLayout(): React.ReactNode {
       }
     }
     void restore()
-  }, [restoreAuth, restoreWorkspace])
+  }, [restoreAuth, restoreWorkspace, connect])
 
   useEffect(() => {
     if (fontsLoaded && !isRestoring) {

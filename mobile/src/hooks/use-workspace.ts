@@ -11,6 +11,7 @@ import { useCallback, useState } from 'react'
 import { getOrCreateAccountClient } from '@/client/account'
 import { useAuthStore } from '@/store/auth'
 import { useWorkspaceStore } from '@/store/workspace'
+import { useConnectionStore } from '@/store/connection'
 
 export function useWorkspaces() {
   const token = useAuthStore((s) => s.token)
@@ -33,6 +34,7 @@ export function useSelectWorkspace(): {
   const [isSelecting, setIsSelecting] = useState(false)
   const token = useAuthStore((s) => s.token)
   const setWorkspace = useWorkspaceStore((s) => s.setWorkspace)
+  const connect = useConnectionStore((s) => s.connect)
   const queryClient = useQueryClient()
 
   const selectWorkspace = useCallback(
@@ -46,11 +48,14 @@ export function useSelectWorkspace(): {
 
         // Clear all cached queries from previous workspace
         queryClient.clear()
+
+        // Connect the data layer so query hooks can fetch
+        await connect(wsInfo.endpoint, wsInfo.workspace, wsInfo.token)
       } finally {
         setIsSelecting(false)
       }
     },
-    [token, setWorkspace, queryClient],
+    [token, setWorkspace, connect, queryClient],
   )
 
   return { selectWorkspace, isSelecting }

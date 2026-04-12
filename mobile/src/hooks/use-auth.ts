@@ -14,6 +14,7 @@ import type { LoginInfo, OtpInfo } from '@hcengineering/account-client'
 import { getOrCreateAccountClient, clearAccountClient } from '@/client/account'
 import { useAuthStore } from '@/store/auth'
 import { useWorkspaceStore } from '@/store/workspace'
+import { useConnectionStore } from '@/store/connection'
 
 // ---------------------------------------------------------------------------
 // useLogin -- email + password
@@ -183,12 +184,14 @@ export function useTwoFactor(): {
 export function useLogout(): () => Promise<void> {
   const clearAuth = useAuthStore((s) => s.clearAuth)
   const clearWorkspace = useWorkspaceStore((s) => s.clearWorkspace)
+  const disconnect = useConnectionStore((s) => s.disconnect)
   const queryClient = useQueryClient()
 
   return useCallback(async () => {
     queryClient.clear()
+    disconnect()
     clearAccountClient()
     await clearWorkspace()
     await clearAuth()
-  }, [clearAuth, clearWorkspace, queryClient])
+  }, [clearAuth, clearWorkspace, disconnect, queryClient])
 }

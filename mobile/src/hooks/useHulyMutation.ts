@@ -53,7 +53,9 @@ export function useHulyCreate<T extends Doc> (): UseMutationResult<
       if (client === null) {
         throw new Error('HulyClient not connected')
       }
-      const factory = new TxFactory('mobile' as PersonId)
+      // Use the authenticated account's PersonId for correct modifiedBy/audit metadata
+      const account = await client.getAccount()
+      const factory = new TxFactory(account.primarySocialId)
       const tx = factory.createTxCreateDoc(
         params._class,
         params.space,
@@ -103,7 +105,9 @@ export function useHulyUpdate<T extends Doc> (): UseMutationResult<
       if (client === null) {
         throw new Error('HulyClient not connected')
       }
-      const factory = new TxFactory('mobile' as PersonId)
+      // Use the authenticated account's PersonId for correct modifiedBy/audit metadata
+      const account = await client.getAccount()
+      const factory = new TxFactory(account.primarySocialId)
       const tx = factory.createTxUpdateDoc(
         params._class,
         params.space,
@@ -151,7 +155,9 @@ export function useHulyRemove<T extends Doc> (): UseMutationResult<
       if (client === null) {
         throw new Error('HulyClient not connected')
       }
-      const factory = new TxFactory('mobile' as PersonId)
+      // Use the authenticated account's PersonId for correct modifiedBy/audit metadata
+      const account = await client.getAccount()
+      const factory = new TxFactory(account.primarySocialId)
       const tx = factory.createTxRemoveDoc(
         params._class,
         params.space,
