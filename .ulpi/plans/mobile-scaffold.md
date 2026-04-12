@@ -140,7 +140,7 @@ Primitives in `src/components/ui/` and tokens in `src/theme/` must be structured
   - `react-native-safe-area-context`
   - `prettier-plugin-tailwindcss`
 
-  Create `tailwind.config.ts` with `nativewind/preset`, content paths `["./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"]`.
+  Create `tailwind.config.ts` with `nativewind/preset`, content paths `["./src/**/*.{ts,tsx}"]`.
   Create `global.css` with `@tailwind base; @tailwind components; @tailwind utilities;`.
   Update `metro.config.js` with `withNativeWind(config, { input: './global.css' })`.
   Update `babel.config.js` with `nativewind/babel` preset.
@@ -226,7 +226,7 @@ Primitives in `src/components/ui/` and tokens in `src/theme/` must be structured
 - **Effort:** S
 - **Agent:** expo-react-native-engineer
 - **Dependencies:** TASK-006b (shared write to mobile/tailwind.config.ts — must sequence)
-- **writeScope:** `mobile/assets/fonts/`, `mobile/tailwind.config.ts`, `mobile/app/_layout.tsx`
+- **writeScope:** `mobile/assets/fonts/`, `mobile/tailwind.config.ts`, `mobile/src/app/_layout.tsx`
 - **Description:** Huly uses IBM Plex Sans (400/500/600/700). Repo has woff2 only — need TTF for RN. Download or install TTF files. Place in `mobile/assets/fonts/`. Load with `expo-font` `useFonts()` in root layout. Map in `tailwind.config.ts` fontFamily: `sans: ["IBMPlexSans-Regular"]`, `sans-medium`, `sans-semibold`, `sans-bold`.
 - **Acceptance Criteria:**
   1. `font-sans` renders IBM Plex Sans Regular on both platforms
@@ -239,7 +239,7 @@ Primitives in `src/components/ui/` and tokens in `src/theme/` must be structured
 - **Effort:** S
 - **Agent:** expo-react-native-engineer
 - **Dependencies:** TASK-001
-- **writeScope:** `mobile/src/`, `mobile/app/`, `mobile/tsconfig.json`
+- **writeScope:** `mobile/src/`, `mobile/tsconfig.json`
 - **Description:** Create the convention-compliant directory structure per folder-structure.md:
   ```
   mobile/src/client/       — API, auth, socket adapters (empty, ready)
@@ -249,8 +249,8 @@ Primitives in `src/components/ui/` and tokens in `src/theme/` must be structured
   mobile/src/components/ui/       — primitives (empty, ready)
   mobile/src/components/features/ — feature widgets (empty, ready)
   mobile/src/lib/          — pure helpers (empty, ready)
-  mobile/app/(auth)/       — auth route group (empty, ready)
-  mobile/app/(app)/        — main app route group (empty, ready)
+  mobile/src/app/(auth)/       — auth route group (empty, ready)
+  mobile/src/app/(app)/        — main app route group (empty, ready)
   ```
   Add `.gitkeep` in each empty dir. Add `tsconfig.json` with strict mode and path aliases (`@/*` → `src/*`).
 - **Acceptance Criteria:**
@@ -264,7 +264,7 @@ Primitives in `src/components/ui/` and tokens in `src/theme/` must be structured
 - **Effort:** S
 - **Agent:** expo-react-native-engineer
 - **Dependencies:** TASK-005, TASK-006b, TASK-007, TASK-008
-- **writeScope:** `mobile/app/_layout.tsx`, `mobile/app/index.tsx`
+- **writeScope:** `mobile/src/app/_layout.tsx`, `mobile/src/app/index.tsx`
 - **Description:** Wire everything together:
   - Root `_layout.tsx`: dark theme default, SafeAreaProvider, font loading via `useFonts()`, splash screen hold until fonts ready, import `global.css`
   - `index.tsx`: placeholder screen with Huly dark background (`bg-surface`), app title in IBM Plex Sans (`font-sans-bold text-xl text-caption`), primary blue accent element (`bg-primary`), proper spacing and border radius from tokens
@@ -309,7 +309,7 @@ TASK-004 + TASK-003 → TASK-005
 | `rush update` fails after rush.json edit | Rush error output, unresolved workspace links | Revert rush.json change, verify JSON syntax, check for duplicate packageName. Run `rush update --purge` to clear cache. |
 | Metro duplicate React instance | Red screen: "Invalid hook call" or "more than one copy of React" | Add explicit `resolver.extraNodeModules` mapping React to a single copy in metro.config.js. Check `nodeModulesPaths` order. |
 | Metro fails to resolve `@hcengineering/*` workspace packages | "Unable to resolve module" error | Verify `watchFolders` includes monorepo root. Check symlinks exist in `common/temp/node_modules/@hcengineering/`. Run `rush update` to recreate symlinks. |
-| NativeWind classes not applying | Unstyled components despite `className` | Verify: (1) `global.css` has `@tailwind` directives, (2) `metro.config.js` has `withNativeWind`, (3) `babel.config.js` has `nativewind/babel` preset, (4) `tailwind.config.ts` content paths include `./app/**` and `./src/**`. |
+| NativeWind classes not applying | Unstyled components despite `className` | Verify: (1) `global.css` has `@tailwind` directives, (2) `metro.config.js` has `withNativeWind`, (3) `babel.config.js` has `nativewind/babel` preset, (4) `tailwind.config.ts` content paths include `./src/**`. |
 | Font not rendering (IBM Plex Sans) | Default system font visible instead of IBM Plex Sans | Check TTF files exist in `assets/fonts/`. Verify `useFonts()` returns `loaded: true` before rendering. Check fontFamily names in tailwind.config.ts match exact filename stems. |
 | `rush build -t @hcengineering/mobile-design-tokens` fails | TypeScript compilation error | Check `tsconfig.json` paths. Ensure `src/index.ts` barrel exports all modules. Verify `as const` objects have no type errors. |
 | Partial rush.json edit (crash mid-write) | Malformed JSON | `git checkout rush.json` to restore, re-apply the entry. Always validate JSON after editing. |

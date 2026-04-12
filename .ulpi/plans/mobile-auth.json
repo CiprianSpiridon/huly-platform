@@ -1,0 +1,245 @@
+{
+  "plan": "mobile-auth",
+  "mode": "HOLD",
+  "review": "claude",
+  "tasks": [
+    {
+      "id": "TASK-100",
+      "title": "Add auth dependencies to mobile",
+      "type": "config",
+      "priority": "P0",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": [],
+      "description": "Add @hcengineering/account-client (workspace:^), expo-secure-store, zustand, @tanstack/react-query to mobile/package.json. Run rush update.",
+      "writeScope": ["mobile/package.json"],
+      "validateCommand": "cd mobile && node -e \"require('@hcengineering/account-client')\" 2>&1 | head -5",
+      "acceptanceCriteria": [
+        "mobile/package.json contains @hcengineering/account-client, expo-secure-store, zustand, @tanstack/react-query",
+        "rush update completes without errors",
+        "import { getClient } from '@hcengineering/account-client' resolves in Metro"
+      ]
+    },
+    {
+      "id": "TASK-101",
+      "title": "Server config loader",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "XS",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-100"],
+      "description": "Implement server config loading in src/client/config.ts. Self-contained fetch of {url}/config.json (do NOT import from @hcengineering/api-client). Export getServerUrl(), loadServerConfig(), getConfig(), clearConfig(). Memory-cache config after first load.",
+      "writeScope": ["mobile/src/client/config.ts"],
+      "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | grep -c 'error' || echo 0",
+      "acceptanceCriteria": [
+        "getServerUrl() returns EXPO_PUBLIC_HULY_URL or 'https://app.huly.io'",
+        "loadServerConfig() fetches /config.json and returns object with ACCOUNTS_URL",
+        "Network failure throws descriptive error (not silent null)"
+      ]
+    },
+    {
+      "id": "TASK-102",
+      "title": "Account client wrapper",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "XS",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-101"],
+      "description": "Create src/client/account.ts. Export getOrCreateAccountClient(token?) that loads server config, calls getClient(config.ACCOUNTS_URL, token), caches instance. Export clearAccountClient() to reset cached client and config.",
+      "writeScope": ["mobile/src/client/account.ts"],
+      "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | grep -c 'error' || echo 0",
+      "acceptanceCriteria": [
+        "getOrCreateAccountClient() returns AccountClient with server config loaded",
+        "Calling getOrCreateAccountClient(token) with new token creates fresh client",
+        "clearAccountClient() resets state so next call re-fetches config"
+      ]
+    },
+    {
+      "id": "TASK-103",
+      "title": "Auth Zustand store",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-100"],
+      "description": "Create src/store/auth.ts. Zustand store with token, account, isAuthenticated, isBootstrapping. Actions: setAuth(LoginInfo) persists to expo-secure-store, clearAuth() deletes keys, restoreAuth() reads from secure store. Throw if loginInfo.token undefined in setAuth.",
+      "writeScope": ["mobile/src/store/auth.ts"],
+      "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | grep -c 'error' || echo 0",
+      "acceptanceCriteria": [
+        "setAuth() persists auth_token and account_id to expo-secure-store",
+        "restoreAuth() reads from secure store and sets isAuthenticated true when tokens exist",
+        "setAuth() throws if loginInfo.token is undefined (tfaRequired case without token)"
+      ]
+    },
+    {
+      "id": "TASK-104",
+      "title": "Workspace Zustand store",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-100"],
+      "description": "Create src/store/workspace.ts. Zustand store with selectedWorkspace, workspaceUrl, workspaceEndpoint, workspaceToken. Actions: setWorkspace(WorkspaceLoginInfo) persists 4 keys to secure store, clearWorkspace() deletes all, restoreWorkspace() reads all 4.",
+      "writeScope": ["mobile/src/store/workspace.ts"],
+      "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | grep -c 'error' || echo 0",
+      "acceptanceCriteria": [
+        "setWorkspace() persists all 4 keys to expo-secure-store and updates state",
+        "restoreWorkspace() populates state only when ALL 4 values present (partial = no workspace)",
+        "clearWorkspace() removes all 4 secure store keys and resets state to null"
+      ]
+    },
+    {
+      "id": "TASK-105",
+      "title": "TanStack Query provider in root layout",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "XS",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-100"],
+      "description": "Add QueryClientProvider to mobile/src/app/_layout.tsx. Create QueryClient at module scope with defaults: staleTime 30s, gcTime 5m, retry 2, refetchOnWindowFocus false, networkMode offlineFirst.",
+      "writeScope": ["mobile/src/app/_layout.tsx"],
+      "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | grep -c 'error' || echo 0",
+      "acceptanceCriteria": [
+        "Root layout renders QueryClientProvider wrapping all children",
+        "QueryClient instantiated at module scope not inside component",
+        "Default staleTime 30000 retry 2 refetchOnWindowFocus false configured"
+      ]
+    },
+    {
+      "id": "TASK-106",
+      "title": "Session restore and splash hold",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-103", "TASK-104", "TASK-105"],
+      "description": "Add session restore logic to root layout. On mount call restoreAuth() then restoreWorkspace(). Keep splash visible until restore completes. Only then hide splash and render Stack. Root layout now: load fonts + restore auth + hide splash.",
+      "writeScope": ["mobile/src/app/_layout.tsx"],
+      "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | grep -c 'error' || echo 0",
+      "acceptanceCriteria": [
+        "Splash screen stays visible until restoreAuth + restoreWorkspace complete",
+        "If secure store has valid tokens isAuthenticated is true before first render",
+        "If secure store empty isAuthenticated is false and splash hides normally"
+      ]
+    },
+    {
+      "id": "TASK-107",
+      "title": "Auth stack layout",
+      "type": "feature",
+      "priority": "P1",
+      "effort": "XS",
+      "agent": "expo-react-native-engineer",
+      "dependencies": [],
+      "description": "Create app/(auth)/_layout.tsx. Stack navigator with headerShown false. If user already authenticated with workspace redirect to /(app)/tracker.",
+      "writeScope": ["mobile/src/app/(auth)/_layout.tsx"],
+      "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | grep -c 'error' || echo 0",
+      "acceptanceCriteria": [
+        "(auth)/_layout.tsx exports Stack with headerShown false",
+        "Authenticated users with workspace redirected to app",
+        "No tab bar visible on auth screens"
+      ]
+    },
+    {
+      "id": "TASK-108",
+      "title": "Auth guard in (app) layout",
+      "type": "feature",
+      "priority": "P1",
+      "effort": "XS",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-103", "TASK-104"],
+      "description": "Create app/(app)/_layout.tsx with auth guard. Check isAuthenticated and selectedWorkspace. Redirect to /(auth)/login or /(auth)/workspace-select via declarative <Redirect>. Render the tab navigator and modals when authenticated. The tab navigator lives directly at (app)/_layout.tsx -- no nested (tabs) group.",
+      "writeScope": ["mobile/src/app/(app)/_layout.tsx"],
+      "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | grep -c 'error' || echo 0",
+      "acceptanceCriteria": [
+        "Unauthenticated access to (app) route redirects to /(auth)/login",
+        "Authenticated without workspace redirects to /(auth)/workspace-select",
+        "Authenticated with workspace renders Stack with no flicker"
+      ]
+    },
+    {
+      "id": "TASK-109",
+      "title": "Login screen (email + password)",
+      "type": "feature",
+      "priority": "P1",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-102", "TASK-103", "TASK-107"],
+      "description": "Create app/(auth)/login.tsx and src/hooks/use-auth.ts. Email + password form. On submit calls accountClient.login(). If tfaRequired navigate to 2FA. If token present call setAuth() and navigate to workspace-select. Include OTP login link. KeyboardAvoidingView, SafeAreaView, accessibility labels.",
+      "writeScope": ["mobile/src/app/(auth)/login.tsx", "mobile/src/hooks/use-auth.ts"],
+      "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | grep -c 'error' || echo 0",
+      "acceptanceCriteria": [
+        "Valid email + password -> setAuth() called -> navigates to workspace-select",
+        "tfaRequired response -> navigates to 2FA screen with account context",
+        "Invalid credentials -> error message displayed form NOT cleared"
+      ]
+    },
+    {
+      "id": "TASK-110",
+      "title": "OTP login screen",
+      "type": "feature",
+      "priority": "P1",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-102", "TASK-103", "TASK-107"],
+      "description": "Create app/(auth)/otp.tsx. Two-step: email -> loginOtp() -> OTP input -> validateOtp() -> setAuth() -> workspace-select. Countdown timer from OtpInfo.retryOn. textContentType oneTimeCode for autofill. Extend use-auth.ts with requestOtp and validateOtp.",
+      "writeScope": ["mobile/src/app/(auth)/otp.tsx", "mobile/src/hooks/use-auth.ts"],
+      "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | grep -c 'error' || echo 0",
+      "acceptanceCriteria": [
+        "loginOtp(email) sends code and UI transitions to OTP input step",
+        "Valid OTP -> setAuth() called -> navigates to workspace-select",
+        "Resend disabled until retryOn timestamp passes with countdown visible"
+      ]
+    },
+    {
+      "id": "TASK-111",
+      "title": "2FA verification screen",
+      "type": "feature",
+      "priority": "P1",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-102", "TASK-103", "TASK-107", "TASK-109"],
+      "description": "Create app/(auth)/two-factor.tsx. 6-digit TOTP input. Calls accountClient.verify2fa(code) using token from initial login response. On success calls setAuth() with verified LoginInfo. Extend use-auth.ts with verify2fa action. Pass initial LoginInfo via route params or transient Zustand field.",
+      "writeScope": ["mobile/src/app/(auth)/two-factor.tsx", "mobile/src/hooks/use-auth.ts"],
+      "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | grep -c 'error' || echo 0",
+      "acceptanceCriteria": [
+        "Valid TOTP code -> verify2fa() returns LoginInfo with token -> setAuth() called",
+        "Invalid code -> error message displayed input cleared for retry",
+        "Back navigation returns to login screen not stuck in 2FA loop"
+      ]
+    },
+    {
+      "id": "TASK-112",
+      "title": "Workspace selection screen",
+      "type": "feature",
+      "priority": "P1",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-102", "TASK-104", "TASK-107"],
+      "description": "Create app/(auth)/workspace-select.tsx and src/hooks/use-workspace.ts. Fetch workspace list via getUserWorkspaces() with TanStack Query. Render list of active workspaces. On tap call selectWorkspace(url), store in workspace Zustand store, navigate to /(app)/tracker. Handle loading, error, empty states. Filter disabled/non-active workspaces.",
+      "writeScope": ["mobile/src/app/(auth)/workspace-select.tsx", "mobile/src/hooks/use-workspace.ts"],
+      "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | grep -c 'error' || echo 0",
+      "acceptanceCriteria": [
+        "Workspace list loads and displays name + URL for each active workspace",
+        "Selecting workspace -> setWorkspace() persists to secure store -> navigates to app",
+        "Empty workspace list shows appropriate empty state not blank screen"
+      ]
+    },
+    {
+      "id": "TASK-113",
+      "title": "Logout flow",
+      "type": "feature",
+      "priority": "P2",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-103", "TASK-104", "TASK-102"],
+      "description": "Implement useLogout hook in src/hooks/use-auth.ts. On logout: clear TanStack Query cache, clear account client, clear workspace store, clear auth store. Auth guard auto-redirects to login. No imperative navigation.",
+      "writeScope": ["mobile/src/hooks/use-auth.ts"],
+      "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | grep -c 'error' || echo 0",
+      "acceptanceCriteria": [
+        "After logout all 6 secure store keys are deleted",
+        "After logout TanStack Query cache is empty (no data leak between accounts)",
+        "Auth guard redirects to login automatically with no imperative router call"
+      ]
+    }
+  ]
+}

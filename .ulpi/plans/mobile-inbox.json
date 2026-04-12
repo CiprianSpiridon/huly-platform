@@ -1,0 +1,126 @@
+{
+  "plan": "mobile-inbox",
+  "mode": "HOLD",
+  "review": "claude",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Notification repository layer",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependencies": [],
+      "description": "Create NotificationRepository: getNotifications (with type filter + pagination), getNotificationContexts, markAsRead (batch), markAllAsRead, archiveNotifications (batch), archiveAll, getUnreadCount.",
+      "writeScope": ["mobile/src/repositories/notification.ts", "mobile/src/repositories/index.ts"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "getNotifications({ type: 'mention' }) returns only mention notifications",
+        "markAsRead([id1, id2]) sends batch update and returns per-ID result",
+        "getUnreadCount handles network error by returning cached count"
+      ]
+    },
+    {
+      "id": "TASK-002",
+      "title": "Notification TanStack Query hooks",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-001"],
+      "description": "Query: useNotifications (infinite), useUnreadCount (polls 30s). Mutations: useMarkAsRead, useArchiveNotifications, useMarkAllAsRead, useArchiveAll. Optimistic updates. Syncs count to Zustand.",
+      "writeScope": ["mobile/src/hooks/useNotifications.ts", "mobile/src/hooks/useUnreadCount.ts"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "useMarkAsRead optimistically sets isViewed true in cache",
+        "useUnreadCount polls every 30s and syncs to useInboxStore.unreadTotal",
+        "Archive mutation removes items from visible list immediately"
+      ]
+    },
+    {
+      "id": "TASK-003",
+      "title": "Inbox Zustand store",
+      "type": "feature",
+      "priority": "P1",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": [],
+      "description": "Create useInboxStore: unreadTotal (tab badge), activeFilter, selectedIds (Set for bulk). Actions: setUnreadTotal, setFilter, toggleSelected, selectAll, clearSelection.",
+      "writeScope": ["mobile/src/store/inbox.ts"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "setFilter('mentions') updates activeFilter and triggers re-render",
+        "toggleSelected adds if absent, removes if present",
+        "clearSelection empties set and exits bulk mode"
+      ]
+    },
+    {
+      "id": "TASK-004",
+      "title": "Inbox route group",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": [],
+      "description": "Create inbox/ route group with Stack navigator. Tab entry already exists from tracker phase. Wire badge from useInboxStore.unreadTotal using bg-notify color. Hides when 0.",
+      "writeScope": ["mobile/src/app/(app)/inbox/_layout.tsx", "mobile/src/app/(app)/inbox/index.tsx"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "Inbox tab shows bell icon with numeric badge",
+        "Badge uses bg-notify color token",
+        "Badge hides when unread count is 0"
+      ]
+    },
+    {
+      "id": "TASK-005",
+      "title": "Notification list screen",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "L",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-002", "TASK-003", "TASK-004"],
+      "description": "FlashList notifications sorted newest-first. NotificationRow: type icon, title, body preview, timestamp, unread dot. Filter chips. Swipe-to-archive. Bulk actions header. Pull-to-refresh. Empty state per filter.",
+      "writeScope": ["mobile/src/app/(app)/inbox/index.tsx", "mobile/src/components/features/NotificationRow.tsx", "mobile/src/components/features/NotificationFilters.tsx"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "Swipe left reveals archive action; completing swipe removes from list",
+        "Filter chips are mutually exclusive; switching re-fetches",
+        "Empty state shows different message per filter"
+      ]
+    },
+    {
+      "id": "TASK-006",
+      "title": "Notification detail / deep navigation",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-005"],
+      "description": "notificationRouter maps objectClass to deep link. Marks as read on navigate. Fallback detail screen for unknown types. Handles deleted source docs.",
+      "writeScope": ["mobile/src/app/(app)/inbox/notification/[id].tsx", "mobile/src/lib/notificationRouter.ts"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "Tracker issue notification navigates to /tracker/issue/[id]",
+        "Unknown objectClass shows fallback detail instead of crash",
+        "Deleted source doc shows 'no longer available' with back action"
+      ]
+    },
+    {
+      "id": "TASK-007",
+      "title": "Bulk operations",
+      "type": "feature",
+      "priority": "P2",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-002", "TASK-003", "TASK-005"],
+      "description": "BulkActionBar: Mark as read, Archive buttons with count. Long-press enters selection mode. Select all header. Batch mutations. Haptic feedback.",
+      "writeScope": ["mobile/src/components/features/BulkActionBar.tsx"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "Long-press enters selection; subsequent taps toggle without navigation",
+        "Mark as read (N) processes all selected then exits selection",
+        "Partial batch failure keeps unprocessed items selected with error toast"
+      ]
+    }
+  ]
+}

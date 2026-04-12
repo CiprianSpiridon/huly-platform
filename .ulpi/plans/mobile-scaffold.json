@@ -152,7 +152,7 @@
       "agent": "expo-react-native-engineer",
       "dependencies": ["TASK-006b"],
       "description": "Download IBM Plex Sans TTF files. Place in mobile/assets/fonts/. Load with useFonts() in root layout. Add fontFamily to tailwind.config.ts.",
-      "writeScope": ["mobile/assets/fonts/", "mobile/tailwind.config.ts", "mobile/app/_layout.tsx"],
+      "writeScope": ["mobile/assets/fonts/", "mobile/tailwind.config.ts", "mobile/src/app/_layout.tsx"],
       "validateCommand": "ls mobile/assets/fonts/*.ttf 2>/dev/null | wc -l",
       "acceptanceCriteria": [
         "font-sans renders IBM Plex Sans Regular on both platforms",
@@ -169,7 +169,7 @@
       "agent": "expo-react-native-engineer",
       "dependencies": ["TASK-001"],
       "description": "Create convention-compliant directory structure with tsconfig.json. Dirs: client, repositories, hooks, store, components/ui, components/features, lib, theme, test. Route groups: (auth), (app).",
-      "writeScope": ["mobile/src/", "mobile/app/", "mobile/tsconfig.json"],
+      "writeScope": ["mobile/src/", "mobile/tsconfig.json"],
       "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | tail -5",
       "acceptanceCriteria": [
         "All convention directories exist (client, repositories, hooks, store, components/ui, components/features, lib)",
@@ -186,7 +186,7 @@
       "agent": "expo-react-native-engineer",
       "dependencies": ["TASK-005", "TASK-006b", "TASK-007", "TASK-008"],
       "description": "Wire everything: root layout with dark theme, SafeAreaProvider, font loading, splash screen. Index screen with Huly dark bg, IBM Plex Sans, primary blue accent.",
-      "writeScope": ["mobile/app/_layout.tsx", "mobile/app/index.tsx"],
+      "writeScope": ["mobile/src/app/_layout.tsx", "mobile/src/app/index.tsx"],
       "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | tail -5",
       "acceptanceCriteria": [
         "App launches: dark bg #161719, white text IBM Plex Sans, blue #205DC2 accent",

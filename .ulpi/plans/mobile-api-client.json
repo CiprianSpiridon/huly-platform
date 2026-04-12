@@ -1,0 +1,191 @@
+{
+  "plan": "mobile-api-client",
+  "mode": "HOLD",
+  "review": "claude",
+  "dependsOn": ["mobile-scaffold", "mobile-auth"],
+  "tasks": [
+    {
+      "id": "TASK-010",
+      "title": "Extend Metro blocklist for api-client transitive deps",
+      "type": "config",
+      "priority": "P0",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": [],
+      "description": "Extend resolveRequest in metro.config.js to block: @hcengineering/client-resources, @hcengineering/text, @hcengineering/text-core, @hcengineering/text-html, @hcengineering/text-markdown, @hcengineering/collaborator-client, @tiptap/* (prefix), prosemirror-* (prefix), markdown-it, ws. Keep existing blocks intact.",
+      "writeScope": ["mobile/metro.config.js"],
+      "validateCommand": "node -e \"const c = require('./mobile/metro.config.js'); console.log('ok')\"",
+      "acceptanceCriteria": [
+        "resolveRequest returns { type: 'empty' } for all new blocked modules",
+        "Existing blocks for server-*, model-*, ui, presentation, theme remain intact",
+        "Node builtins still blocked",
+        "Metro starts without errors"
+      ]
+    },
+    {
+      "id": "TASK-011",
+      "title": "Add api-client and account-client dependencies",
+      "type": "config",
+      "priority": "P0",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-010"],
+      "description": "Add @hcengineering/api-client, @hcengineering/account-client, @hcengineering/client as workspace:^ deps. Also add @shopify/flash-list, @react-native-async-storage/async-storage (needed by tracker/chat/inbox for lists and Zustand persist). Run rush update. Verify Metro resolves imports without hitting blocked transitive deps.",
+      "writeScope": ["mobile/package.json"],
+      "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | tail -10",
+      "acceptanceCriteria": [
+        "All three packages in dependencies with workspace:^ versions",
+        "rush update completes without errors",
+        "npx expo start launches without module resolution errors",
+        "import { createRestClient } from '@hcengineering/api-client' resolves",
+        "import { getClient } from '@hcengineering/account-client' resolves"
+      ]
+    },
+    {
+      "id": "TASK-012",
+      "title": "Add plugin type package dependencies",
+      "type": "config",
+      "priority": "P1",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-010"],
+      "description": "Add tracker, task, chunter, contact, notification, activity as workspace:^ deps. Extend Metro blocklist for plugin transitive deps: @hcengineering/view, preference, workbench, setting, templates, card, tags, time, attachment (prefix). Add dompurify, autolinker, plyr, blurhash, svelte to blockedExact. Run rush update.",
+      "writeScope": ["mobile/package.json", "mobile/metro.config.js"],
+      "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | tail -10",
+      "acceptanceCriteria": [
+        "All 6 plugin packages in dependencies",
+        "import type { Issue } from '@hcengineering/tracker' compiles",
+        "import type { Channel } from '@hcengineering/chunter' compiles",
+        "import type { Person } from '@hcengineering/contact' compiles",
+        "Metro starts without svelte/ui resolution errors"
+      ]
+    },
+    {
+      "id": "TASK-013",
+      "title": "Create API client singleton",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-011"],
+      "description": "Create HulyClient class in src/client/api.ts wrapping RestClientImpl from createRestClient(). Loads hierarchy/model via getModel(). Creates TxOperations. Exposes findAll, findOne, createDoc, updateDoc, removeDoc, searchFulltext, getAccount, getHierarchy, getModel, close. Static factory HulyClient.connect(). Singleton holder getClient/setClient/clearClient in src/client/index.ts. Import loadServerConfig from @/client/config (created in auth phase).",
+      "writeScope": [
+        "mobile/src/client/api.ts",
+        "mobile/src/client/index.ts"
+      ],
+      "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | tail -10",
+      "acceptanceCriteria": [
+        "HulyClient.connect(endpoint, wsId, token) returns working client",
+        "client.findAll returns typed FindResult",
+        "client.getHierarchy() returns loaded hierarchy",
+        "No imports from client-resources, text, or collaborator-client",
+        "Singleton getClient/setClient/clearClient works correctly"
+      ]
+    },
+    {
+      "id": "TASK-014",
+      "title": "Create base repository pattern",
+      "type": "feature",
+      "priority": "P1",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-013"],
+      "description": "Create BaseRepository class in src/repositories/base.ts that receives HulyClient instance. Methods: findAll, findOne, createDoc, updateDoc, removeDoc, searchFulltext. All delegate to HulyClient with correct generic types. Barrel export in src/repositories/index.ts.",
+      "writeScope": [
+        "mobile/src/repositories/base.ts",
+        "mobile/src/repositories/index.ts"
+      ],
+      "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | tail -10",
+      "acceptanceCriteria": [
+        "BaseRepository compiles with correct generic type signatures",
+        "All methods delegate to HulyClient",
+        "TypeScript generics preserve Doc subtype",
+        "No direct fetch/REST calls"
+      ]
+    },
+    {
+      "id": "TASK-015",
+      "title": "Install and configure TanStack Query",
+      "type": "config",
+      "priority": "P1",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-013"],
+      "description": "TanStack Query and QueryClientProvider already installed by auth phase (TASK-105). This task creates the queryClient singleton module at src/client/queryClient.ts if auth phase used an inline QueryClient. Extract to dedicated module with staleTime 30s, gcTime 5min, retry 2. No package install needed.",
+      "writeScope": [
+        "mobile/src/client/queryClient.ts"
+      ],
+      "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | tail -10",
+      "acceptanceCriteria": [
+        "@tanstack/react-query in package.json",
+        "QueryClientProvider wraps root layout",
+        "queryClient has correct defaults",
+        "App still launches and renders",
+        "useQuery hook available in child components"
+      ]
+    },
+    {
+      "id": "TASK-016",
+      "title": "Create useHulyQuery and useHulyMutation hooks",
+      "type": "feature",
+      "priority": "P1",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-014", "TASK-015"],
+      "description": "Create useHulyQuery<T> wrapping useQuery with auto-generated query keys from ['huly', _class, hash(query), hash(options)]. Create useHulyFindOne<T>. Create useHulyCreate, useHulyUpdate, useHulyRemove mutations wrapping useMutation with query invalidation. Include stableHash utility for deterministic keys. Barrel export from src/hooks/index.ts.",
+      "writeScope": [
+        "mobile/src/hooks/useHulyQuery.ts",
+        "mobile/src/hooks/useHulyMutation.ts",
+        "mobile/src/hooks/index.ts"
+      ],
+      "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | tail -10",
+      "acceptanceCriteria": [
+        "useHulyQuery returns typed FindResult<T>",
+        "Query keys are deterministic for same inputs",
+        "Mutations invalidate matching queries on success",
+        "Hooks disabled when client not connected",
+        "TypeScript enforces query type matches Doc subtype fields"
+      ]
+    },
+    {
+      "id": "TASK-017",
+      "title": "Create auth-client bridge connection store",
+      "type": "feature",
+      "priority": "P1",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-013", "TASK-015"],
+      "description": "Create Zustand useConnectionStore in src/store/connection.ts. States: disconnected, connecting, connected, error. Actions: connect(endpoint, workspaceId, token) creates HulyClient and sets singleton, disconnect() clears client, reconnect(). Barrel export from src/store/index.ts. This bridges Phase 1 auth with Phase 2 data access.",
+      "writeScope": [
+        "mobile/src/store/connection.ts",
+        "mobile/src/store/index.ts"
+      ],
+      "validateCommand": "cd mobile && npx tsc --noEmit 2>&1 | tail -10",
+      "acceptanceCriteria": [
+        "connect() transitions to 'connected' state",
+        "client property returns HulyClient after connect",
+        "disconnect() clears client and transitions to 'disconnected'",
+        "Error during connect transitions to 'error' with message",
+        "Store importable from any component"
+      ]
+    },
+    {
+      "id": "TASK-018",
+      "title": "Add ESLint rule for import type enforcement",
+      "type": "config",
+      "priority": "P2",
+      "effort": "XS",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-012"],
+      "description": "Configure @typescript-eslint/consistent-type-imports with prefer type-imports. Add restricted-imports or no-restricted-imports rule to enforce import type for @hcengineering/tracker, task, chunter, contact, notification, activity, ui, view packages.",
+      "writeScope": ["mobile/.eslintrc.js"],
+      "validateCommand": "cd mobile && npx eslint src/ --max-warnings 0 2>&1 | tail -10",
+      "acceptanceCriteria": [
+        "import { Issue } from '@hcengineering/tracker' triggers ESLint error",
+        "import type { Issue } from '@hcengineering/tracker' passes",
+        "Rule applies to all 6 plugin packages plus ui and view",
+        "ESLint auto-fix converts to import type"
+      ]
+    }
+  ]
+}

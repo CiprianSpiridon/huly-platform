@@ -1,0 +1,177 @@
+{
+  "plan": "mobile-tracker",
+  "mode": "HOLD",
+  "review": "claude",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Tracker repository layer",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependencies": [],
+      "description": "Create TrackerRepository with getProjects, getIssues, getIssue, createIssue, updateIssue, searchIssues. Uses Phase 2 API client. Returns typed DTOs with pagination support.",
+      "writeScope": ["mobile/src/repositories/tracker.ts", "mobile/src/repositories/index.ts"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "All 6 methods exist with typed parameters and return types",
+        "Pagination returns { items, nextCursor, hasMore } shape",
+        "Returns typed error when API returns 404 for a deleted project"
+      ]
+    },
+    {
+      "id": "TASK-002",
+      "title": "Tracker TanStack Query hooks",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-001"],
+      "description": "Query hooks: useProjects, useIssues (infinite), useIssue, useSearchIssues. Mutation hooks: useCreateIssue, useUpdateIssue. Stale-while-revalidate 30s. Mutations invalidate affected queries.",
+      "writeScope": ["mobile/src/hooks/useProjects.ts", "mobile/src/hooks/useIssues.ts", "mobile/src/hooks/useIssue.ts"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "useIssues returns { data, fetchNextPage, hasNextPage, isLoading, error, refetch }",
+        "useCreateIssue().mutate(draft) invalidates the project issue list query key",
+        "useIssue returns disabled query when issueId is undefined"
+      ]
+    },
+    {
+      "id": "TASK-003",
+      "title": "Tracker Zustand store",
+      "type": "feature",
+      "priority": "P1",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": [],
+      "description": "Create useTrackerStore: selectedProjectId, issueFilters, issueSort, viewMode, issueDraft. Persist filter preferences to AsyncStorage.",
+      "writeScope": ["mobile/src/store/tracker.ts"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "setFilter('priority', [High]) updates issueFilters.priority",
+        "Closing and reopening the app preserves last-used filter/sort",
+        "clearDraft resets all draft fields to defaults"
+      ]
+    },
+    {
+      "id": "TASK-004",
+      "title": "Tab navigator with all tabs + Tracker route group",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": [],
+      "description": "Create (app) tab layout with bottom tabs. Add all 4 tabs: Tracker (active), Chat, Inbox, Settings. Each tab points to its route group. Chat/Inbox/Settings use placeholder screens for now. Create tracker/ route group with Stack navigator.",
+      "writeScope": ["mobile/src/app/(app)/_layout.tsx", "mobile/src/app/(app)/tracker/_layout.tsx", "mobile/src/app/(app)/tracker/index.tsx", "mobile/src/app/(app)/chat/index.tsx", "mobile/src/app/(app)/inbox/index.tsx", "mobile/src/app/(app)/settings/index.tsx"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "Bottom tab bar shows all 4 tabs: Tracker, Chat, Inbox, Settings",
+        "Tab bar uses Huly design tokens: bg-surface inactive, text-primary active",
+        "Tab bar remains visible when navigating within the tracker stack"
+      ]
+    },
+    {
+      "id": "TASK-005",
+      "title": "Project list screen",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-002", "TASK-004"],
+      "description": "Project list using useProjects. ProjectCard with identifier badge, name, issue count. Pull-to-refresh. Loading skeleton. Empty state.",
+      "writeScope": ["mobile/src/app/(app)/tracker/index.tsx", "mobile/src/components/features/ProjectCard.tsx"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "Projects render with identifier, name, and member count",
+        "Pull-to-refresh triggers re-fetch and shows indicator",
+        "Empty state shows No projects message when API returns empty array"
+      ]
+    },
+    {
+      "id": "TASK-006",
+      "title": "Issue list screen",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "L",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-002", "TASK-003", "TASK-005"],
+      "description": "Issue list at tracker/project/[id]. FlashList with infinite scroll. Filter bottom sheet. Sort controls. IssueRow with priority icon, identifier, title, status, assignee. Kanban toggle.",
+      "writeScope": ["mobile/src/app/(app)/tracker/project/[id].tsx", "mobile/src/components/features/IssueRow.tsx", "mobile/src/components/features/IssueFilters.tsx"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "Scrolling past last page triggers fetchNextPage with footer spinner",
+        "Applying a priority filter immediately filters the displayed list",
+        "Switching to kanban view groups issues by status in horizontal scroll"
+      ]
+    },
+    {
+      "id": "TASK-007",
+      "title": "Issue detail screen",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "L",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-002", "TASK-006"],
+      "description": "Full issue detail at tracker/issue/[id]. All fields: title, description, status, priority, assignee, component, milestone, sub-issues, time tracking, comments. Bottom sheet pickers. Pull-to-refresh.",
+      "writeScope": ["mobile/src/app/(app)/tracker/issue/[id].tsx", "mobile/src/components/features/IssueDetail.tsx", "mobile/src/components/features/IssueComments.tsx"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "All issue fields render: title, description, status, priority, assignee, component, milestone",
+        "Tapping status chip opens bottom sheet; selecting calls useUpdateIssue",
+        "Deleted issue shows error state with back action instead of crashing"
+      ]
+    },
+    {
+      "id": "TASK-008",
+      "title": "Create issue screen",
+      "type": "feature",
+      "priority": "P1",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-002", "TASK-003", "TASK-007"],
+      "description": "Modal create screen. Zustand draft persistence. Form: title, description, status, priority, assignee, component, milestone, estimation. Validation. Cancel confirmation if dirty.",
+      "writeScope": ["mobile/src/app/(app)/tracker/create.tsx", "mobile/src/components/features/IssueForm.tsx"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "Empty title shows inline validation error; submit button disabled",
+        "Navigating away and back preserves draft via Zustand persist",
+        "After creation, issue list query is invalidated and new issue appears"
+      ]
+    },
+    {
+      "id": "TASK-009",
+      "title": "Issue search",
+      "type": "feature",
+      "priority": "P2",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-002", "TASK-006"],
+      "description": "Search screen with debounced input (300ms). useSearchIssues hook. Reuses IssueRow. Recent searches persisted in AsyncStorage. Empty state.",
+      "writeScope": ["mobile/src/app/(app)/tracker/search.tsx", "mobile/src/components/features/SearchResults.tsx"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "Under 2 characters shows hint; 2+ triggers API after 300ms debounce",
+        "Tapping result navigates to issue detail",
+        "Recent searches persist across app restarts and can be cleared"
+      ]
+    },
+    {
+      "id": "TASK-010",
+      "title": "UI primitives for Tracker",
+      "type": "feature",
+      "priority": "P1",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependencies": [],
+      "description": "PriorityIcon, StatusChip, AvatarCircle. Props-only, no data fetching, max 80 lines each. Accessible labels.",
+      "writeScope": ["mobile/src/components/ui/PriorityIcon.tsx", "mobile/src/components/ui/StatusChip.tsx", "mobile/src/components/ui/AvatarCircle.tsx"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "PriorityIcon renders red urgent icon with accessibilityLabel",
+        "AvatarCircle shows initials with deterministic color when no image",
+        "All three accept testID prop"
+      ]
+    }
+  ]
+}

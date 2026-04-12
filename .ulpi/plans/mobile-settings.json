@@ -1,0 +1,109 @@
+{
+  "plan": "mobile-settings",
+  "mode": "HOLD",
+  "review": "claude",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Settings repository layer",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": [],
+      "description": "Create SettingsRepository: getProfile, getWorkspaceInfo, getWorkspaces, switchWorkspace (returns new token), logout (clears secure store).",
+      "writeScope": ["mobile/src/repositories/settings.ts", "mobile/src/repositories/index.ts"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "getProfile returns { firstName, lastName, email, avatarUrl } with defaults for missing",
+        "getWorkspaces returns array sorted by lastVisit descending",
+        "logout clears expo-secure-store token and never throws"
+      ]
+    },
+    {
+      "id": "TASK-002",
+      "title": "Settings Zustand store",
+      "type": "feature",
+      "priority": "P1",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": [],
+      "description": "Create useSettingsStore: theme (dark/light/system), appVersion. Persist theme to AsyncStorage. Apply via Appearance.setColorScheme. Default dark.",
+      "writeScope": ["mobile/src/store/settings.ts"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "setTheme('light') persists and app restarts in light mode",
+        "setTheme('system') follows device setting",
+        "Default is 'dark' when no persisted preference"
+      ]
+    },
+    {
+      "id": "TASK-003",
+      "title": "Settings TanStack Query hooks",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-001"],
+      "description": "Query: useProfile (staleTime 5min), useWorkspaces (staleTime 60s). Mutation: useSwitchWorkspace calls selectWorkspace() for new token, updates workspace Zustand store (all 4 keys), disconnects+reconnects API client, clears query cache, navigates to /(app)/tracker. Logout hook from auth phase.",
+      "writeScope": ["mobile/src/hooks/useProfile.ts", "mobile/src/hooks/useWorkspaces.ts"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "useProfile returns { data, isLoading, error }",
+        "useSwitchWorkspace updates workspace store (4 keys), clears cache, reconnects client, navigates to /(app)/tracker",
+        "After switch, connection store client points to new workspace endpoint"
+      ]
+    },
+    {
+      "id": "TASK-004",
+      "title": "Settings route group",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": [],
+      "description": "Create settings/ route group with Stack navigator. Tab entry already exists from tracker phase.",
+      "writeScope": ["mobile/src/app/(app)/settings/_layout.tsx", "mobile/src/app/(app)/settings/index.tsx"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "Settings tab shows gear icon labeled Settings",
+        "Tab is rightmost in tab bar",
+        "Navigating shows settings list screen"
+      ]
+    },
+    {
+      "id": "TASK-005",
+      "title": "Settings main screen",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-002", "TASK-003", "TASK-004"],
+      "description": "Sections: Profile header (avatar, name, email), Workspace (name, switch row), Appearance (theme segmented control), Account (logout button calls useLogout from @/hooks/use-auth created in auth phase -- no new logout implementation needed), App info footer (version).",
+      "writeScope": ["mobile/src/app/(app)/settings/index.tsx", "mobile/src/components/features/SettingsRow.tsx", "mobile/src/components/features/ProfileHeader.tsx"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "Profile header shows avatar with initials fallback, name, email",
+        "Theme toggle immediately changes app appearance",
+        "Logout shows confirmation alert; cancel does nothing"
+      ]
+    },
+    {
+      "id": "TASK-006",
+      "title": "Workspace switcher screen",
+      "type": "feature",
+      "priority": "P1",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-003", "TASK-005"],
+      "description": "Workspace list from useWorkspaces. Current workspace indicator. Tap to switch with confirmation. Loading overlay. Error handling for archived/unavailable workspace.",
+      "writeScope": ["mobile/src/app/(app)/settings/workspaces.tsx", "mobile/src/components/features/WorkspaceRow.tsx"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "Current workspace has checkmark; tapping does nothing",
+        "Switching shows full-screen loading overlay",
+        "Archived workspace shows error alert and stays on current"
+      ]
+    }
+  ]
+}

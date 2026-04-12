@@ -1,0 +1,143 @@
+{
+  "plan": "mobile-chat",
+  "mode": "HOLD",
+  "review": "claude",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Chat repository layer",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependencies": [],
+      "description": "Create ChatRepository: getChannels, getDirectMessages, getMessages, sendMessage, getThread, sendThreadReply, addReaction, removeReaction. Newest-first ordering for inverted list.",
+      "writeScope": ["mobile/src/repositories/chat.ts", "mobile/src/repositories/index.ts"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "getMessages returns { items, nextCursor, hasMore } newest-first",
+        "sendMessage returns created message DTO for optimistic update",
+        "Handles 403 gracefully when user removed from channel"
+      ]
+    },
+    {
+      "id": "TASK-002",
+      "title": "Chat TanStack Query hooks",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-001"],
+      "description": "Query hooks: useChannels, useMessages (infinite inverted), useThread. Mutation hooks: useSendMessage (optimistic), useSendThreadReply, useToggleReaction. Messages staleTime 10s, channels 60s.",
+      "writeScope": ["mobile/src/hooks/useChannels.ts", "mobile/src/hooks/useMessages.ts", "mobile/src/hooks/useThread.ts"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "useSendMessage optimistically adds message before server confirms",
+        "Failed send rolls back optimistic message and shows error",
+        "useMessages infinite query loads older messages on scroll up"
+      ]
+    },
+    {
+      "id": "TASK-003",
+      "title": "Chat Zustand store",
+      "type": "feature",
+      "priority": "P1",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": [],
+      "description": "Create useChatStore: unreadCounts map, draftMessages map, activeChannelId. In-memory only drafts. Unread counts for tab badge and channel indicators.",
+      "writeScope": ["mobile/src/store/chat.ts"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "setUnreadCount(channelId, 5) makes badge show 5 on that row",
+        "saveDraft preserves text when navigating away and back",
+        "clearUnread zeroes count when user opens the channel"
+      ]
+    },
+    {
+      "id": "TASK-004",
+      "title": "Chat route group",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": [],
+      "description": "Create chat/ route group with Stack navigator. Tab entry already exists from tracker phase. Wire unread badge from useChatStore into existing tab config.",
+      "writeScope": ["mobile/src/app/(app)/chat/_layout.tsx", "mobile/src/app/(app)/chat/index.tsx"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "Chat tab shows message icon with unread badge when count > 0",
+        "Badge disappears when all channels read",
+        "Tab navigation preserves each stack's navigation state"
+      ]
+    },
+    {
+      "id": "TASK-005",
+      "title": "Channel list screen",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-002", "TASK-003", "TASK-004"],
+      "description": "SectionList: Channels and Direct Messages sections. Each row: name, last message preview, timestamp, unread indicator. Sorted by last activity. Pull-to-refresh.",
+      "writeScope": ["mobile/src/app/(app)/chat/index.tsx", "mobile/src/components/features/ChannelRow.tsx"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "Channels and DMs render in separate sections with headers",
+        "Unread channels show bold title + blue dot; read shows normal",
+        "Pull-to-refresh re-fetches and updates unread indicators"
+      ]
+    },
+    {
+      "id": "TASK-006",
+      "title": "Channel detail / message thread screen",
+      "type": "feature",
+      "priority": "P0",
+      "effort": "L",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-002", "TASK-003", "TASK-005"],
+      "description": "Inverted FlashList messages. MessageBubble: avatar, name, text, timestamp, reactions, reply count. MessageInput with keyboard-avoiding. Mark read on mount. Long-press for reactions.",
+      "writeScope": ["mobile/src/app/(app)/chat/channel/[id].tsx", "mobile/src/components/features/MessageBubble.tsx", "mobile/src/components/features/MessageInput.tsx"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "New messages appear at bottom without scroll jump",
+        "Keyboard opening pushes input and messages smoothly",
+        "Long-press shows emoji reaction sheet; tapping calls useToggleReaction"
+      ]
+    },
+    {
+      "id": "TASK-007",
+      "title": "Thread replies screen",
+      "type": "feature",
+      "priority": "P1",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-002", "TASK-006"],
+      "description": "Thread view: parent message pinned at top, replies below. Reuses MessageBubble and MessageInput. useSendThreadReply mutation.",
+      "writeScope": ["mobile/src/app/(app)/chat/thread/[id].tsx", "mobile/src/components/features/ThreadHeader.tsx"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "Parent message pinned at top with visual distinction",
+        "Replies render chronologically below parent",
+        "Back to channel shows updated reply count on parent"
+      ]
+    },
+    {
+      "id": "TASK-008",
+      "title": "Emoji reaction picker",
+      "type": "feature",
+      "priority": "P2",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependencies": ["TASK-006"],
+      "description": "Bottom sheet with 8 quick reactions + more. ReactionPills component below messages. Toggle behavior. Haptic feedback. Optimistic count update.",
+      "writeScope": ["mobile/src/components/features/ReactionPicker.tsx", "mobile/src/components/features/ReactionPills.tsx"],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit 2>&1 | tail -5",
+      "acceptanceCriteria": [
+        "Quick grid shows 8 emojis; tapping adds reaction and dismisses",
+        "Tapping own reaction pill removes it (toggle)",
+        "Count updates optimistically before server confirmation"
+      ]
+    }
+  ]
+}
