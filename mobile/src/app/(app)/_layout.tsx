@@ -5,6 +5,8 @@ import { useAuthStore } from '@/store/auth'
 import { useWorkspaceStore } from '@/store/workspace'
 import { useChatStore } from '@/store/chat'
 import { useInboxStore } from '@/store/inbox'
+import { useChatUnreadSync } from '@/hooks/useChatUnread'
+import { useUnreadCount } from '@/hooks/useUnreadCount'
 
 /**
  * Authenticated app layout with bottom tab navigator.
@@ -25,6 +27,10 @@ export default function AppLayout(): React.ReactNode {
   if (hasWorkspace === null) {
     return <Redirect href="/(auth)/workspace-select" />
   }
+
+  // Mount unread sync hooks here (not inside tabs) so badges work before tabs are visited
+  useChatUnreadSync()
+  useUnreadCount()
 
   const chatBadge = useChatStore((s) => s.unreadTotal)
   const inboxBadge = useInboxStore((s) => s.unreadTotal)

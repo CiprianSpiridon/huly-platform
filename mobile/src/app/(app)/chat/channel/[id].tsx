@@ -95,7 +95,7 @@ export default function ChannelDetailScreen(): React.ReactNode {
     (emoji: string) => {
       if (selectedMessage == null) return
       const hasReacted = selectedMessage.reactions.some(
-        (r) => r.emoji === emoji && r.userIds.includes('me')
+        (r) => r.emoji === emoji && r.userIds.includes(currentUserId)
       )
       toggleReaction.mutate({
         messageId: selectedMessage._id,

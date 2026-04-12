@@ -69,7 +69,7 @@ export default function ThreadScreen(): React.ReactNode {
     (emoji: string) => {
       if (selectedMessage == null || data == null) return
       const hasReacted = selectedMessage.reactions.some(
-        (r) => r.emoji === emoji && r.userIds.includes('me')
+        (r) => r.emoji === emoji && r.userIds.includes(currentUserId)
       )
       toggleReaction.mutate({
         messageId: selectedMessage._id,

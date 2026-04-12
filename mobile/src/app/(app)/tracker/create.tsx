@@ -37,12 +37,18 @@ export default function CreateIssueScreen(): React.ReactNode {
       return
     }
 
+    const resolvedStatus = draft.statusId ?? defaultStatus
+    if (resolvedStatus == null || resolvedStatus === '') {
+      Alert.alert('No status available', 'Project data is still loading. Please try again.')
+      return
+    }
+
     createIssue.mutate(
       {
         title: draft.title,
         description: draft.description,
         priority: draft.priority,
-        status: (draft.statusId ?? defaultStatus ?? '') as Ref<IssueStatus>,
+        status: resolvedStatus as Ref<IssueStatus>,
         assignee: draft.assigneeId,
         projectId: projectId as Ref<Space>,
       },

@@ -114,11 +114,24 @@ export function useMarkAsRead(): UseMutationResult<void, Error, string[]> {
         }
       )
 
-      // Optimistically decrement unread count
-      const idSet = new Set(ids)
+      // Optimistically decrement unread count — only for items that were actually unread
+      const allData = queryClient.getQueryData(notificationKeys.all) as unknown
+      let unreadCount = 0
+      if (allData != null && typeof allData === 'object' && 'pages' in (allData as Record<string, unknown>)) {
+        const pages = (allData as { pages: Array<{ items: Array<{ _id: string; isViewed?: boolean }> }> }).pages
+        const idSet = new Set(ids)
+        for (const page of pages) {
+          for (const item of page.items) {
+            if (idSet.has(item._id) && item.isViewed !== true) {
+              unreadCount++
+            }
+          }
+        }
+      } else {
+        unreadCount = ids.length // fallback
+      }
       const currentCount = useInboxStore.getState().unreadTotal
-      const decrement = ids.filter((id) => idSet.has(id)).length
-      useInboxStore.getState().setUnreadTotal(Math.max(0, currentCount - decrement))
+      useInboxStore.getState().setUnreadTotal(Math.max(0, currentCount - unreadCount))
 
       return { previous }
     },
@@ -135,6 +148,7 @@ export function useMarkAsRead(): UseMutationResult<void, Error, string[]> {
 
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: notificationKeys.all })
+      void queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount })
     },
   })
 }
@@ -166,6 +180,25 @@ export function useArchiveNotifications(): UseMutationResult<void, Error, string
         }
       )
 
+      // Decrement unread count for archived items that were unread
+      const allData = queryClient.getQueryData(notificationKeys.all) as unknown
+      let unreadArchived = 0
+      if (allData != null && typeof allData === 'object' && 'pages' in (allData as Record<string, unknown>)) {
+        const pages = (allData as { pages: Array<{ items: Array<{ _id: string; isViewed?: boolean }> }> }).pages
+        const idSet = new Set(ids)
+        for (const page of pages) {
+          for (const item of page.items) {
+            if (idSet.has(item._id) && item.isViewed !== true) {
+              unreadArchived++
+            }
+          }
+        }
+      }
+      if (unreadArchived > 0) {
+        const current = useInboxStore.getState().unreadTotal
+        useInboxStore.getState().setUnreadTotal(Math.max(0, current - unreadArchived))
+      }
+
       return { previous }
     },
 
@@ -180,6 +213,7 @@ export function useArchiveNotifications(): UseMutationResult<void, Error, string
 
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: notificationKeys.all })
+      void queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount })
     },
   })
 }
@@ -201,6 +235,7 @@ export function useMarkAllAsRead(): UseMutationResult<void, Error, void> {
 
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: notificationKeys.all })
+      void queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount })
     },
   })
 }
@@ -217,6 +252,7 @@ export function useArchiveAll(): UseMutationResult<void, Error, void> {
 
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: notificationKeys.all })
+      void queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount })
     },
   })
 }

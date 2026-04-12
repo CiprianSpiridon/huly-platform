@@ -15,6 +15,7 @@ import {
   type InfiniteData,
 } from '@tanstack/react-query'
 
+import { useAuthStore } from '@/store/auth'
 import {
   getMessages,
   sendMessage,
@@ -83,6 +84,7 @@ interface SendMessageContext {
 
 export function useSendMessage(): UseMutationResult<MessageItem, Error, SendMessageParams, SendMessageContext> {
   const queryClient = useQueryClient()
+  const currentAccountId = useAuthStore((s) => s.account) ?? 'unknown'
 
   return useMutation<MessageItem, Error, SendMessageParams, SendMessageContext>({
     mutationFn: (params) => sendMessage(params.spaceId, params.content),
@@ -98,7 +100,7 @@ export function useSendMessage(): UseMutationResult<MessageItem, Error, SendMess
       const optimisticMessage: MessageItem = {
         _id: `optimistic-${Date.now()}`,
         content: variables.content,
-        sender: 'me',
+        sender: currentAccountId,
         senderName: 'You',
         createdOn: Date.now(),
         modifiedOn: Date.now(),
@@ -171,6 +173,7 @@ interface ToggleReactionContext {
 
 export function useToggleReaction(): UseMutationResult<void, Error, ToggleReactionParams, ToggleReactionContext> {
   const queryClient = useQueryClient()
+  const currentAccountId = useAuthStore((s) => s.account) ?? 'unknown'
 
   return useMutation<void, Error, ToggleReactionParams, ToggleReactionContext>({
     mutationFn: async (params) => {
@@ -209,7 +212,7 @@ export function useToggleReaction(): UseMutationResult<void, Error, ToggleReacti
                       reactions[existingIdx] = {
                         ...existing,
                         count: existing.count - 1,
-                        userIds: existing.userIds.filter((id) => id !== 'me'),
+                        userIds: existing.userIds.filter((id) => id !== currentAccountId),
                       }
                     }
                   }
@@ -220,13 +223,13 @@ export function useToggleReaction(): UseMutationResult<void, Error, ToggleReacti
                     reactions[existingIdx] = {
                       ...existing,
                       count: existing.count + 1,
-                      userIds: [...existing.userIds, 'me'],
+                      userIds: [...existing.userIds, currentAccountId],
                     }
                   } else {
                     reactions.push({
                       emoji: variables.emoji,
                       count: 1,
-                      userIds: ['me'],
+                      userIds: [currentAccountId],
                     })
                   }
                 }
