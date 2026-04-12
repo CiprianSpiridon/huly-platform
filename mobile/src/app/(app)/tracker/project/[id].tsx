@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { FlashList } from '@shopify/flash-list'
 import { useLocalSearchParams, router, Stack, type Href } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import type { Ref, Space } from '@hcengineering/core'
 import type { Issue } from '@hcengineering/tracker'
 
 import { useIssues } from '@/hooks/useIssues'
@@ -47,8 +48,10 @@ export default function IssueListScreen(): React.ReactNode {
   }, [])
 
   const handleCreatePress = useCallback(() => {
+    // Set project context so create screen knows which project to create in
+    useTrackerStore.getState().setSelectedProjectId(id as Ref<Space>)
     router.push('/(app)/tracker/create' as Href)
-  }, [])
+  }, [id])
 
   const handleEndReached = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {

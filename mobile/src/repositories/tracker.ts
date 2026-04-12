@@ -35,6 +35,11 @@ import { RepositoryError, wrapRepositoryError } from './base'
 const TRACKER_CLASS = {
   Project: 'tracker:class:Project' as Ref<Class<Project>>,
   Issue: 'tracker:class:Issue' as Ref<Class<Issue>>,
+  IssueStatus: 'tracker:class:IssueStatus' as Ref<Class<IssueStatus>>,
+} as const
+
+const CONTACT_CLASS = {
+  Person: 'contact:class:Person' as Ref<Class<Doc>>,
 } as const
 
 const DOMAIN = 'tracker'
@@ -120,6 +125,11 @@ export async function getIssues(
       sort: { [sortKey]: sortOrder } as Record<string, SortingOrder>,
       limit,
       total: true,
+      // Expand status and assignee refs so UI can show human-readable values
+      lookup: {
+        status: TRACKER_CLASS.IssueStatus,
+        assignee: CONTACT_CLASS.Person,
+      } as unknown as FindOptions<Issue>['lookup'],
     }
 
     const result = await client.findAll(TRACKER_CLASS.Issue, query, options)
@@ -152,7 +162,13 @@ export async function getIssue(
   try {
     return await client.findOne(
       TRACKER_CLASS.Issue,
-      { _id: issueId }
+      { _id: issueId },
+      {
+        lookup: {
+          status: TRACKER_CLASS.IssueStatus,
+          assignee: CONTACT_CLASS.Person,
+        } as unknown as FindOptions<Issue>['lookup'],
+      }
     )
   } catch (error) {
     throw wrapRepositoryError(DOMAIN, 'getIssue', error)

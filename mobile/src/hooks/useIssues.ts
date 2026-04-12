@@ -101,6 +101,10 @@ export interface CreateIssueDraft {
   status: Ref<IssueStatus>
   assignee?: Ref<Doc> | null
   projectId: Ref<Space>
+  component?: Ref<Doc> | null
+  milestone?: Ref<Doc> | null
+  estimation?: number
+  dueDate?: number | null
 }
 
 export function useCreateIssue(): UseMutationResult<Ref<Doc>, Error, CreateIssueDraft> {
@@ -113,30 +117,28 @@ export function useCreateIssue(): UseMutationResult<Ref<Doc>, Error, CreateIssue
         throw new Error('HulyClient not connected')
       }
       const { TxFactory } = await import('@hcengineering/core')
-      const factory = new TxFactory('' as import('@hcengineering/core').PersonId)
+      // Use authenticated account's PersonId for correct modifiedBy metadata
+      const account = await client.getAccount()
+      const factory = new TxFactory(account.primarySocialId)
+      // Only send user-owned fields — platform handles number, identifier,
+      // kind, rank, and other read-only/computed fields server-side
+      const attrs: Record<string, unknown> = {
+          title: draft.title,
+          priority: draft.priority,
+        }
+      // Only include optional fields if user provided them
+      if (draft.description) attrs.description = draft.description
+      if (draft.status) attrs.status = draft.status
+      if (draft.assignee) attrs.assignee = draft.assignee
+      if (draft.component) attrs.component = draft.component
+      if (draft.milestone) attrs.milestone = draft.milestone
+      if (draft.estimation) attrs.estimation = draft.estimation
+      if (draft.dueDate) attrs.dueDate = draft.dueDate
+
       const tx = factory.createTxCreateDoc(
         ISSUE_CLASS as unknown as Ref<import('@hcengineering/core').Class<Issue>>,
         draft.projectId,
-        {
-          title: draft.title,
-          description: draft.description,
-          priority: draft.priority,
-          status: draft.status,
-          assignee: draft.assignee ?? null,
-          number: 0,
-          identifier: '',
-          kind: '' as Ref<Doc>,
-          component: null,
-          milestone: null,
-          estimation: 0,
-          remainingTime: 0,
-          reportedTime: 0,
-          relations: [],
-          childInfo: [],
-          parents: [],
-          dueDate: null,
-          rank: '',
-        } as unknown as import('@hcengineering/core').Data<Issue>
+        attrs as unknown as import('@hcengineering/core').Data<Issue>
       )
       await client.tx(tx)
       return tx.objectId as Ref<Doc>
@@ -174,7 +176,9 @@ export function useUpdateIssue(): UseMutationResult<void, Error, UpdateIssuePara
         throw new Error('HulyClient not connected')
       }
       const { TxFactory } = await import('@hcengineering/core')
-      const factory = new TxFactory('' as import('@hcengineering/core').PersonId)
+      // Use authenticated account's PersonId for correct modifiedBy metadata
+      const account = await client.getAccount()
+      const factory = new TxFactory(account.primarySocialId)
       const tx = factory.createTxUpdateDoc(
         ISSUE_CLASS as unknown as Ref<import('@hcengineering/core').Class<Issue>>,
         params.projectId,
