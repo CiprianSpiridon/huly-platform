@@ -21,13 +21,15 @@ import {
   type MessageItem,
 } from '@/repositories/chat'
 import { getClient } from '@/client'
+import { useWebSocketStore } from '@/store/websocket'
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const THREAD_STALE_TIME = 10_000   // 10 seconds
-const THREAD_GC_TIME = 2 * 60_000 // 2 minutes
+const THREAD_STALE_TIME = 10_000           // 10 seconds (polling fallback)
+const THREAD_STALE_TIME_WS = 5 * 60_000   // 5 minutes (WS connected)
+const THREAD_GC_TIME = 2 * 60_000          // 2 minutes
 
 // ---------------------------------------------------------------------------
 // Types
@@ -45,10 +47,12 @@ export interface ThreadData {
 export function useThread(
   messageId: string | undefined
 ): UseQueryResult<ThreadData, Error> {
+  const wsConnected = useWebSocketStore((s) => s.status === 'connected')
+
   return useQuery<ThreadData, Error>({
     queryKey: ['chat', 'thread', messageId],
     queryFn: () => getThread(messageId!),
-    staleTime: THREAD_STALE_TIME,
+    staleTime: wsConnected ? THREAD_STALE_TIME_WS : THREAD_STALE_TIME,
     gcTime: THREAD_GC_TIME,
     enabled: messageId !== undefined && getClient() !== null,
   })

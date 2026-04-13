@@ -11,3 +11,5 @@ export type { ViewMode, TrackerIssueFilters, TrackerIssueSort, IssueDraftState }
 export { useChatStore } from './chat'
 export { useInboxStore } from './inbox'
 export type { InboxFilter } from './inbox'
+export { useWebSocketStore } from './websocket'
+export type { WsStatus } from './websocket'

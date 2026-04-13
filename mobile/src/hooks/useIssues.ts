@@ -27,15 +27,17 @@ import {
   type IssueSearchResult,
 } from '@/repositories/tracker'
 import { getClient } from '@/client'
+import { useWebSocketStore } from '@/store/websocket'
 import { useHulyCreate, useHulyUpdate, type HulyCreateParams, type HulyUpdateParams } from './useHulyMutation'
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const ISSUES_STALE_TIME = 30_000         // 30 seconds
-const ISSUES_GC_TIME = 5 * 60_000       // 5 minutes
-const SEARCH_STALE_TIME = 10_000         // 10 seconds
+const ISSUES_STALE_TIME = 30_000             // 30 seconds (polling fallback)
+const ISSUES_STALE_TIME_WS = 5 * 60_000     // 5 minutes (WS connected)
+const ISSUES_GC_TIME = 5 * 60_000           // 5 minutes
+const SEARCH_STALE_TIME = 10_000             // 10 seconds
 
 /**
  * Tracker class ref for Issue -- avoids value import from @hcengineering/tracker.
@@ -51,6 +53,8 @@ export function useIssues(
   filters?: IssueFilters,
   sort?: IssueSort
 ): UseInfiniteQueryResult<PaginatedResult<Issue>, Error> {
+  const wsConnected = useWebSocketStore((s) => s.status === 'connected')
+
   return useInfiniteQuery<PaginatedResult<Issue>, Error, PaginatedResult<Issue>, readonly unknown[], number>({
     queryKey: ['tracker', 'issues', projectId, filters, sort] as const,
     queryFn: ({ pageParam }) =>
@@ -58,7 +62,7 @@ export function useIssues(
     initialPageParam: 0,
     getNextPageParam: (lastPage, _allPages, lastPageParam) =>
       lastPage.hasMore ? lastPageParam + 1 : undefined,
-    staleTime: ISSUES_STALE_TIME,
+    staleTime: wsConnected ? ISSUES_STALE_TIME_WS : ISSUES_STALE_TIME,
     gcTime: ISSUES_GC_TIME,
     enabled: projectId !== undefined && getClient() !== null,
     select: (data) => {

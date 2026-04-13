@@ -8,13 +8,15 @@ import { useQuery, type UseQueryResult } from '@tanstack/react-query'
 
 import { getChannels, getDirectMessages, type ChannelItem } from '@/repositories/chat'
 import { getClient } from '@/client'
+import { useWebSocketStore } from '@/store/websocket'
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const CHANNELS_STALE_TIME = 60_000   // 60 seconds
-const CHANNELS_GC_TIME = 5 * 60_000 // 5 minutes
+const CHANNELS_STALE_TIME = 60_000           // 60 seconds (polling fallback)
+const CHANNELS_STALE_TIME_WS = 5 * 60_000   // 5 minutes (WS connected)
+const CHANNELS_GC_TIME = 5 * 60_000          // 5 minutes
 
 // ---------------------------------------------------------------------------
 // Types
@@ -34,6 +36,8 @@ export interface ChannelListData {
  * Sorted by last activity (most recent first).
  */
 export function useChannels(): UseQueryResult<ChannelListData, Error> {
+  const wsConnected = useWebSocketStore((s) => s.status === 'connected')
+
   return useQuery<ChannelListData, Error>({
     queryKey: ['chat', 'channels'],
     queryFn: async () => {
@@ -51,7 +55,7 @@ export function useChannels(): UseQueryResult<ChannelListData, Error> {
         directMessages: directMessages.sort(sortByActivity),
       }
     },
-    staleTime: CHANNELS_STALE_TIME,
+    staleTime: wsConnected ? CHANNELS_STALE_TIME_WS : CHANNELS_STALE_TIME,
     gcTime: CHANNELS_GC_TIME,
     enabled: getClient() !== null,
   })

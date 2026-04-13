@@ -26,13 +26,15 @@ import {
 } from '@/repositories/notification'
 import { getClient } from '@/client'
 import { useInboxStore } from '@/store/inbox'
+import { useWebSocketStore } from '@/store/websocket'
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const NOTIFICATIONS_STALE_TIME = 15_000   // 15 seconds
-const NOTIFICATIONS_GC_TIME = 5 * 60_000 // 5 minutes
+const NOTIFICATIONS_STALE_TIME = 15_000          // 15 seconds (polling fallback)
+const NOTIFICATIONS_STALE_TIME_WS = 2 * 60_000  // 2 minutes (WS connected)
+const NOTIFICATIONS_GC_TIME = 5 * 60_000         // 5 minutes
 
 // ---------------------------------------------------------------------------
 // Query keys
@@ -52,6 +54,7 @@ export function useNotifications(
   filter?: NotificationFilterType
 ): UseInfiniteQueryResult<PaginatedNotifications, Error> {
   const effectiveFilter = filter === 'all' ? undefined : filter
+  const wsConnected = useWebSocketStore((s) => s.status === 'connected')
 
   return useInfiniteQuery<
     PaginatedNotifications,
@@ -69,7 +72,7 @@ export function useNotifications(
     initialPageParam: undefined,
     getNextPageParam: (lastPage) =>
       lastPage.hasMore ? lastPage.nextCursor : undefined,
-    staleTime: NOTIFICATIONS_STALE_TIME,
+    staleTime: wsConnected ? NOTIFICATIONS_STALE_TIME_WS : NOTIFICATIONS_STALE_TIME,
     gcTime: NOTIFICATIONS_GC_TIME,
     enabled: getClient() !== null,
     select: (data) => {

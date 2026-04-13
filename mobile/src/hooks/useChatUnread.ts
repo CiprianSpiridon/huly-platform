@@ -11,9 +11,11 @@ import type { Doc, Ref, Class, Space } from '@hcengineering/core'
 
 import { getClient } from '@/client'
 import { useChatStore } from '@/store/chat'
+import { useWebSocketStore } from '@/store/websocket'
 
 const NOTIFY_CONTEXT_CLASS = 'notification:class:DocNotifyContext' as Ref<Class<Doc>>
-const POLL_INTERVAL = 30_000 // 30 seconds
+const POLL_INTERVAL = 30_000         // 30 seconds (polling fallback)
+const POLL_INTERVAL_WS = 2 * 60_000 // 2 minutes (WS connected)
 
 /**
  * Polls DocNotifyContext documents to determine which channels have
@@ -23,6 +25,8 @@ const POLL_INTERVAL = 30_000 // 30 seconds
  */
 export function useChatUnreadSync(): void {
   const setUnreadCount = useChatStore((s) => s.setUnreadCount)
+  const wsConnected = useWebSocketStore((s) => s.status === 'connected')
+  const effectiveInterval = wsConnected ? POLL_INTERVAL_WS : POLL_INTERVAL
 
   const { data: contexts } = useQuery({
     queryKey: ['chat', 'unread-contexts'],
@@ -36,8 +40,8 @@ export function useChatUnreadSync(): void {
       )
     },
     enabled: getClient() !== null,
-    staleTime: POLL_INTERVAL,
-    refetchInterval: POLL_INTERVAL,
+    staleTime: effectiveInterval,
+    refetchInterval: effectiveInterval,
   })
 
   useEffect(() => {

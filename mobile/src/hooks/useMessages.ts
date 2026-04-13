@@ -16,6 +16,7 @@ import {
 } from '@tanstack/react-query'
 
 import { useConnectionStore } from '@/store/connection'
+import { useWebSocketStore } from '@/store/websocket'
 import {
   getMessages,
   sendMessage,
@@ -30,8 +31,9 @@ import { getClient } from '@/client'
 // Constants
 // ---------------------------------------------------------------------------
 
-const MESSAGES_STALE_TIME = 10_000   // 10 seconds
-const MESSAGES_GC_TIME = 2 * 60_000 // 2 minutes
+const MESSAGES_STALE_TIME = 10_000           // 10 seconds (polling fallback)
+const MESSAGES_STALE_TIME_WS = 5 * 60_000   // 5 minutes (WS connected)
+const MESSAGES_GC_TIME = 2 * 60_000          // 2 minutes
 
 // ---------------------------------------------------------------------------
 // useMessages (infinite query, inverted)
@@ -40,6 +42,8 @@ const MESSAGES_GC_TIME = 2 * 60_000 // 2 minutes
 export function useMessages(
   spaceId: string | undefined
 ): UseInfiniteQueryResult<CursorPaginatedResult<MessageItem>, Error> {
+  const wsConnected = useWebSocketStore((s) => s.status === 'connected')
+
   return useInfiniteQuery<
     CursorPaginatedResult<MessageItem>,
     Error,
@@ -53,7 +57,7 @@ export function useMessages(
     initialPageParam: undefined,
     getNextPageParam: (lastPage) =>
       lastPage.hasMore ? lastPage.nextCursor : undefined,
-    staleTime: MESSAGES_STALE_TIME,
+    staleTime: wsConnected ? MESSAGES_STALE_TIME_WS : MESSAGES_STALE_TIME,
     gcTime: MESSAGES_GC_TIME,
     enabled: spaceId !== undefined && getClient() !== null,
     select: (data) => {

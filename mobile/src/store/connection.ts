@@ -10,6 +10,7 @@ import { create } from 'zustand'
 
 import { HulyClient } from '@/client/api'
 import { setClient, clearClient } from '@/client'
+import { useWebSocketStore } from './websocket'
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error'
 
@@ -58,6 +59,10 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
       }
 
       set({ status: 'connected', error: null, currentSocialId: socialId })
+
+      // Auto-connect WebSocket sidecar for real-time broadcasts
+      // The endpoint is the WS URL; the token is the workspace JWT
+      useWebSocketStore.getState().connectWs(endpoint, token)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Connection failed'
       set({ status: 'error', error: message })
@@ -66,6 +71,9 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   },
 
   disconnect: () => {
+    // Disconnect WebSocket sidecar first
+    useWebSocketStore.getState().disconnectWs()
+
     clearClient()
     _credentials = null
     set({ status: 'disconnected', error: null, currentSocialId: null })

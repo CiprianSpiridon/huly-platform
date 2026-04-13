@@ -1,12 +1,15 @@
 import { Redirect, Tabs } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 
+import { View } from 'react-native'
+
 import { useAuthStore } from '@/store/auth'
 import { useWorkspaceStore } from '@/store/workspace'
 import { useChatStore } from '@/store/chat'
 import { useInboxStore } from '@/store/inbox'
 import { useChatUnreadSync } from '@/hooks/useChatUnread'
 import { useUnreadCount } from '@/hooks/useUnreadCount'
+import { ConnectionStatusBar } from '@/components/features/ConnectionStatusBar'
 
 /**
  * Authenticated app layout with bottom tab navigator.
@@ -36,8 +39,10 @@ export default function AppLayout(): React.ReactNode {
   const inboxBadge = useInboxStore((s) => s.unreadTotal)
 
   return (
-    <Tabs
-      screenOptions={{
+    <View className="flex-1">
+      <ConnectionStatusBar />
+      <Tabs
+        screenOptions={{
         headerShown: false,
         tabBarStyle: {
           backgroundColor: '#161719',
@@ -113,5 +118,6 @@ export default function AppLayout(): React.ReactNode {
         }}
       />
     </Tabs>
+    </View>
   )
 }
