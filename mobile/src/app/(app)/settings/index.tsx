@@ -174,15 +174,15 @@ export default function SettingsScreen(): React.ReactNode {
         ) : workspace != null ? (
           <>
             <SettingsRow label="Name" value={workspace.name} />
-            <SettingsRow label="Members" value={String(workspace.memberCount)} />
+            <SettingsRow
+              label="Members"
+              value={String(workspace.memberCount)}
+              onPress={handleMembers}
+              showChevron
+              accessibilityLabel="View workspace members"
+            />
           </>
         ) : null}
-        <SettingsRow
-          label="Members"
-          onPress={handleMembers}
-          showChevron
-          accessibilityLabel="View workspace members"
-        />
         <SettingsRow
           label="Switch Workspace"
           onPress={handleSwitchWorkspace}

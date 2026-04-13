@@ -86,12 +86,15 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
       throw new Error('No stored credentials for reconnect')
     }
 
+    // Save credentials before disconnect() nulls the module-level reference
+    const creds = _credentials
+
     // Tear down existing connection if any
     if (status === 'connected' || status === 'error') {
       disconnect()
     }
 
-    const { endpoint, workspaceId, token } = _credentials
+    const { endpoint, workspaceId, token } = creds
     await connect(endpoint, workspaceId, token)
   },
 }))

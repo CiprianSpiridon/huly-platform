@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useRef, useCallback } from 'react'
-import { Pressable, Text, View, Dimensions } from 'react-native'
+import { Pressable, Text, View } from 'react-native'
 import Animated, {
   useSharedValue,
   useAnimatedStyle,

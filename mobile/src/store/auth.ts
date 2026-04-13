@@ -73,7 +73,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       try {
         const { getOrCreateAccountClient } = await import('@/client/account')
         const client = await getOrCreateAccountClient(token)
-        await client.getLoginInfoByToken()
+        const info = await client.getLoginInfoByToken()
+
+        if (info == null) {
+          throw new Error('Token invalid')
+        }
 
         // Token is valid — restore session
         set({

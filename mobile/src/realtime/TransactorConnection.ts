@@ -29,7 +29,7 @@ import {
 // ---------------------------------------------------------------------------
 
 const PING_INTERVAL_MS = 10_000
-const HANG_TIMEOUT_MS = 5 * 60_000
+const HANG_TIMEOUT_MS = 60_000
 const DIAL_TIMEOUT_MS = 30_000
 const MAX_DELAY_SECONDS = 3
 
@@ -70,6 +70,7 @@ export class TransactorConnection {
   private readonly onStatusChange?: (status: TransactorStatus) => void
 
   private url = ''
+  private token = ''
 
   constructor(options: TransactorConnectionOptions) {
     this.sessionId = generateId()
@@ -82,10 +83,11 @@ export class TransactorConnection {
    * Connect to the transactor WebSocket endpoint.
    *
    * @param wsEndpoint - The WebSocket URL (wss://...)
-   * @param _token - The workspace JWT token (reserved for future auth)
+   * @param token - The workspace JWT token sent in the hello handshake
    */
-  connect(wsEndpoint: string, _token: string): void {
+  connect(wsEndpoint: string, token: string): void {
     this.url = wsEndpoint
+    this.token = token
     this.closed = false
     this.delay = 0
     this.setStatus('connecting')
@@ -186,7 +188,7 @@ export class TransactorConnection {
   private sendHello(): void {
     const hello: HelloRequest = {
       method: 'hello',
-      params: [],
+      params: [this.token],
       id: -1,
       binary: false,
       compression: false,

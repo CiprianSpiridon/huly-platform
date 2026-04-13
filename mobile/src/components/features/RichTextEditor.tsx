@@ -99,43 +99,51 @@ function textToMarkup(text: string): MarkupNode {
       continue
     }
 
-    // Bullet list item
+    // Bullet list item -- group consecutive items under one parent
     if (/^[-*]\s+/.test(line)) {
       const itemText = line.replace(/^[-*]\s+/, '')
-      content.push({
-        type: MarkupNodeType.bullet_list,
+      const listItem: MarkupNode = {
+        type: MarkupNodeType.list_item,
         content: [
           {
-            type: MarkupNodeType.list_item,
-            content: [
-              {
-                type: MarkupNodeType.paragraph,
-                content: parseInlineMarks(itemText),
-              },
-            ],
+            type: MarkupNodeType.paragraph,
+            content: parseInlineMarks(itemText),
           },
         ],
-      })
+      }
+      const prev = content[content.length - 1]
+      if (prev != null && prev.type === MarkupNodeType.bullet_list && prev.content != null) {
+        prev.content.push(listItem)
+      } else {
+        content.push({
+          type: MarkupNodeType.bullet_list,
+          content: [listItem],
+        })
+      }
       continue
     }
 
-    // Ordered list item
+    // Ordered list item -- group consecutive items under one parent
     const olMatch = /^(\d+)\.\s+(.+)$/.exec(line)
     if (olMatch != null) {
-      content.push({
-        type: MarkupNodeType.ordered_list,
+      const listItem: MarkupNode = {
+        type: MarkupNodeType.list_item,
         content: [
           {
-            type: MarkupNodeType.list_item,
-            content: [
-              {
-                type: MarkupNodeType.paragraph,
-                content: parseInlineMarks(olMatch[2] ?? ''),
-              },
-            ],
+            type: MarkupNodeType.paragraph,
+            content: parseInlineMarks(olMatch[2] ?? ''),
           },
         ],
-      })
+      }
+      const prev = content[content.length - 1]
+      if (prev != null && prev.type === MarkupNodeType.ordered_list && prev.content != null) {
+        prev.content.push(listItem)
+      } else {
+        content.push({
+          type: MarkupNodeType.ordered_list,
+          content: [listItem],
+        })
+      }
       continue
     }
 

@@ -43,6 +43,7 @@ const NOTIFICATION_CLASS = {
 
 const DOMAIN = 'notification'
 const DEFAULT_PAGE_SIZE = 30
+const BATCH_CHUNK_SIZE = 50
 
 // ---------------------------------------------------------------------------
 // Types
@@ -231,14 +232,18 @@ export async function markAsRead(ids: string[]): Promise<void> {
       NOTIFICATION_CLASS.InboxNotification as Ref<Class<Doc>>,
       { _id: { $in: ids } as unknown as DocumentQuery<Doc>['_id'] }
     )
-    for (const notif of notifications) {
-      const tx = factory.createTxUpdateDoc(
+    const txes = notifications.map((notif) =>
+      factory.createTxUpdateDoc(
         NOTIFICATION_CLASS.InboxNotification as Ref<Class<Doc>>,
         notif.space,
         notif._id,
         { isViewed: true } as Record<string, unknown>
       )
-      await client.tx(tx)
+    )
+    // Send in chunks of 50 to avoid overwhelming the server
+    for (let i = 0; i < txes.length; i += BATCH_CHUNK_SIZE) {
+      const chunk = txes.slice(i, i + BATCH_CHUNK_SIZE)
+      await Promise.all(chunk.map((tx) => client.tx(tx)))
     }
   } catch (error) {
     throw wrapRepositoryError(DOMAIN, 'markAsRead', error)
@@ -265,14 +270,18 @@ export async function markAllAsRead(): Promise<void> {
     const account = await client.getAccount()
     const factory = new TxFactory(account.primarySocialId)
 
-    for (const doc of result) {
-      const tx = factory.createTxUpdateDoc(
+    const txes = [...result].map((doc) =>
+      factory.createTxUpdateDoc(
         NOTIFICATION_CLASS.InboxNotification as Ref<Class<Doc>>,
         doc.space,
         doc._id,
         { isViewed: true } as Record<string, unknown>
       )
-      await client.tx(tx)
+    )
+    // Send in chunks of 50 to avoid overwhelming the server
+    for (let i = 0; i < txes.length; i += BATCH_CHUNK_SIZE) {
+      const chunk = txes.slice(i, i + BATCH_CHUNK_SIZE)
+      await Promise.all(chunk.map((tx) => client.tx(tx)))
     }
   } catch (error) {
     throw wrapRepositoryError(DOMAIN, 'markAllAsRead', error)
@@ -297,14 +306,18 @@ export async function archiveNotifications(ids: string[]): Promise<void> {
       NOTIFICATION_CLASS.InboxNotification as Ref<Class<Doc>>,
       { _id: { $in: ids } as unknown as DocumentQuery<Doc>['_id'] }
     )
-    for (const notif of notifications) {
-      const tx = factory.createTxUpdateDoc(
+    const txes = notifications.map((notif) =>
+      factory.createTxUpdateDoc(
         NOTIFICATION_CLASS.InboxNotification as Ref<Class<Doc>>,
         notif.space,
         notif._id,
         { archived: true, isViewed: true } as Record<string, unknown>
       )
-      await client.tx(tx)
+    )
+    // Send in chunks of 50 to avoid overwhelming the server
+    for (let i = 0; i < txes.length; i += BATCH_CHUNK_SIZE) {
+      const chunk = txes.slice(i, i + BATCH_CHUNK_SIZE)
+      await Promise.all(chunk.map((tx) => client.tx(tx)))
     }
   } catch (error) {
     throw wrapRepositoryError(DOMAIN, 'archiveNotifications', error)
@@ -330,14 +343,18 @@ export async function archiveAll(): Promise<void> {
     const account = await client.getAccount()
     const factory = new TxFactory(account.primarySocialId)
 
-    for (const doc of result) {
-      const tx = factory.createTxUpdateDoc(
+    const txes = [...result].map((doc) =>
+      factory.createTxUpdateDoc(
         NOTIFICATION_CLASS.InboxNotification as Ref<Class<Doc>>,
         doc.space,
         doc._id,
         { archived: true, isViewed: true } as Record<string, unknown>
       )
-      await client.tx(tx)
+    )
+    // Send in chunks of 50 to avoid overwhelming the server
+    for (let i = 0; i < txes.length; i += BATCH_CHUNK_SIZE) {
+      const chunk = txes.slice(i, i + BATCH_CHUNK_SIZE)
+      await Promise.all(chunk.map((tx) => client.tx(tx)))
     }
   } catch (error) {
     throw wrapRepositoryError(DOMAIN, 'archiveAll', error)

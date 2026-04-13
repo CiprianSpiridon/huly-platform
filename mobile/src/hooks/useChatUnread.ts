@@ -13,7 +13,6 @@ import type { Doc, Ref, Class } from '@hcengineering/core'
 import { getClient } from '@/client'
 import { useChatStore } from '@/store/chat'
 import { useConnectionStore } from '@/store/connection'
-import { useAuthStore } from '@/store/auth'
 import { useWebSocketStore } from '@/store/websocket'
 
 const NOTIFY_CONTEXT_CLASS = 'notification:class:DocNotifyContext' as Ref<Class<Doc>>
@@ -36,26 +35,26 @@ const POLL_INTERVAL_WS = 2 * 60_000 // 2 minutes (WS connected)
 export function useChatUnreadSync(): void {
   const resetAllUnread = useChatStore((s) => s.resetAllUnread)
   const setUnreadCount = useChatStore((s) => s.setUnreadCount)
-  const account = useAuthStore((s) => s.account)
+  const currentSocialId = useConnectionStore((s) => s.currentSocialId)
   const wsConnected = useWebSocketStore((s) => s.status === 'connected')
   const effectiveInterval = wsConnected ? POLL_INTERVAL_WS : POLL_INTERVAL
 
   const { data: contexts } = useQuery({
-    queryKey: ['chat', 'unread-contexts', account],
+    queryKey: ['chat', 'unread-contexts', currentSocialId],
     queryFn: async () => {
       const client = getClient()
-      if (client === null || account === null) return []
+      if (client === null || currentSocialId == null) return []
 
       return await client.findAll<Doc>(
         NOTIFY_CONTEXT_CLASS,
         {
-          user: account,
+          user: currentSocialId,
           objectClass: { $in: [CHANNEL_CLASS, DM_CLASS] },
           hidden: { $ne: true },
         } as Record<string, unknown>
       )
     },
-    enabled: getClient() !== null && account !== null,
+    enabled: getClient() !== null && currentSocialId != null,
     staleTime: effectiveInterval,
     refetchInterval: effectiveInterval,
   })

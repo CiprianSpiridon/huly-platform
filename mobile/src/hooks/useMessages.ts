@@ -88,7 +88,6 @@ interface SendMessageContext {
 
 export function useSendMessage(): UseMutationResult<MessageItem, Error, SendMessageParams, SendMessageContext> {
   const queryClient = useQueryClient()
-  const currentSocialId = useConnectionStore((s) => s.currentSocialId) ?? 'unknown'
 
   return useMutation<MessageItem, Error, SendMessageParams, SendMessageContext>({
     mutationFn: (params) => sendMessage(params.spaceId, params.content),
@@ -99,6 +98,9 @@ export function useSendMessage(): UseMutationResult<MessageItem, Error, SendMess
 
       // Snapshot the previous value
       const previousData = queryClient.getQueryData(['chat', 'messages', variables.spaceId])
+
+      // Read currentSocialId fresh from the store to avoid stale closure captures
+      const currentSocialId = useConnectionStore.getState().currentSocialId ?? 'unknown'
 
       // Optimistically add the new message at the top (newest first)
       const optimisticMessage: MessageItem = {

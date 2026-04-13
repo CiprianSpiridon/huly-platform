@@ -21,6 +21,7 @@ import type { Issue, IssueStatus } from '@hcengineering/tracker'
 import {
   getIssues,
   searchIssues,
+  type IssueCursor,
   type IssueFilters,
   type IssueSort,
   type PaginatedResult,
@@ -54,14 +55,20 @@ export function useIssues(
   sort?: IssueSort
 ): UseInfiniteQueryResult<PaginatedResult<Issue>, Error> {
   const wsConnected = useWebSocketStore((s) => s.status === 'connected')
+  const sortKey = sort?.key ?? 'modifiedOn'
 
-  return useInfiniteQuery<PaginatedResult<Issue>, Error, PaginatedResult<Issue>, readonly unknown[], number>({
+  return useInfiniteQuery<PaginatedResult<Issue>, Error, PaginatedResult<Issue>, readonly unknown[], IssueCursor>({
     queryKey: ['tracker', 'issues', projectId, filters, sort] as const,
     queryFn: ({ pageParam }) =>
       getIssues(projectId as Ref<Space>, filters, sort, pageParam),
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, _allPages, lastPageParam) =>
-      lastPage.hasMore ? lastPageParam + 1 : undefined,
+    initialPageParam: undefined,
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.hasMore) return undefined
+      const lastItem = lastPage.items[lastPage.items.length - 1]
+      if (lastItem == null) return undefined
+      // Use the sort key value from the last item as cursor
+      return (lastItem as unknown as Record<string, unknown>)[sortKey] as number | undefined
+    },
     staleTime: wsConnected ? ISSUES_STALE_TIME_WS : ISSUES_STALE_TIME,
     gcTime: ISSUES_GC_TIME,
     enabled: projectId !== undefined && getClient() !== null,
@@ -132,12 +139,12 @@ export function useCreateIssue(): UseMutationResult<Ref<Doc>, Error, CreateIssue
         }
       // Only include optional fields if user provided them
       if (draft.description) attrs.description = draft.description
-      if (draft.status) attrs.status = draft.status
+      if (draft.status != null) attrs.status = draft.status
       if (draft.assignee) attrs.assignee = draft.assignee
-      if (draft.component) attrs.component = draft.component
-      if (draft.milestone) attrs.milestone = draft.milestone
-      if (draft.estimation) attrs.estimation = draft.estimation
-      if (draft.dueDate) attrs.dueDate = draft.dueDate
+      if (draft.component != null) attrs.component = draft.component
+      if (draft.milestone != null) attrs.milestone = draft.milestone
+      if (draft.estimation != null) attrs.estimation = draft.estimation
+      if (draft.dueDate != null) attrs.dueDate = draft.dueDate
 
       const tx = factory.createTxCreateDoc(
         ISSUE_CLASS as unknown as Ref<import('@hcengineering/core').Class<Issue>>,

@@ -141,6 +141,7 @@ function setupAppStateListener(
       // Close WS on background to save battery
       if (_connection !== null && _connection.isConnected()) {
         _connection.disconnect()
+        _connection = null
         _wasBackgrounded = true
         set({ status: 'disconnected' })
       }
@@ -148,17 +149,20 @@ function setupAppStateListener(
       // Reconnect on foreground
       _wasBackgrounded = false
       if (_wsEndpoint !== null && _wsToken !== null) {
-        if (_connection === null) {
-          _connection = new TransactorConnection({
-            socketFactory: RNWebSocketFactory,
-            onBroadcast: (txes) => {
-              processBroadcast(txes, queryClient)
-            },
-            onStatusChange: (status: TransactorStatus) => {
-              set({ status: status as WsStatus })
-            },
-          })
+        // Always create a fresh connection to avoid reusing a stale socket
+        if (_connection !== null) {
+          _connection.disconnect()
+          _connection = null
         }
+        _connection = new TransactorConnection({
+          socketFactory: RNWebSocketFactory,
+          onBroadcast: (txes) => {
+            processBroadcast(txes, queryClient)
+          },
+          onStatusChange: (status: TransactorStatus) => {
+            set({ status: status as WsStatus })
+          },
+        })
         _connection.connect(_wsEndpoint, _wsToken)
         set({ status: 'connecting' })
 
@@ -190,6 +194,7 @@ function setupNetInfoListener(
       // Network lost -- disconnect WebSocket
       if (_connection !== null && _connection.isConnected()) {
         _connection.disconnect()
+        _connection = null
         wasDisconnected = true
         set({ status: 'disconnected' })
       }
@@ -197,17 +202,20 @@ function setupNetInfoListener(
       // Network restored -- reconnect
       wasDisconnected = false
       if (_wsEndpoint !== null && _wsToken !== null) {
-        if (_connection === null) {
-          _connection = new TransactorConnection({
-            socketFactory: RNWebSocketFactory,
-            onBroadcast: (txes) => {
-              processBroadcast(txes, queryClient)
-            },
-            onStatusChange: (status: TransactorStatus) => {
-              set({ status: status as WsStatus })
-            },
-          })
+        // Always create a fresh connection to avoid reusing a stale socket
+        if (_connection !== null) {
+          _connection.disconnect()
+          _connection = null
         }
+        _connection = new TransactorConnection({
+          socketFactory: RNWebSocketFactory,
+          onBroadcast: (txes) => {
+            processBroadcast(txes, queryClient)
+          },
+          onStatusChange: (status: TransactorStatus) => {
+            set({ status: status as WsStatus })
+          },
+        })
         _connection.connect(_wsEndpoint, _wsToken)
         set({ status: 'connecting' })
 

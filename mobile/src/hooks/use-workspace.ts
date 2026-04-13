@@ -17,7 +17,7 @@ export function useWorkspaces() {
   const token = useAuthStore((s) => s.token)
 
   return useQuery({
-    queryKey: ['workspaces'],
+    queryKey: ['workspaces', token],
     queryFn: async () => {
       const client = await getOrCreateAccountClient(token ?? undefined)
       return await client.getUserWorkspaces()

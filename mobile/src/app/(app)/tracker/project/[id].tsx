@@ -40,8 +40,11 @@ export default function IssueListScreen(): React.ReactNode {
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
-    await refetch()
-    setRefreshing(false)
+    try {
+      await refetch()
+    } finally {
+      setRefreshing(false)
+    }
   }, [refetch])
 
   const handleIssuePress = useCallback((issueId: string) => {
@@ -210,11 +213,11 @@ interface KanbanViewProps {
 }
 
 function KanbanView({ items, onIssuePress }: KanbanViewProps): React.ReactNode {
-  // Group issues by status
+  // Group issues by status name (resolved via $lookup)
   const groups = useMemo(() => {
     const map = new Map<string, Issue[]>()
     for (const item of items) {
-      const key = item.status as unknown as string
+      const key = getStatusName(item)
       const list = map.get(key)
       if (list !== undefined) {
         list.push(item)

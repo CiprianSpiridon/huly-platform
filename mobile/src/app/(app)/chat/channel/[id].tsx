@@ -32,11 +32,6 @@ export default function ChannelDetailScreen(): React.ReactNode {
   const { id } = useLocalSearchParams<{ id: string }>()
   const currentUserId = useConnectionStore((s) => s.currentSocialId) ?? 'unknown'
 
-  if (!id) {
-    router.back()
-    return null
-  }
-
   const {
     data: messagesData,
     isLoading,
@@ -62,6 +57,11 @@ export default function ChannelDetailScreen(): React.ReactNode {
     filename: string
     mimeType: string
   } | null>(null)
+
+  if (!id) {
+    router.back()
+    return null
+  }
 
   // Mark channel as read and set active on mount
   useEffect(() => {

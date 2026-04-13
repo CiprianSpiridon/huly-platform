@@ -30,17 +30,17 @@ export default function ThreadScreen(): React.ReactNode {
   const { id } = useLocalSearchParams<{ id: string }>()
   const currentUserId = useConnectionStore((s) => s.currentSocialId) ?? 'unknown'
 
-  if (!id) {
-    router.back()
-    return null
-  }
-
   const { data, isLoading, error, refetch } = useThread(id)
   const sendReply = useSendThreadReply()
   const toggleReaction = useToggleReaction()
 
   const reactionPickerRef = useRef<BottomSheetModal>(null)
   const [selectedMessage, setSelectedMessage] = useState<MessageItem | null>(null)
+
+  if (!id) {
+    router.back()
+    return null
+  }
 
   // Handle send reply
   const handleSend = useCallback(

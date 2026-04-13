@@ -95,6 +95,26 @@ const HEADING_CLASSES: Record<number, string> = {
 }
 
 // ---------------------------------------------------------------------------
+// URL validation for external links
+// ---------------------------------------------------------------------------
+
+const ALLOWED_URL_SCHEMES = new Set(['https:', 'http:', 'mailto:'])
+
+/**
+ * Returns true if the URL uses an allowed scheme (https, http, mailto).
+ * Blocks dangerous schemes like javascript:, tel:, file:, intent:, market:.
+ */
+function isAllowedUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url)
+    return ALLOWED_URL_SCHEMES.has(parsed.protocol)
+  } catch {
+    // Malformed URL -- reject
+    return false
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Node renderers
 // ---------------------------------------------------------------------------
 
@@ -107,7 +127,9 @@ function RenderTextNode({ node }: { node: MarkupNode }): React.ReactNode {
       <Text
         className={baseClass}
         onPress={() => {
-          void Linking.openURL(linkHref)
+          if (isAllowedUrl(linkHref)) {
+            void Linking.openURL(linkHref)
+          }
         }}
         accessibilityRole="link"
         accessibilityLabel={`Link: ${node.text ?? linkHref}`}
@@ -275,7 +297,9 @@ function RenderNode({ node }: { node: MarkupNode }): React.ReactNode {
         <Pressable
           className="my-1.5"
           onPress={() => {
-            void Linking.openURL(src)
+            if (isAllowedUrl(src)) {
+              void Linking.openURL(src)
+            }
           }}
           accessibilityRole="image"
           accessibilityLabel={alt}

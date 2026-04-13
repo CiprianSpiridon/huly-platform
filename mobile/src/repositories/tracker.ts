@@ -92,11 +92,17 @@ export async function getProjects(): Promise<Project[]> {
 // Issues
 // ---------------------------------------------------------------------------
 
+/**
+ * Cursor value for keyset pagination. Undefined for the first page.
+ * Contains the sort-key value of the last item from the previous page.
+ */
+export type IssueCursor = number | undefined
+
 export async function getIssues(
   projectId: Ref<Space>,
   filters?: IssueFilters,
   sort?: IssueSort,
-  page: number = 0
+  cursor?: IssueCursor
 ): Promise<PaginatedResult<Issue>> {
   const client = getClient()
   if (client === null) {
@@ -119,11 +125,17 @@ export async function getIssues(
     const sortOrder = sort?.order === 'ascending' ? SortingOrder.Ascending : SortingOrder.Descending
     const sortKey = sort?.key ?? 'modifiedOn'
 
-    const limit = (page + 1) * DEFAULT_PAGE_SIZE
+    // Use cursor-based (keyset) pagination to avoid O(n^2) re-fetch.
+    // The cursor is the sort-key value of the last item from the
+    // previous page. We fetch one extra item to detect hasMore.
+    if (cursor !== undefined) {
+      const cursorOp = sortOrder === SortingOrder.Descending ? '$lt' : '$gt'
+      ;(query as Record<string, unknown>)[sortKey] = { [cursorOp]: cursor }
+    }
 
     const options: FindOptions<Issue> = {
       sort: { [sortKey]: sortOrder } as Record<string, SortingOrder>,
-      limit,
+      limit: DEFAULT_PAGE_SIZE + 1,
       total: true,
       // Expand status and assignee refs so UI can show human-readable values
       lookup: {
@@ -133,14 +145,14 @@ export async function getIssues(
     }
 
     const result = await client.findAll(TRACKER_CLASS.Issue, query, options)
-
-    // When page > 0, slice off already-fetched items
-    const items = page > 0 ? [...result].slice(page * DEFAULT_PAGE_SIZE) : [...result]
+    const all = [...result]
+    const hasMore = all.length > DEFAULT_PAGE_SIZE
+    const items = hasMore ? all.slice(0, DEFAULT_PAGE_SIZE) : all
 
     return {
       items,
       total: result.total,
-      hasMore: (page + 1) * DEFAULT_PAGE_SIZE < result.total,
+      hasMore,
     }
   } catch (error) {
     throw wrapRepositoryError(DOMAIN, 'getIssues', error)
