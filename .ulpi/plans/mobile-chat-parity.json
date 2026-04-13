@@ -6,7 +6,7 @@
     "defaultReview": "claude",
     "agent": "expo-react-native-engineer"
   },
-  "overview": "Close all chat gaps between the web chunter/chat experience and the Expo mobile app: channel settings, members, pinned messages, thread correctness, message edit/delete, DM/group-DM creation, rich text editor with @mentions, thread browsing, online/presence, saved messages, per-channel mute, persistent drafts, history navigation, typing indicators, and channel administration. Video support explicitly deferred.",
+  "overview": "Close the remaining chat gaps between the web chunter/chat experience and the Expo mobile app: channel lifecycle and membership actions, settings, pins, history navigation, typing, message edit/delete, DM/group-DM creation, richer compose, thread browsing, saved messages, presence, mute controls, persistent drafts, and video-message support.",
   "scopeChallenge": {
     "assumedMode": "HOLD",
     "assumedDefaultReview": "claude",
@@ -466,7 +466,7 @@
     {
       "id": "TASK-014",
       "title": "Add rich text editor toolbar and @mention insertion",
-      "description": "Upgrade the chat message composer with a formatting toolbar and inline @mention picker.",
+      "description": "Upgrade the shared chat message composer with a formatting toolbar and inline @mention picker.",
       "priority": "P1",
       "type": "feature",
       "effort": "M",
@@ -475,21 +475,21 @@
         "TASK-002"
       ],
       "acceptanceCriteria": [
-        "Composer shows a toolbar with bold, italic, code, and link formatting actions that wrap selected text or insert markers at cursor.",
+        "The shared composer used by both channel and thread screens shows a toolbar with bold, italic, code, and link formatting actions that wrap selected text or insert markers at cursor.",
         "Typing @ triggers a searchable member suggestions overlay; selecting a member inserts a mention reference that renders as a tappable chip.",
         "Formatted content serializes to the same markup format the server expects and renders correctly via MarkupRenderer on receipt."
       ],
       "filesToModify": [
-        "mobile/src/components/features/RichTextEditor.tsx",
-        "mobile/src/app/(app)/chat/channel/[id].tsx"
+        "mobile/src/components/features/MessageInput.tsx",
+        "mobile/src/components/features/RichTextEditor.tsx"
       ],
       "filesToCreate": [
         "mobile/src/components/features/MentionSuggestions.tsx"
       ],
       "writeScope": [
+        "mobile/src/components/features/MessageInput.tsx",
         "mobile/src/components/features/RichTextEditor.tsx",
-        "mobile/src/components/features/MentionSuggestions.tsx",
-        "mobile/src/app/(app)/chat/channel/[id].tsx"
+        "mobile/src/components/features/MentionSuggestions.tsx"
       ],
       "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
       "review": "claude"
@@ -512,15 +512,15 @@
         "Tapping a thread row navigates to the existing thread screen; empty state shows when the user has no active threads."
       ],
       "filesToModify": [
+        "mobile/src/app/(app)/chat/index.tsx",
         "mobile/src/hooks/useThread.ts"
       ],
       "filesToCreate": [
-        "mobile/src/app/(app)/chat/threads.tsx",
-        "mobile/src/components/features/ThreadListRow.tsx"
+        "mobile/src/app/(app)/chat/threads.tsx"
       ],
       "writeScope": [
+        "mobile/src/app/(app)/chat/index.tsx",
         "mobile/src/app/(app)/chat/threads.tsx",
-        "mobile/src/components/features/ThreadListRow.tsx",
         "mobile/src/hooks/useThread.ts"
       ],
       "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
@@ -576,16 +576,16 @@
         "Tapping a saved message navigates to the source channel/thread; unsaving removes it from the list with optimistic update."
       ],
       "filesToModify": [
-        "mobile/src/repositories/chat.ts"
+        "mobile/src/app/(app)/chat/index.tsx"
       ],
       "filesToCreate": [
         "mobile/src/app/(app)/chat/saved.tsx",
         "mobile/src/components/features/SavedMessageRow.tsx"
       ],
       "writeScope": [
+        "mobile/src/app/(app)/chat/index.tsx",
         "mobile/src/app/(app)/chat/saved.tsx",
-        "mobile/src/components/features/SavedMessageRow.tsx",
-        "mobile/src/repositories/chat.ts"
+        "mobile/src/components/features/SavedMessageRow.tsx"
       ],
       "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
       "review": "claude"
@@ -649,6 +649,69 @@
       ],
       "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
       "review": "claude"
+    },
+    {
+      "id": "TASK-020",
+      "title": "Add channel lifecycle and membership actions",
+      "description": "Close the remaining channel administration gap by adding join/leave plus archive/delete actions to the settings shell and list surfaces.",
+      "priority": "P1",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [
+        "TASK-001",
+        "TASK-002",
+        "TASK-005"
+      ],
+      "acceptanceCriteria": [
+        "Channel settings exposes join/leave actions where appropriate and archive/delete actions when the current user has permission.",
+        "Archive/delete mutations remove or update the affected conversation in the chat list without leaving stale routes behind.",
+        "Join/leave and archive/delete failures show recoverable errors and do not desynchronize list membership state."
+      ],
+      "filesToModify": [
+        "mobile/src/app/(app)/chat/channel/settings/[id].tsx",
+        "mobile/src/app/(app)/chat/index.tsx",
+        "mobile/src/repositories/chat.ts"
+      ],
+      "filesToCreate": [],
+      "writeScope": [
+        "mobile/src/app/(app)/chat/channel/settings/[id].tsx",
+        "mobile/src/app/(app)/chat/index.tsx",
+        "mobile/src/repositories/chat.ts"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-021",
+      "title": "Add video message support",
+      "description": "Close the remaining media gap by rendering video attachments and messages with an explicit playback path instead of generic file-only handling.",
+      "priority": "P2",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [
+        "TASK-008"
+      ],
+      "acceptanceCriteria": [
+        "Video attachments and messages render with a recognizable inline preview and play affordance inside channel and thread timelines.",
+        "Opening a video launches a stable playback surface with loading, error, and unsupported-format fallbacks.",
+        "Non-video attachments keep their current behavior and video detection does not misclassify images or generic files."
+      ],
+      "filesToModify": [
+        "mobile/src/components/features/MessageBubble.tsx",
+        "mobile/src/components/features/AttachmentViewer.tsx"
+      ],
+      "filesToCreate": [
+        "mobile/src/components/features/VideoMessage.tsx"
+      ],
+      "writeScope": [
+        "mobile/src/components/features/MessageBubble.tsx",
+        "mobile/src/components/features/AttachmentViewer.tsx",
+        "mobile/src/components/features/VideoMessage.tsx"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
     }
   ],
   "failureModes": [
@@ -696,10 +759,20 @@
       "failure": "Presence shows stale online",
       "detection": "WebSocket disconnects without cleanup",
       "recovery": "Presence hook clears all status on disconnect event"
+    },
+    {
+      "failure": "Channel archive/delete leaves stale list state",
+      "detection": "Removed channel still appears in list or remains open",
+      "recovery": "Invalidate chat list and redirect away from inaccessible channel after successful mutation"
+    },
+    {
+      "failure": "Video message fails on unsupported media",
+      "detection": "User taps video and sees blank surface",
+      "recovery": "Show explicit unsupported/error state and preserve download/view fallback"
     }
   ],
   "shipCut": {
-    "minimumCoherentCutAfter": "TASK-013",
+    "minimumCoherentCutAfter": "TASK-020",
     "delivers": [
       "channel settings shell",
       "active conversation lifecycle correctness",
@@ -707,7 +780,8 @@
       "pinned messages",
       "thread correctness",
       "message edit and delete",
-      "create DM and group DM"
+      "create DM and group DM",
+      "channel join/leave/archive/delete"
     ],
     "safeToDefer": [
       "rich text editor toolbar",
@@ -718,7 +792,8 @@
       "persistent message drafts",
       "history search / jump-to-date",
       "channel create/edit administration",
-      "typing indicator parity"
+      "typing indicator parity",
+      "video-message support"
     ]
   },
   "testCoverageMap": [
@@ -740,10 +815,12 @@
     "TASK-016: presence dot rendering + DM header status + disconnect degradation",
     "TASK-017: save/unsave action + saved messages screen + source navigation",
     "TASK-018: mute toggle + unread badge exclusion + server-side persistence",
-    "TASK-019: draft persistence + send-clear + workspace-switch-clear + draft indicator"
+    "TASK-019: draft persistence + send-clear + workspace-switch-clear + draft indicator",
+    "TASK-020: join/leave and archive/delete actions + stale-route recovery",
+    "TASK-021: inline video preview + playback fallback + media-type safety"
   ],
   "executionSummary": {
-    "taskCount": 19,
+    "taskCount": 21,
     "parallelizableFoundations": [
       "TASK-001",
       "TASK-003"
@@ -764,6 +841,12 @@
       "TASK-001",
       "TASK-002",
       "TASK-013"
+    ],
+    "channelLifecyclePath": [
+      "TASK-001",
+      "TASK-002",
+      "TASK-005",
+      "TASK-020"
     ],
     "secondaryPaths": [
       [
@@ -816,6 +899,10 @@
       [
         "TASK-003",
         "TASK-019"
+      ],
+      [
+        "TASK-008",
+        "TASK-021"
       ]
     ]
   },
@@ -892,6 +979,14 @@
     ],
     "TASK-019": [
       "TASK-003"
+    ],
+    "TASK-020": [
+      "TASK-001",
+      "TASK-002",
+      "TASK-005"
+    ],
+    "TASK-021": [
+      "TASK-008"
     ]
   }
 }

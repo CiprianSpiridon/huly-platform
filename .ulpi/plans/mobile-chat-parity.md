@@ -2,12 +2,13 @@
 
 ## Overview
 
-Close the highest-value chat gap between the web chunter/chat experience and the Expo mobile app.
+Close the remaining chat gaps between the web chunter/chat experience and the Expo mobile app.
 Current mobile chat covers channel/DM list, channel timeline, thread view, reactions, and basic
-attachments. Web chat additionally exposes channel settings, members, pinned messages, richer
-thread semantics, channel history navigation, typing indicators, and DM-to-private-channel flows.
-This plan targets those user-facing chat workflows without widening into cross-app inline comments
-or workbench-specific side panels.
+attachments. This plan closes the remaining user-facing parity gaps: channel lifecycle and
+membership actions, settings, pins, history navigation, typing, message edit/delete, DM/group-DM
+creation, richer compose, thread browsing, saved messages, presence, mute controls, persistent
+drafts, and video-message support, without widening into cross-app inline comments or
+workbench-specific side panels.
 
 ## Scope Challenge
 
@@ -71,10 +72,10 @@ or workbench-specific side panels.
 
 ## Scope Update (2026-04-13)
 
-Added TASK-012 through TASK-019 to cover gaps identified in the feature-comparison audit:
+Added TASK-012 through TASK-021 to cover gaps identified in the feature-comparison audit:
 edit/delete message, create DM/group DM, rich text editor with @mentions, thread browsing,
-online/presence status, saved/bookmarked messages, per-channel mute settings, and persistent
-message drafts. Video support explicitly deferred.
+online/presence status, saved/bookmarked messages, per-channel mute settings, persistent
+message drafts, channel lifecycle/membership actions, and video support.
 
 ## Tasks
 
@@ -88,7 +89,7 @@ history search/jump, message edit/delete, DM creation, saved messages, and threa
 - **Agent:** expo-react-native-engineer
 - **Priority:** P0
 - **writeScope:** `mobile/src/repositories/chat.ts`, `mobile/src/repositories/index.ts`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit && rg -n "pinned|history|edit|delete|saved|dm|group" src/repositories/chat.ts`
 - **Acceptance Criteria:**
   1. Repository exposes typed methods for channel detail, members, pinned messages, channel update, DM conversion, message-history search, message edit/delete, DM/group-DM creation, and saved messages.
   2. Thread fetch/send paths distinguish parent timeline messages from thread replies instead of returning ambiguous mixed payloads.
@@ -105,7 +106,7 @@ and thread correctness all share the same cache model.
 - **Priority:** P0
 - **Depends on:** `TASK-001`
 - **writeScope:** `mobile/src/hooks/useChannels.ts`, `mobile/src/hooks/useMessages.ts`, `mobile/src/hooks/useThread.ts`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit && rg -n "invalidateQueries|queryKey|thread" src/hooks/useChannels.ts src/hooks/useMessages.ts src/hooks/useThread.ts`
 - **Acceptance Criteria:**
   1. Hooks expose channel-detail, pinned-message, and history-search queries without screens calling repositories directly.
   2. Pin/unpin, channel-update, DM-conversion, and thread-reaction mutations invalidate the exact channel or thread keys they affect.
@@ -122,7 +123,7 @@ the app shell and WS invalidation rules.
 - **Priority:** P0
 - **Depends on:** `TASK-001`
 - **writeScope:** `mobile/src/store/chat.ts`, `mobile/src/hooks/useChatUnread.ts`, `mobile/src/realtime/rules/chat.ts`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit && rg -n "unread|draft|workspace" src/store/chat.ts src/hooks/useChatUnread.ts src/realtime/rules/chat.ts`
 - **Acceptance Criteria:**
   1. Unread sync uses the correct account identity and rebuilds unread state from fresh server contexts.
   2. Realtime chat invalidation does not leave stale unread counts behind after channel/message mutations.
@@ -139,7 +140,7 @@ semantics can distinguish what the user is actually viewing.
 - **Priority:** P0
 - **Depends on:** `TASK-003`
 - **writeScope:** `mobile/src/app/(app)/chat/channel/[id].tsx`, `mobile/src/app/(app)/chat/thread/[id].tsx`, `mobile/src/store/chat.ts`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit && rg -n "setActive|active.*thread|active.*channel" 'src/app/(app)/chat/channel/[id].tsx' 'src/app/(app)/chat/thread/[id].tsx' src/store/chat.ts`
 - **Acceptance Criteria:**
   1. Opening a channel or thread registers an active conversation state that distinguishes channel timeline from thread view.
   2. Self-generated replies in the currently-open conversation do not increment unread counts.
@@ -156,7 +157,7 @@ members, pins, history, and edit flows.
 - **Priority:** P1
 - **Depends on:** `TASK-001`, `TASK-002`
 - **writeScope:** `mobile/src/app/(app)/chat/channel/[id].tsx`, `mobile/src/app/(app)/chat/channel/settings/[id].tsx`, `mobile/src/components/features/ChannelHeader.tsx`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit && test -f 'src/app/(app)/chat/channel/settings/[id].tsx' && test -f 'src/components/features/ChannelHeader.tsx' && rg -n "members|pins|history|edit" 'src/app/(app)/chat/channel/settings/[id].tsx' src/components/features/ChannelHeader.tsx`
 - **Acceptance Criteria:**
   1. Channel screen header exposes navigation into a typed settings route.
   2. Settings route supports channel name, description, privacy, and basic metadata display/edit.
@@ -173,7 +174,7 @@ match web behavior more closely.
 - **Priority:** P1
 - **Depends on:** `TASK-001`, `TASK-002`, `TASK-005`
 - **writeScope:** `mobile/src/app/(app)/chat/channel/members/[id].tsx`, `mobile/src/components/features/ChannelMemberRow.tsx`, `mobile/src/app/(app)/chat/index.tsx`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit && test -f 'src/app/(app)/chat/channel/members/[id].tsx' && test -f 'src/components/features/ChannelMemberRow.tsx' && rg -n "convert|members|private channel|dm" 'src/app/(app)/chat/channel/members/[id].tsx' 'src/app/(app)/chat/index.tsx'`
 - **Acceptance Criteria:**
   1. Mobile exposes a members route from channel settings with readable participant rows and empty/error states.
   2. DM surfaces expose a conversion path to private channel only when the repository reports the action is valid.
@@ -190,7 +191,7 @@ screen.
 - **Priority:** P1
 - **Depends on:** `TASK-001`, `TASK-002`, `TASK-005`
 - **writeScope:** `mobile/src/app/(app)/chat/channel/pins/[id].tsx`, `mobile/src/components/features/PinnedMessageRow.tsx`, `mobile/src/app/(app)/chat/channel/settings/[id].tsx`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit && test -f 'src/app/(app)/chat/channel/pins/[id].tsx' && test -f 'src/components/features/PinnedMessageRow.tsx' && rg -n "pin|unpin" 'src/app/(app)/chat/channel/settings/[id].tsx' 'src/app/(app)/chat/channel/pins/[id].tsx'`
 - **Acceptance Criteria:**
   1. Channel settings route exposes pinned-message browsing through a dedicated pins screen.
   2. Pinned list renders stable previews that navigate back to the underlying message or thread context.
@@ -207,7 +208,7 @@ real thread surface instead of a channel-side variant.
 - **Priority:** P0
 - **Depends on:** `TASK-001`, `TASK-002`, `TASK-003`, `TASK-004`
 - **writeScope:** `mobile/src/repositories/chat.ts`, `mobile/src/hooks/useThread.ts`, `mobile/src/app/(app)/chat/thread/[id].tsx`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit && rg -n "thread|reply|attachment|reaction" src/repositories/chat.ts src/hooks/useThread.ts 'src/app/(app)/chat/thread/[id].tsx'`
 - **Acceptance Criteria:**
   1. Thread screen reads and mutates thread-specific cache keys, including reactions and reply inserts.
   2. Reply creation uses the correct thread semantics so replies do not leak back into the main channel timeline.
@@ -225,7 +226,7 @@ history query behavior, and jump semantics.
 - **Priority:** P2
 - **Depends on:** `TASK-001`, `TASK-002`, `TASK-005`
 - **writeScope:** `mobile/src/app/(app)/chat/channel/search/[id].tsx`, `mobile/src/components/features/JumpToDatePicker.tsx`, `mobile/src/hooks/useMessages.ts`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit && test -f 'src/app/(app)/chat/channel/search/[id].tsx' && test -f 'src/components/features/JumpToDatePicker.tsx' && rg -n "jump|history|search" 'src/app/(app)/chat/channel/search/[id].tsx' src/hooks/useMessages.ts`
 - **Acceptance Criteria:**
   1. Searchable message history integrates with the settings-shell entrypoint established in `TASK-005` without collapsing the main message list state.
   2. Jump-to-date loads the nearest history window and lands the user on a stable anchor message.
@@ -242,7 +243,7 @@ channel metadata without leaving mobile.
 - **Priority:** P2
 - **Depends on:** `TASK-001`, `TASK-002`, `TASK-005`
 - **writeScope:** `mobile/src/app/(app)/chat/new.tsx`, `mobile/src/app/(app)/chat/edit/[id].tsx`, `mobile/src/components/features/ChannelForm.tsx`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit && test -f 'src/app/(app)/chat/new.tsx' && test -f 'src/app/(app)/chat/edit/[id].tsx' && test -f 'src/components/features/ChannelForm.tsx'`
 - **Acceptance Criteria:**
   1. Mobile exposes typed routes for creating a channel and editing an existing channel.
   2. Channel form supports name, description, privacy, and member selection with validation.
@@ -305,10 +306,10 @@ Upgrade the chat message composer with a formatting toolbar and inline @mention 
 - **Agent:** expo-react-native-engineer
 - **Priority:** P1
 - **Depends on:** `TASK-002`
-- **writeScope:** `mobile/src/components/features/RichTextEditor.tsx`, `mobile/src/components/features/MentionSuggestions.tsx`, `mobile/src/app/(app)/chat/channel/[id].tsx`
+- **writeScope:** `mobile/src/components/features/MessageInput.tsx`, `mobile/src/components/features/RichTextEditor.tsx`, `mobile/src/components/features/MentionSuggestions.tsx`
 - **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
-  1. Composer shows a toolbar with bold, italic, code, and link formatting actions that wrap selected text or insert markers at cursor.
+  1. The shared composer used by both channel and thread screens shows a toolbar with bold, italic, code, and link formatting actions that wrap selected text or insert markers at cursor.
   2. Typing "@" triggers a searchable member suggestions overlay; selecting a member inserts a mention reference that renders as a tappable chip.
   3. Formatted content serializes to the same markup format the server expects and renders correctly via MarkupRenderer on receipt.
 
@@ -321,7 +322,7 @@ Add a threads list screen accessible from the chat tab showing all active thread
 - **Agent:** expo-react-native-engineer
 - **Priority:** P2
 - **Depends on:** `TASK-002`, `TASK-008`
-- **writeScope:** `mobile/src/app/(app)/chat/threads.tsx`, `mobile/src/components/features/ThreadListRow.tsx`, `mobile/src/hooks/useThread.ts`
+- **writeScope:** `mobile/src/app/(app)/chat/index.tsx`, `mobile/src/app/(app)/chat/threads.tsx`, `mobile/src/hooks/useThread.ts`
 - **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Chat tab exposes a threads entry point that lists all threads the user participates in, sorted by latest reply.
@@ -353,7 +354,7 @@ Allow users to save messages for later reference and browse saved messages from 
 - **Agent:** expo-react-native-engineer
 - **Priority:** P2
 - **Depends on:** `TASK-001`, `TASK-002`
-- **writeScope:** `mobile/src/app/(app)/chat/saved.tsx`, `mobile/src/components/features/SavedMessageRow.tsx`, `mobile/src/repositories/chat.ts`
+- **writeScope:** `mobile/src/app/(app)/chat/index.tsx`, `mobile/src/app/(app)/chat/saved.tsx`, `mobile/src/components/features/SavedMessageRow.tsx`
 - **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Long-press on any message shows a "Save" action; saved messages are stored server-side via the existing savedMessages API.
@@ -392,6 +393,40 @@ Upgrade in-memory chat drafts to persist across app restarts via AsyncStorage.
   2. Drafts clear on successful message send and on workspace switch.
   3. Draft indicator (pencil icon) shows in the channel list for conversations with unsent drafts.
 
+### TASK-020: Add channel lifecycle and membership actions
+
+Close the remaining channel administration gap by adding join/leave plus archive/delete actions to
+the settings shell and list surfaces.
+
+- **Type:** feature
+- **Effort:** M
+- **Agent:** expo-react-native-engineer
+- **Priority:** P1
+- **Depends on:** `TASK-001`, `TASK-002`, `TASK-005`
+- **writeScope:** `mobile/src/app/(app)/chat/channel/settings/[id].tsx`, `mobile/src/app/(app)/chat/index.tsx`, `mobile/src/repositories/chat.ts`
+- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **Acceptance Criteria:**
+  1. Channel settings exposes join/leave actions where appropriate and archive/delete actions when the current user has permission.
+  2. Archive/delete mutations remove or update the affected conversation in the chat list without leaving stale routes behind.
+  3. Join/leave and archive/delete failures show recoverable errors and do not desynchronize list membership state.
+
+### TASK-021: Add video message support
+
+Close the remaining media gap by rendering video attachments/messages with an explicit playback path
+instead of generic file-only handling.
+
+- **Type:** feature
+- **Effort:** M
+- **Agent:** expo-react-native-engineer
+- **Priority:** P2
+- **Depends on:** `TASK-008`
+- **writeScope:** `mobile/src/components/features/MessageBubble.tsx`, `mobile/src/components/features/AttachmentViewer.tsx`, `mobile/src/components/features/VideoMessage.tsx`
+- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **Acceptance Criteria:**
+  1. Video attachments/messages render with a recognizable inline preview and play affordance inside channel and thread timelines.
+  2. Opening a video launches a stable playback surface with loading, error, and unsupported-format fallbacks.
+  3. Non-video attachments keep their current behavior and video detection does not misclassify images or generic files.
+
 ## Failure Modes
 
 | Failure | Detection | Recovery |
@@ -405,10 +440,12 @@ Upgrade in-memory chat drafts to persist across app restarts via AsyncStorage.
 | Duplicate DM creation | Two users create DM with each other simultaneously | Repository checks existing DMs before creating; navigates to existing if found |
 | Draft restored after send | AsyncStorage write races with send completion | Clear draft synchronously on send initiation, not on server confirmation |
 | Presence shows stale online | WebSocket disconnects without cleanup | Presence hook clears all status on disconnect event |
+| Channel archive/delete leaves stale list state | Removed channel still appears in list or remains open | Invalidate chat list and redirect away from inaccessible channel after successful mutation |
+| Video message fails on unsupported media | User taps video and sees blank surface | Show explicit unsupported/error state and preserve download/view fallback |
 
 ## Ship Cut
 
-If execution stops halfway, the minimum coherent cut is after `TASK-013`.
+If execution stops halfway, the minimum coherent cut is after `TASK-020`.
 
 That cut yields:
 - channel settings shell
@@ -418,6 +455,7 @@ That cut yields:
 - thread correctness
 - message edit and delete
 - create DM / group DM
+- channel join/leave/archive/delete
 
 Items below that cut and safe to defer:
 - rich text editor toolbar
@@ -429,6 +467,7 @@ Items below that cut and safe to defer:
 - history search / jump-to-date
 - channel create/edit administration
 - typing indicator parity
+- video-message support
 
 ## Test Coverage Map
 
@@ -451,10 +490,12 @@ Items below that cut and safe to defer:
 - `TASK-017`: save/unsave action + saved messages screen + source navigation
 - `TASK-018`: mute toggle + unread badge exclusion + server-side persistence
 - `TASK-019`: draft persistence + send-clear + workspace-switch-clear + draft indicator
+- `TASK-020`: join/leave and archive/delete actions + stale-route recovery
+- `TASK-021`: inline video preview + playback fallback + media-type safety
 
 ## Execution Summary
 
-- Tasks: 19
+- Tasks: 21
 - Parallelizable foundations:
   - `TASK-001`
   - `TASK-003`
@@ -464,6 +505,8 @@ Items below that cut and safe to defer:
   - `TASK-001 -> TASK-002 -> TASK-012`
 - DM creation path (short):
   - `TASK-001 -> TASK-002 -> TASK-013`
+- Channel lifecycle path:
+  - `TASK-001 -> TASK-002 -> TASK-005 -> TASK-020`
 - Secondary path:
   - `TASK-001 -> TASK-002 -> TASK-005 -> TASK-006`
   - `TASK-001 -> TASK-002 -> TASK-005 -> TASK-007`
@@ -480,6 +523,7 @@ Items below that cut and safe to defer:
   - `TASK-001 -> TASK-002 -> TASK-017`
   - `TASK-005 -> TASK-018`
   - `TASK-003 -> TASK-019`
+  - `TASK-008 -> TASK-021`
 
 ## Task Dependencies
 
@@ -495,6 +539,7 @@ TASK-001 -> TASK-010
 TASK-001 -> TASK-012
 TASK-001 -> TASK-013
 TASK-001 -> TASK-017
+TASK-001 -> TASK-020
 
 TASK-002 -> TASK-005
 TASK-002 -> TASK-006
@@ -507,6 +552,7 @@ TASK-002 -> TASK-013
 TASK-002 -> TASK-014
 TASK-002 -> TASK-015
 TASK-002 -> TASK-017
+TASK-002 -> TASK-020
 
 TASK-003 -> TASK-004
 TASK-003 -> TASK-008
@@ -521,8 +567,10 @@ TASK-005 -> TASK-007
 TASK-005 -> TASK-009
 TASK-005 -> TASK-010
 TASK-005 -> TASK-018
+TASK-005 -> TASK-020
 
 TASK-008 -> TASK-015
+TASK-008 -> TASK-021
 
 TASK-011 -> TASK-016
 ```
