@@ -2,13 +2,13 @@
   "plan": {
     "name": "mobile-chat-parity",
     "title": "Mobile Chat Feature Parity",
-    "mode": "HOLD",
+    "mode": "EXPANSION",
     "defaultReview": "claude",
     "agent": "expo-react-native-engineer"
   },
   "overview": "Close the remaining chat gaps between the web chunter/chat experience and the Expo mobile app: channel lifecycle and membership actions, settings, pins, history navigation, typing, message edit/delete, DM/group-DM creation, richer compose, thread browsing, saved messages, presence, mute controls, persistent drafts, and video-message support.",
   "scopeChallenge": {
-    "assumedMode": "HOLD",
+    "assumedMode": "EXPANSION",
     "assumedDefaultReview": "claude",
     "scopeCuts": [
       "Focus on chat parity inside mobile chat routes, hooks, store, repository, and realtime rules",
@@ -79,7 +79,7 @@
         "mobile/src/repositories/chat.ts",
         "mobile/src/repositories/index.ts"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit && rg -n \"pinned|history|edit|delete|saved|dm|group\" src/repositories/chat.ts",
       "review": "claude"
     },
     {
@@ -109,7 +109,7 @@
         "mobile/src/hooks/useMessages.ts",
         "mobile/src/hooks/useThread.ts"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit && rg -n \"invalidateQueries|queryKey|thread\" src/hooks/useChannels.ts src/hooks/useMessages.ts src/hooks/useThread.ts",
       "review": "claude"
     },
     {
@@ -139,7 +139,7 @@
         "mobile/src/hooks/useChatUnread.ts",
         "mobile/src/realtime/rules/chat.ts"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit && rg -n \"unread|draft|workspace\" src/store/chat.ts src/hooks/useChatUnread.ts src/realtime/rules/chat.ts",
       "review": "claude"
     },
     {
@@ -169,7 +169,7 @@
         "mobile/src/app/(app)/chat/thread/[id].tsx",
         "mobile/src/store/chat.ts"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit && rg -n \"setActive|active.*thread|active.*channel\" 'src/app/(app)/chat/channel/[id].tsx' 'src/app/(app)/chat/thread/[id].tsx' src/store/chat.ts",
       "review": "claude"
     },
     {
@@ -201,7 +201,7 @@
         "mobile/src/app/(app)/chat/channel/settings/[id].tsx",
         "mobile/src/components/features/ChannelHeader.tsx"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit && test -f 'src/app/(app)/chat/channel/settings/[id].tsx' && test -f 'src/components/features/ChannelHeader.tsx' && rg -n \"members|pins|history|edit\" 'src/app/(app)/chat/channel/settings/[id].tsx' src/components/features/ChannelHeader.tsx",
       "review": "claude"
     },
     {
@@ -234,7 +234,7 @@
         "mobile/src/components/features/ChannelMemberRow.tsx",
         "mobile/src/app/(app)/chat/index.tsx"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit && test -f 'src/app/(app)/chat/channel/members/[id].tsx' && test -f 'src/components/features/ChannelMemberRow.tsx' && rg -n \"convert|members|private channel|dm\" 'src/app/(app)/chat/channel/members/[id].tsx' 'src/app/(app)/chat/index.tsx'",
       "review": "claude"
     },
     {
@@ -267,14 +267,14 @@
         "mobile/src/app/(app)/chat/channel/pins/[id].tsx",
         "mobile/src/components/features/PinnedMessageRow.tsx"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit && test -f 'src/app/(app)/chat/channel/pins/[id].tsx' && test -f 'src/components/features/PinnedMessageRow.tsx' && rg -n \"pin|unpin\" 'src/app/(app)/chat/channel/settings/[id].tsx' 'src/app/(app)/chat/channel/pins/[id].tsx'",
       "review": "claude"
     },
     {
       "id": "TASK-008",
       "title": "Bring thread flow to parity-correctness",
       "description": "Correct the thread model and screen behavior so thread replies, reactions, and attachments behave like a real thread surface instead of a channel-side variant.",
-      "priority": "P0",
+      "priority": "P1",
       "type": "feature",
       "effort": "L",
       "agent": "expo-react-native-engineer",
@@ -300,7 +300,7 @@
         "mobile/src/hooks/useThread.ts",
         "mobile/src/app/(app)/chat/thread/[id].tsx"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit && rg -n \"thread|reply|attachment|reaction\" src/repositories/chat.ts src/hooks/useThread.ts 'src/app/(app)/chat/thread/[id].tsx'",
       "review": "claude"
     },
     {
@@ -333,7 +333,7 @@
         "mobile/src/components/features/JumpToDatePicker.tsx",
         "mobile/src/hooks/useMessages.ts"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit && test -f 'src/app/(app)/chat/channel/search/[id].tsx' && test -f 'src/components/features/JumpToDatePicker.tsx' && rg -n \"jump|history|search\" 'src/app/(app)/chat/channel/search/[id].tsx' src/hooks/useMessages.ts",
       "review": "claude"
     },
     {
@@ -365,7 +365,7 @@
         "mobile/src/app/(app)/chat/edit/[id].tsx",
         "mobile/src/components/features/ChannelForm.tsx"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit && test -f 'src/app/(app)/chat/new.tsx' && test -f 'src/app/(app)/chat/edit/[id].tsx' && test -f 'src/components/features/ChannelForm.tsx'",
       "review": "claude"
     },
     {
@@ -397,20 +397,20 @@
         "mobile/src/components/features/TypingIndicator.tsx",
         "mobile/src/realtime/TransactorConnection.ts"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit && test -f 'src/components/features/TypingIndicator.tsx' && rg -n \"typing\" 'src/app/(app)/chat/channel/[id].tsx' src/components/features/TypingIndicator.tsx src/realtime/TransactorConnection.ts",
       "review": "claude"
     },
     {
       "id": "TASK-012",
       "title": "Add message edit and delete",
       "description": "Add edit and delete actions to messages in channel and thread views via long-press context menu.",
-      "priority": "P0",
+      "priority": "P1",
       "type": "feature",
       "effort": "M",
       "agent": "expo-react-native-engineer",
       "dependsOn": [
-        "TASK-001",
-        "TASK-002"
+        "TASK-005",
+        "TASK-008"
       ],
       "acceptanceCriteria": [
         "Long-press on a message authored by the current user shows Edit and Delete actions; messages by others show only Delete if the user has moderation rights.",
@@ -428,20 +428,20 @@
         "mobile/src/components/features/MessageBubble.tsx",
         "mobile/src/repositories/chat.ts"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit && rg -n \"edit|delete|edited\" 'src/app/(app)/chat/channel/[id].tsx' src/components/features/MessageBubble.tsx src/repositories/chat.ts",
       "review": "claude"
     },
     {
       "id": "TASK-013",
       "title": "Add create DM and group DM flow",
       "description": "Allow users to initiate new direct message and group DM conversations from the chat list.",
-      "priority": "P0",
+      "priority": "P1",
       "type": "feature",
       "effort": "M",
       "agent": "expo-react-native-engineer",
       "dependsOn": [
-        "TASK-001",
-        "TASK-002"
+        "TASK-002",
+        "TASK-006"
       ],
       "acceptanceCriteria": [
         "Chat list exposes a New Message entry point that opens a member selector with search for starting 1:1 or group DMs.",
@@ -460,14 +460,14 @@
         "mobile/src/components/features/MemberSelector.tsx",
         "mobile/src/app/(app)/chat/index.tsx"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit && test -f 'src/app/(app)/chat/new-dm.tsx' && test -f 'src/components/features/MemberSelector.tsx' && rg -n \"New Message|group|duplicate|existing\" 'src/app/(app)/chat/new-dm.tsx' 'src/app/(app)/chat/index.tsx'",
       "review": "claude"
     },
     {
       "id": "TASK-014",
       "title": "Add rich text editor toolbar and @mention insertion",
       "description": "Upgrade the shared chat message composer with a formatting toolbar and inline @mention picker.",
-      "priority": "P1",
+      "priority": "P2",
       "type": "feature",
       "effort": "M",
       "agent": "expo-react-native-engineer",
@@ -491,7 +491,7 @@
         "mobile/src/components/features/RichTextEditor.tsx",
         "mobile/src/components/features/MentionSuggestions.tsx"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit && test -f 'src/components/features/RichTextEditor.tsx' && test -f 'src/components/features/MentionSuggestions.tsx' && rg -n \"mention|bold|italic|code|link\" src/components/features/MessageInput.tsx src/components/features/RichTextEditor.tsx src/components/features/MentionSuggestions.tsx",
       "review": "claude"
     },
     {
@@ -523,7 +523,7 @@
         "mobile/src/app/(app)/chat/threads.tsx",
         "mobile/src/hooks/useThread.ts"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit && test -f 'src/app/(app)/chat/threads.tsx' && rg -n \"threads|router|Thread\" 'src/app/(app)/chat/index.tsx' 'src/app/(app)/chat/threads.tsx' src/hooks/useThread.ts",
       "review": "claude"
     },
     {
@@ -555,7 +555,7 @@
         "mobile/src/hooks/usePresence.ts",
         "mobile/src/realtime/TransactorConnection.ts"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit && test -f 'src/hooks/usePresence.ts' && rg -n \"presence|online|last seen\" src/components/ui/AvatarCircle.tsx src/hooks/usePresence.ts src/realtime/TransactorConnection.ts",
       "review": "claude"
     },
     {
@@ -587,7 +587,7 @@
         "mobile/src/app/(app)/chat/saved.tsx",
         "mobile/src/components/features/SavedMessageRow.tsx"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit && test -f 'src/app/(app)/chat/saved.tsx' && test -f 'src/components/features/SavedMessageRow.tsx' && rg -n \"saved|bookmark|unsave\" 'src/app/(app)/chat/index.tsx' 'src/app/(app)/chat/saved.tsx'",
       "review": "claude"
     },
     {
@@ -617,7 +617,7 @@
         "mobile/src/repositories/chat.ts",
         "mobile/src/hooks/useChannels.ts"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit && rg -n \"mute|notification\" 'src/app/(app)/chat/channel/settings/[id].tsx' src/repositories/chat.ts src/hooks/useChannels.ts",
       "review": "claude"
     },
     {
@@ -647,7 +647,7 @@
         "mobile/src/app/(app)/chat/channel/[id].tsx",
         "mobile/src/app/(app)/chat/thread/[id].tsx"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit && rg -n \"draft|AsyncStorage|pencil\" src/store/chat.ts 'src/app/(app)/chat/channel/[id].tsx' 'src/app/(app)/chat/thread/[id].tsx'",
       "review": "claude"
     },
     {
@@ -679,7 +679,7 @@
         "mobile/src/app/(app)/chat/index.tsx",
         "mobile/src/repositories/chat.ts"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit && rg -n \"join|leave|archive|delete\" 'src/app/(app)/chat/channel/settings/[id].tsx' 'src/app/(app)/chat/index.tsx' src/repositories/chat.ts",
       "review": "claude"
     },
     {
@@ -710,7 +710,7 @@
         "mobile/src/components/features/AttachmentViewer.tsx",
         "mobile/src/components/features/VideoMessage.tsx"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit && test -f 'src/components/features/VideoMessage.tsx' && rg -n \"video|playback|unsupported\" src/components/features/MessageBubble.tsx src/components/features/AttachmentViewer.tsx src/components/features/VideoMessage.tsx",
       "review": "claude"
     }
   ],
@@ -821,89 +821,42 @@
   ],
   "executionSummary": {
     "taskCount": 21,
-    "parallelizableFoundations": [
-      "TASK-001",
-      "TASK-003"
+    "singleP0Root": "TASK-001",
+    "parallelAfterRoot": [
+      "TASK-002 (hooks parity)",
+      "TASK-003 (unread + active conversation)"
     ],
+    "convergencePoint": "TASK-008 (needs TASK-002 + TASK-004)",
     "criticalPath": [
       "TASK-001",
-      "TASK-002",
       "TASK-003",
       "TASK-004",
-      "TASK-008"
+      "TASK-008",
+      "TASK-012",
+      "TASK-011",
+      "TASK-019"
     ],
-    "messageEditDeletePath": [
-      "TASK-001",
-      "TASK-002",
-      "TASK-012"
-    ],
-    "dmCreationPath": [
-      "TASK-001",
-      "TASK-002",
-      "TASK-013"
-    ],
-    "channelLifecyclePath": [
+    "settingsAdminPath": [
       "TASK-001",
       "TASK-002",
       "TASK-005",
+      "TASK-006",
+      "TASK-013",
+      "TASK-020",
+      "TASK-018"
+    ],
+    "pinHistoryPath": [
+      "TASK-005",
+      "TASK-007",
       "TASK-020"
     ],
-    "secondaryPaths": [
-      [
-        "TASK-001",
-        "TASK-002",
-        "TASK-005",
-        "TASK-006"
-      ],
-      [
-        "TASK-001",
-        "TASK-002",
-        "TASK-005",
-        "TASK-007"
-      ]
-    ],
-    "richTextPath": [
-      "TASK-002",
-      "TASK-014"
-    ],
-    "threadBrowsingPath": [
-      "TASK-008",
-      "TASK-015"
-    ],
-    "presencePath": [
-      "TASK-011",
-      "TASK-016"
-    ],
     "optionalPaths": [
-      [
-        "TASK-005",
-        "TASK-009"
-      ],
-      [
-        "TASK-005",
-        "TASK-010"
-      ],
-      [
-        "TASK-004",
-        "TASK-011"
-      ],
-      [
-        "TASK-001",
-        "TASK-002",
-        "TASK-017"
-      ],
-      [
-        "TASK-005",
-        "TASK-018"
-      ],
-      [
-        "TASK-003",
-        "TASK-019"
-      ],
-      [
-        "TASK-008",
-        "TASK-021"
-      ]
+      ["TASK-005", "TASK-009"],
+      ["TASK-005", "TASK-010"],
+      ["TASK-002", "TASK-014"],
+      ["TASK-008", "TASK-013", "TASK-015", "TASK-017"],
+      ["TASK-011", "TASK-016"],
+      ["TASK-008", "TASK-021"]
     ]
   },
   "dependencyMap": {
@@ -919,7 +872,8 @@
     ],
     "TASK-005": [
       "TASK-001",
-      "TASK-002"
+      "TASK-002",
+      "TASK-004"
     ],
     "TASK-006": [
       "TASK-001",
@@ -949,41 +903,47 @@
     ],
     "TASK-011": [
       "TASK-003",
-      "TASK-004"
+      "TASK-004",
+      "TASK-012"
     ],
     "TASK-012": [
-      "TASK-001",
-      "TASK-002"
+      "TASK-005",
+      "TASK-008"
     ],
     "TASK-013": [
-      "TASK-001",
-      "TASK-002"
+      "TASK-002",
+      "TASK-006"
     ],
     "TASK-014": [
       "TASK-002"
     ],
     "TASK-015": [
       "TASK-002",
-      "TASK-008"
+      "TASK-008",
+      "TASK-013"
     ],
     "TASK-016": [
       "TASK-003",
       "TASK-011"
     ],
     "TASK-017": [
-      "TASK-001",
-      "TASK-002"
+      "TASK-002",
+      "TASK-015"
     ],
     "TASK-018": [
-      "TASK-005"
+      "TASK-005",
+      "TASK-007",
+      "TASK-020"
     ],
     "TASK-019": [
-      "TASK-003"
+      "TASK-003",
+      "TASK-008",
+      "TASK-011"
     ],
     "TASK-020": [
-      "TASK-001",
-      "TASK-002",
-      "TASK-005"
+      "TASK-005",
+      "TASK-007",
+      "TASK-013"
     ],
     "TASK-021": [
       "TASK-008"
