@@ -36,18 +36,31 @@ export default function ThreadScreen(): React.ReactNode {
 
   const reactionPickerRef = useRef<BottomSheetModal>(null)
   const [selectedMessage, setSelectedMessage] = useState<MessageItem | null>(null)
+  // Track pending attachment blob IDs to include in the next sent reply
+  const [pendingAttachmentIds, setPendingAttachmentIds] = useState<string[]>([])
 
-  // Handle send reply
+  // Handle send reply -- includes any pending attachment blob IDs
   const handleSend = useCallback(
     (content: string) => {
       if (data == null) return
+      const attachmentIds = pendingAttachmentIds.length > 0 ? [...pendingAttachmentIds] : undefined
       sendReply.mutate({
         messageId: id,
         spaceId: data.parent.space,
         content,
+        attachmentIds,
       })
+      setPendingAttachmentIds([])
     },
-    [id, data, sendReply]
+    [id, data, sendReply, pendingAttachmentIds]
+  )
+
+  // Handle attachment uploaded -- store blob ID for next send
+  const handleAttachmentUploaded = useCallback(
+    (blobId: string) => {
+      setPendingAttachmentIds((prev) => [...prev, blobId])
+    },
+    []
   )
 
   // Handle long-press for reaction picker
@@ -175,8 +188,10 @@ export default function ThreadScreen(): React.ReactNode {
         {/* Reply input */}
         <MessageInput
           onSend={handleSend}
+          onAttachmentUploaded={handleAttachmentUploaded}
           placeholder="Reply in thread..."
           isSending={sendReply.isPending}
+          showAttachButton
         />
       </KeyboardAvoidingView>
 

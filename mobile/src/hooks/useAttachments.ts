@@ -9,7 +9,10 @@
 
 import { useCallback, useMemo } from 'react'
 
-import { uploadFile, getLocalFileSize, getAuthenticatedFileUrl, getAuthenticatedThumbnailUrl } from '@/repositories/attachment'
+import { useQuery, type UseQueryResult } from '@tanstack/react-query'
+
+import { uploadFile, getLocalFileSize, getAuthenticatedFileUrl, getAuthenticatedThumbnailUrl, getAttachments, type AttachmentMeta } from '@/repositories/attachment'
+import { getClient } from '@/client'
 import { useUploadStore } from '@/store/upload'
 import type { UploadEntry, UploadStatus } from '@/store/upload'
 
@@ -103,6 +106,29 @@ export function useAttachmentUrl(
   )
 
   return { fileUrl, thumbnailUrl }
+}
+
+// ---------------------------------------------------------------------------
+// useDocAttachments -- fetch attachment docs for a parent document
+// ---------------------------------------------------------------------------
+
+const ATTACHMENTS_STALE_TIME = 30_000   // 30 seconds
+const ATTACHMENTS_GC_TIME = 5 * 60_000  // 5 minutes
+
+/**
+ * Hook to fetch attachment documents for a given parent doc (e.g. an Issue).
+ * Queries `attachment:class:Attachment` with `{ attachedTo: docId }`.
+ */
+export function useDocAttachments(
+  docId: string | undefined
+): UseQueryResult<AttachmentMeta[], Error> {
+  return useQuery<AttachmentMeta[], Error>({
+    queryKey: ['attachments', docId],
+    queryFn: () => getAttachments(docId!),
+    staleTime: ATTACHMENTS_STALE_TIME,
+    gcTime: ATTACHMENTS_GC_TIME,
+    enabled: docId !== undefined && getClient() !== null,
+  })
 }
 
 // ---------------------------------------------------------------------------

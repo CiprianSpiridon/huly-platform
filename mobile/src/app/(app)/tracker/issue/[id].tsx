@@ -9,6 +9,7 @@ import type { Issue, IssueStatus } from '@hcengineering/tracker'
 
 import { useIssue } from '@/hooks/useIssue'
 import { useUpdateIssue } from '@/hooks/useIssues'
+import { useDocAttachments } from '@/hooks/useAttachments'
 import { IssueDetailView } from '@/components/features/IssueDetail'
 import { IssueComments } from '@/components/features/IssueComments'
 import { StatusPicker } from '@/components/features/StatusPicker'
@@ -28,6 +29,9 @@ import type { IssuePriorityValue } from '@/components/ui/PriorityIcon'
 export default function IssueDetailScreen(): React.ReactNode {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { data: issue, isLoading, error, refetch } = useIssue(id)
+  const { data: attachments, refetch: refetchAttachments } = useDocAttachments(
+    issue != null ? (issue._id as string) : undefined
+  )
   const updateIssue = useUpdateIssue()
   const [refreshing, setRefreshing] = useState(false)
 
@@ -46,11 +50,11 @@ export default function IssueDetailScreen(): React.ReactNode {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
     try {
-      await refetch()
+      await Promise.all([refetch(), refetchAttachments()])
     } finally {
       setRefreshing(false)
     }
-  }, [refetch])
+  }, [refetch, refetchAttachments])
 
   const handleStatusPress = useCallback(() => {
     statusPickerRef.current?.present()
@@ -181,6 +185,12 @@ export default function IssueDetailScreen(): React.ReactNode {
       >
         <IssueDetailView
           issue={issue}
+          attachments={attachments?.map((a) => ({
+            blobId: a.blobId,
+            name: a.name,
+            size: a.size,
+            contentType: a.contentType,
+          }))}
           onStatusPress={handleStatusPress}
           onPriorityPress={handlePriorityPress}
           onAssigneePress={handleAssigneePress}

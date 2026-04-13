@@ -79,14 +79,17 @@ export function useGlobalSearch(
 
       for (const doc of result.docs) {
         const classRef = String(doc.doc?._class ?? '')
+        const rawDoc = doc.doc as Record<string, unknown> | undefined
         const item: GlobalSearchItem = {
           id: doc.id,
           title: doc.title ?? doc.shortTitle ?? 'Untitled',
           subtitle: doc.shortTitle ?? doc.description,
           category: 'issues',
           classRef,
-          // For messages, store the parent space (channel) for navigation
-          parentId: (doc.doc as Record<string, unknown>)?.attachedTo as string | undefined,
+          // For messages, store the parent channel (space) for navigation.
+          // The `space` field on a ChatMessage is the channel ID.
+          // Fall back to `attachedTo` for backwards compatibility.
+          parentId: (rawDoc?.space as string | undefined) ?? (rawDoc?.attachedTo as string | undefined),
         }
 
         if (classRef.includes('tracker')) {

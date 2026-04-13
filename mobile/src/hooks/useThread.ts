@@ -66,6 +66,7 @@ interface SendThreadReplyParams {
   messageId: string
   spaceId: string
   content: string
+  attachmentIds?: string[]
 }
 
 interface SendThreadReplyContext {
@@ -77,7 +78,7 @@ export function useSendThreadReply(): UseMutationResult<MessageItem, Error, Send
   const currentSocialId = useConnectionStore((s) => s.currentSocialId) ?? 'unknown'
 
   return useMutation<MessageItem, Error, SendThreadReplyParams, SendThreadReplyContext>({
-    mutationFn: (params) => sendThreadReply(params.messageId, params.content),
+    mutationFn: (params) => sendThreadReply(params.messageId, params.content, params.attachmentIds),
 
     onMutate: async (variables) => {
       await queryClient.cancelQueries({ queryKey: ['chat', 'thread', variables.messageId] })

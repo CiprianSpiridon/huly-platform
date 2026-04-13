@@ -44,13 +44,15 @@ export function useSelectWorkspace(): {
         const client = await getOrCreateAccountClient(token ?? undefined)
         const wsInfo = await client.selectWorkspace(workspaceUrl)
 
-        await setWorkspace(wsInfo)
-
         // Clear all cached queries from previous workspace
         queryClient.clear()
 
-        // Connect the data layer so query hooks can fetch
+        // Connect the data layer FIRST -- if this fails we must not persist
+        // workspace credentials that point to a broken connection.
         await connect(wsInfo.endpoint, wsInfo.workspace, wsInfo.token)
+
+        // Only persist after connect succeeds
+        await setWorkspace(wsInfo)
       } finally {
         setIsSelecting(false)
       }

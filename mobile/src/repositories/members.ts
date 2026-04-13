@@ -29,7 +29,7 @@ import { RepositoryError, wrapRepositoryError } from './base'
  */
 const CONTACT_CLASS = {
   Person: 'contact:class:Person' as Ref<Class<Doc>>,
-  Employee: 'contact:class:Employee' as Ref<Class<Doc>>,
+  Employee: 'contact:mixin:Employee' as Ref<Class<Doc>>,
   Member: 'contact:class:Member' as Ref<Class<Doc>>,
 } as const
 
@@ -56,7 +56,8 @@ export interface MemberItem {
 // ---------------------------------------------------------------------------
 
 /**
- * Fetch all workspace members. Returns Person documents sorted alphabetically.
+ * Fetch all workspace members. Queries the Employee mixin with active: true
+ * to get only actual workspace members (not all Person contacts).
  */
 export async function getMembers(): Promise<MemberItem[]> {
   const client = getClient()
@@ -66,8 +67,8 @@ export async function getMembers(): Promise<MemberItem[]> {
 
   try {
     const result = await client.findAll<Doc>(
-      CONTACT_CLASS.Person,
-      {},
+      CONTACT_CLASS.Employee,
+      { active: true } as Record<string, unknown>,
       {
         sort: { name: SortingOrder.Ascending } as Record<string, SortingOrder>,
         limit: 500,
@@ -93,7 +94,7 @@ export async function getMember(
 
   try {
     const doc = await client.findOne<Doc>(
-      CONTACT_CLASS.Person,
+      CONTACT_CLASS.Employee,
       { _id: memberId as Ref<Doc> } as Record<string, unknown>
     )
 

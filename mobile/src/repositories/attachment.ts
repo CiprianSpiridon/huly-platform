@@ -11,6 +11,7 @@ import * as FileSystem from 'expo-file-system'
 import * as Sharing from 'expo-sharing'
 
 import { getConfig } from '@/client/config'
+import { getClient } from '@/client'
 import { useAuthStore } from '@/store/auth'
 import { useWorkspaceStore } from '@/store/workspace'
 import { getFileUrl, getThumbnailUrl } from '@/lib/files'
@@ -217,6 +218,53 @@ export function getAuthenticatedThumbnailUrl(
   const token = useAuthStore.getState().token
   const url = getThumbnailUrl(config, blobId, getWorkspaceId(), width, height)
   return token != null ? `${url}&token=${encodeURIComponent(token)}` : url
+}
+
+// ---------------------------------------------------------------------------
+// Fetch attachments for a document
+// ---------------------------------------------------------------------------
+
+/**
+ * Huly class ref for the Attachment class.
+ * Declared as a plain string to avoid value-importing @hcengineering/attachment
+ * which is blocked by the Metro resolver (svelte transitive deps).
+ */
+const ATTACHMENT_CLASS = 'attachment:class:Attachment' as import('@hcengineering/core').Ref<
+  import('@hcengineering/core').Class<import('@hcengineering/core').Doc>
+>
+
+/**
+ * Fetch all attachment documents attached to a given parent doc.
+ * Returns metadata needed for the UI (blob ID, name, size, content type).
+ */
+export async function getAttachments(
+  attachedTo: string
+): Promise<AttachmentMeta[]> {
+  const client = getClient()
+  if (client === null) {
+    throw new Error('HulyClient not connected')
+  }
+
+  try {
+    const result = await client.findAll(
+      ATTACHMENT_CLASS,
+      { attachedTo } as Record<string, unknown>,
+      { limit: 100 }
+    )
+
+    return [...result].map((doc): AttachmentMeta => {
+      const record = doc as unknown as Record<string, unknown>
+      return {
+        blobId: String(record.file ?? record.uuid ?? record._id ?? ''),
+        name: String(record.name ?? record.filename ?? 'file'),
+        size: Number(record.size ?? 0),
+        contentType: String(record.contentType ?? record.type ?? 'application/octet-stream'),
+        lastModified: Number(record.lastModified ?? record.modifiedOn ?? 0),
+      }
+    })
+  } catch (error) {
+    throw wrapRepositoryError('attachment', 'getAttachments', error)
+  }
 }
 
 // ---------------------------------------------------------------------------

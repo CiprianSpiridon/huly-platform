@@ -57,6 +57,8 @@ export default function ChannelDetailScreen(): React.ReactNode {
     filename: string
     mimeType: string
   } | null>(null)
+  // Track pending attachment blob IDs to include in the next sent message
+  const [pendingAttachmentIds, setPendingAttachmentIds] = useState<string[]>([])
 
   // Mark channel as read and set active on mount
   useEffect(() => {
@@ -68,12 +70,22 @@ export default function ChannelDetailScreen(): React.ReactNode {
     }
   }, [id, clearUnread, setActiveChannel])
 
-  // Handle send
+  // Handle send -- includes any pending attachment blob IDs
   const handleSend = useCallback(
     (content: string) => {
-      sendMessage.mutate({ spaceId: id, content })
+      const attachmentIds = pendingAttachmentIds.length > 0 ? [...pendingAttachmentIds] : undefined
+      sendMessage.mutate({ spaceId: id, content, attachmentIds })
+      setPendingAttachmentIds([])
     },
-    [id, sendMessage]
+    [id, sendMessage, pendingAttachmentIds]
+  )
+
+  // Handle attachment uploaded -- store blob ID for next send
+  const handleAttachmentUploaded = useCallback(
+    (blobId: string) => {
+      setPendingAttachmentIds((prev) => [...prev, blobId])
+    },
+    []
   )
 
   // Handle draft changes
@@ -247,6 +259,7 @@ export default function ChannelDetailScreen(): React.ReactNode {
         <MessageInput
           onSend={handleSend}
           onDraftChange={handleDraftChange}
+          onAttachmentUploaded={handleAttachmentUploaded}
           initialDraft={getDraft(id)}
           isSending={sendMessage.isPending}
           showAttachButton

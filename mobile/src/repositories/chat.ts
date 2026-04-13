@@ -225,11 +225,13 @@ export async function getMessages(
 
 /**
  * Send a new message to a channel or DM.
+ * Optionally includes attachment blob IDs that were previously uploaded.
  * Returns the created message DTO for optimistic update.
  */
 export async function sendMessage(
   spaceId: string,
-  content: string
+  content: string,
+  attachmentIds?: string[]
 ): Promise<MessageItem> {
   const client = getClient()
   if (client === null) {
@@ -241,17 +243,36 @@ export async function sendMessage(
     const account = await client.getAccount()
     const factory = new TxFactory(account.primarySocialId)
 
+    const attrs: Record<string, unknown> = {
+      message: content,
+    }
+
+    // Link uploaded attachment blobs to the message
+    if (attachmentIds != null && attachmentIds.length > 0) {
+      attrs.attachments = attachmentIds.map((blobId) => ({
+        blobId,
+        name: blobId,
+        contentType: 'application/octet-stream',
+        size: 0,
+      }))
+    }
+
     const tx = factory.createTxCreateDoc(
       CHUNTER_CLASS.ChatMessage as unknown as Ref<Class<Doc>>,
       spaceId as Ref<Space>,
-      {
-        message: content,
-      } as unknown as Record<string, unknown>
+      attrs as unknown as Record<string, unknown>
     )
 
     await client.tx(tx)
 
     // Return a message DTO for optimistic update
+    const optimisticAttachments: MessageAttachment[] = (attachmentIds ?? []).map((blobId) => ({
+      blobId,
+      name: blobId,
+      size: 0,
+      contentType: 'application/octet-stream',
+    }))
+
     return {
       _id: tx.objectId as string,
       content,
@@ -263,7 +284,7 @@ export async function sendMessage(
       reactions: [],
       replyCount: 0,
       threadLastReply: 0,
-      attachments: [],
+      attachments: optimisticAttachments,
     }
   } catch (error) {
     throw wrapRepositoryError(DOMAIN, 'sendMessage', error)
@@ -318,10 +339,12 @@ export async function getThread(
 
 /**
  * Send a reply in a thread.
+ * Optionally includes attachment blob IDs that were previously uploaded.
  */
 export async function sendThreadReply(
   messageId: string,
-  content: string
+  content: string,
+  attachmentIds?: string[]
 ): Promise<MessageItem> {
   const client = getClient()
   if (client === null) {
@@ -343,18 +366,37 @@ export async function sendThreadReply(
       ? String((parentDoc as unknown as Record<string, unknown>).space ?? '')
       : ''
 
+    const attrs: Record<string, unknown> = {
+      message: content,
+      attachedTo: messageId as Ref<Doc>,
+      attachedToClass: ACTIVITY_MESSAGE_CLASS,
+      collection: 'replies',
+    }
+
+    // Link uploaded attachment blobs to the reply
+    if (attachmentIds != null && attachmentIds.length > 0) {
+      attrs.attachments = attachmentIds.map((blobId) => ({
+        blobId,
+        name: blobId,
+        contentType: 'application/octet-stream',
+        size: 0,
+      }))
+    }
+
     const tx = factory.createTxCreateDoc(
       CHUNTER_CLASS.ChatMessage as unknown as Ref<Class<Doc>>,
       parentSpace as Ref<Space>,
-      {
-        message: content,
-        attachedTo: messageId as Ref<Doc>,
-        attachedToClass: ACTIVITY_MESSAGE_CLASS,
-        collection: 'replies',
-      } as unknown as Record<string, unknown>
+      attrs as unknown as Record<string, unknown>
     )
 
     await client.tx(tx)
+
+    const optimisticAttachments: MessageAttachment[] = (attachmentIds ?? []).map((blobId) => ({
+      blobId,
+      name: blobId,
+      size: 0,
+      contentType: 'application/octet-stream',
+    }))
 
     return {
       _id: tx.objectId as string,
@@ -368,7 +410,7 @@ export async function sendThreadReply(
       replyCount: 0,
       threadLastReply: 0,
       attachedTo: messageId,
-      attachments: [],
+      attachments: optimisticAttachments,
     }
   } catch (error) {
     throw wrapRepositoryError(DOMAIN, 'sendThreadReply', error)

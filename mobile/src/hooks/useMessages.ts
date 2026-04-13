@@ -80,6 +80,7 @@ export function useMessages(
 interface SendMessageParams {
   spaceId: string
   content: string
+  attachmentIds?: string[]
 }
 
 interface SendMessageContext {
@@ -90,7 +91,7 @@ export function useSendMessage(): UseMutationResult<MessageItem, Error, SendMess
   const queryClient = useQueryClient()
 
   return useMutation<MessageItem, Error, SendMessageParams, SendMessageContext>({
-    mutationFn: (params) => sendMessage(params.spaceId, params.content),
+    mutationFn: (params) => sendMessage(params.spaceId, params.content, params.attachmentIds),
 
     onMutate: async (variables) => {
       // Cancel any outgoing refetches for this channel's messages
