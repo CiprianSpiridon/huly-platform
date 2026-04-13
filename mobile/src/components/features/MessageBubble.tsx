@@ -12,6 +12,8 @@ import { Image } from 'expo-image'
 
 import { AvatarCircle } from '@/components/ui/AvatarCircle'
 import { ReactionPills } from '@/components/features/ReactionPills'
+import { MarkupRenderer } from '@/components/features/MarkupRenderer'
+import { markupToPlainText } from '@/lib/markupUtils'
 import { getAuthenticatedThumbnailUrl } from '@/repositories/attachment'
 import type { MessageItem } from '@/repositories/chat'
 
@@ -85,14 +87,8 @@ function MessageBubbleInner({
   const displayName = getSenderDisplayName(message.senderName || message.sender)
   const isOptimistic = message._id.startsWith('optimistic')
 
-  // Strip basic HTML tags from message content for display
-  const textContent = message.content
-    .replace(/<[^>]*>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .trim()
+  // Plain text fallback for accessibility label
+  const plainText = markupToPlainText(message.content)
 
   return (
     <Pressable
@@ -100,7 +96,7 @@ function MessageBubbleInner({
       onLongPress={handleLongPress}
       delayLongPress={400}
       accessibilityRole="text"
-      accessibilityLabel={`Message from ${displayName}: ${textContent}`}
+      accessibilityLabel={`Message from ${displayName}: ${plainText}`}
     >
       {/* Avatar */}
       <View className="mr-3 pt-0.5">
@@ -119,10 +115,8 @@ function MessageBubbleInner({
           </Text>
         </View>
 
-        {/* Message text */}
-        <Text className="font-sans text-sm text-content-primary leading-5">
-          {textContent}
-        </Text>
+        {/* Message text (rich) */}
+        <MarkupRenderer content={message.content} />
 
         {/* Inline attachments */}
         {message.attachments.length > 0 && (

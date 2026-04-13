@@ -12,6 +12,7 @@ import { getStatusName, getAssigneeName } from '@/lib/lookup'
 import { PriorityIcon, ISSUE_PRIORITY } from '@/components/ui/PriorityIcon'
 import { AvatarCircle } from '@/components/ui/AvatarCircle'
 import { AttachmentThumbnail } from '@/components/features/AttachmentThumbnail'
+import { MarkupRenderer } from '@/components/features/MarkupRenderer'
 
 interface AttachmentInfo {
   blobId: string
@@ -176,9 +177,10 @@ function IssueDetailView({
             Description
           </Text>
           <View className="bg-surface-secondary rounded-md p-3">
-            <Text className="font-sans text-sm text-content">
-              {issue.description as unknown as string}
-            </Text>
+            <MarkupRenderer
+              content={issue.description}
+              accessibilityLabel="Issue description"
+            />
           </View>
         </View>
       ) : null}

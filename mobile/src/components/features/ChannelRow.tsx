@@ -8,6 +8,7 @@
 import { memo, useCallback } from 'react'
 import { View, Text, Pressable } from 'react-native'
 
+import { truncateMarkupText } from '@/lib/markupUtils'
 import type { ChannelItem } from '@/repositories/chat'
 
 // ---------------------------------------------------------------------------
@@ -43,10 +44,7 @@ function formatTimestamp(timestamp: number): string {
   return `${date.getMonth() + 1}/${date.getDate()}`
 }
 
-function truncateMessage(message: string, maxLength: number = 60): string {
-  if (message.length <= maxLength) return message
-  return message.slice(0, maxLength).trimEnd() + '...'
-}
+// truncateMessage replaced by truncateMarkupText from @/lib/markupUtils
 
 // ---------------------------------------------------------------------------
 // Component
@@ -104,7 +102,7 @@ function ChannelRowInner({
             }`}
             numberOfLines={1}
           >
-            {truncateMessage(channel.lastMessage)}
+            {truncateMarkupText(channel.lastMessage)}
           </Text>
         )}
       </View>

@@ -10,6 +10,7 @@ import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator } from 
 
 import { useTrackerStore } from '@/store/tracker'
 import { PriorityIcon, ISSUE_PRIORITY } from '@/components/ui/PriorityIcon'
+import { RichTextEditor } from '@/components/features/RichTextEditor'
 
 interface IssueFormProps {
   onSubmit: () => void
@@ -72,15 +73,13 @@ function IssueForm({ onSubmit, onCancel, isSubmitting = false, testID }: IssueFo
         <Text className="font-sans-medium text-sm text-content-secondary mb-1">
           Description
         </Text>
-        <TextInput
-          className="bg-surface-tertiary text-caption font-sans text-base rounded-md px-3 py-2.5 border border-border-primary min-h-[100px]"
-          placeholder="Add a description..."
-          placeholderTextColor="#77818B"
+        <RichTextEditor
           value={draft.description}
           onChangeText={(text) => updateDraft({ description: text })}
-          multiline
-          textAlignVertical="top"
+          onMarkupChange={(json) => updateDraft({ description: json })}
+          placeholder="Add a description..."
           accessibilityLabel="Issue description"
+          editable={!isSubmitting}
         />
       </View>
 

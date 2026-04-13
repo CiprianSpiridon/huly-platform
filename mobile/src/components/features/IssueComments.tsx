@@ -19,6 +19,7 @@ import {
 import { Ionicons } from '@expo/vector-icons'
 
 import { useComments, useCreateComment } from '@/hooks/useComments'
+import { MarkupRenderer } from '@/components/features/MarkupRenderer'
 import type { CommentItem } from '@/repositories/activity'
 
 // ---------------------------------------------------------------------------
@@ -74,23 +75,6 @@ function formatAuthor(personId: string): string {
   return 'Unknown'
 }
 
-/**
- * Strip simple HTML tags from message content to produce plain text.
- * Activity messages may contain basic markup like <p>, <br>, etc.
- */
-function stripHtml(html: string): string {
-  return html
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/p>\s*<p[^>]*>/gi, '\n\n')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .trim()
-}
-
 // ---------------------------------------------------------------------------
 // Comment item
 // ---------------------------------------------------------------------------
@@ -98,7 +82,6 @@ function stripHtml(html: string): string {
 function CommentRow({ comment }: { comment: CommentItem }): React.ReactNode {
   const authorName = formatAuthor(comment.modifiedBy)
   const timestamp = formatTimestamp(comment.createdOn || comment.modifiedOn)
-  const messageText = stripHtml(comment.message)
 
   return (
     <View className="bg-surface-secondary rounded-md p-3 mb-2">
@@ -110,9 +93,10 @@ function CommentRow({ comment }: { comment: CommentItem }): React.ReactNode {
           {timestamp}
         </Text>
       </View>
-      <Text className="font-sans text-sm text-content-primary">
-        {messageText || '(empty message)'}
-      </Text>
+      <MarkupRenderer
+        content={comment.message}
+        accessibilityLabel={`Comment by ${authorName}`}
+      />
     </View>
   )
 }
