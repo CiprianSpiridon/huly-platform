@@ -13,10 +13,17 @@ import type { ServerConfig } from '@/client/config'
 /**
  * Build a download URL for a blob.
  */
-export function getFileUrl(config: ServerConfig, blobId: string): string {
-  return config.FILES_URL
+export function getFileUrl(config: ServerConfig, blobId: string, workspaceId?: string): string {
+  let url = config.FILES_URL
     .replace(':filename', blobId)
     .replace(':blobId', blobId)
+
+  // FILES_URL may contain a :workspace placeholder (e.g., /files/:workspace/:blobId)
+  if (workspaceId != null) {
+    url = url.replace(':workspace', workspaceId)
+  }
+
+  return url
 }
 
 /**
@@ -25,9 +32,10 @@ export function getFileUrl(config: ServerConfig, blobId: string): string {
 export function getThumbnailUrl(
   config: ServerConfig,
   blobId: string,
+  workspaceId?: string,
   width: number = 200,
   height: number = 200
 ): string {
-  const base = getFileUrl(config, blobId)
+  const base = getFileUrl(config, blobId, workspaceId)
   return `${base}?width=${width}&height=${height}&format=webp`
 }

@@ -109,11 +109,27 @@ export async function uploadFile(
     }
 
     const parsed: unknown = JSON.parse(result.body)
-    if (!isUploadResult(parsed)) {
-      throw new Error('Invalid upload response format')
+
+    // The Datalake returns an array of { key, id, metadata } objects.
+    // Normalize to our UploadResult shape.
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      const first = parsed[0] as Record<string, unknown>
+      return {
+        uuid: String(first.id ?? first.key ?? ''),
+        name: filename,
+        size: typeof first.metadata === 'object' && first.metadata != null
+          ? (first.metadata as Record<string, unknown>).size as number ?? 0
+          : 0,
+        contentType: mimeType,
+      }
     }
 
-    return parsed
+    // Fallback: try single-object format
+    if (isUploadResult(parsed)) {
+      return parsed
+    }
+
+    throw new Error('Invalid upload response format')
   } catch (error) {
     throw wrapRepositoryError('attachment', 'uploadFile', error)
   }
@@ -145,7 +161,7 @@ export async function downloadFile(
   try {
     const config = getConfig()
     const headers = getAuthHeaders()
-    const url = getFileUrl(config, blobId)
+    const url = getFileUrl(config, blobId, getWorkspaceId())
     const localPath = `${FileSystem.cacheDirectory ?? ''}${filename}`
 
     const result = await FileSystem.downloadAsync(url, localPath, { headers })
@@ -185,7 +201,7 @@ export async function downloadAndShare(
 export function getAuthenticatedFileUrl(blobId: string): string {
   const config = getConfig()
   const token = useAuthStore.getState().token
-  const url = getFileUrl(config, blobId)
+  const url = getFileUrl(config, blobId, getWorkspaceId())
   return token != null ? `${url}?token=${encodeURIComponent(token)}` : url
 }
 
@@ -199,7 +215,7 @@ export function getAuthenticatedThumbnailUrl(
 ): string {
   const config = getConfig()
   const token = useAuthStore.getState().token
-  const url = getThumbnailUrl(config, blobId, width, height)
+  const url = getThumbnailUrl(config, blobId, getWorkspaceId(), width, height)
   return token != null ? `${url}&token=${encodeURIComponent(token)}` : url
 }
 
