@@ -1,0 +1,361 @@
+{
+  "plan": {
+    "name": "mobile-inbox-parity",
+    "title": "Mobile Inbox Feature Parity",
+    "mode": "HOLD",
+    "defaultReview": "claude",
+    "agent": "expo-react-native-engineer"
+  },
+  "overview": "Close the remaining inbox/notification gaps: mark-all-read/archive-all buttons, read/unread filtering, notification grouping by document, unarchive flow, expanded deep-link coverage, per-type notification settings, and permanent delete.",
+  "scopeChallenge": {
+    "assumedMode": "HOLD",
+    "assumedDefaultReview": "claude",
+    "scopeCuts": [
+      "Focus on inbox parity inside mobile inbox routes, notification hooks/store, and adjacent components",
+      "Exclude server-side notification service changes, push delivery, and WS subscription overhaul"
+    ]
+  },
+  "prerequisites": [
+    "Existing scaffold/auth/api client/notification phases are already implemented in mobile/",
+    "WebSocket sidecar and notification invalidation rules are operational",
+    "useNotifications, useMarkAsRead, useArchiveNotifications, useMarkAllAsRead, useArchiveAll hooks already exist with optimistic updates"
+  ],
+  "nonGoals": [
+    "Modifying Huly server notification services or push delivery",
+    "Replacing polling-based unread sync with live WebSocket subscriptions",
+    "Per-notification-type server-enforced settings",
+    "Notification search"
+  ],
+  "contracts": [
+    "Repository ownership stays in mobile/src/repositories/notification.ts",
+    "Server state remains in TanStack Query; UI state remains in Zustand",
+    "New inbox routes stay under mobile/src/app/(app)/inbox/**",
+    "Existing swipe-to-archive and bulk selection behavior must not regress",
+    "Mark-all and archive-all use existing hook functions"
+  ],
+  "existingCodeLeverage": [
+    "mobile/src/app/(app)/inbox/index.tsx",
+    "mobile/src/app/(app)/inbox/notification/[id].tsx",
+    "mobile/src/app/(app)/inbox/_layout.tsx",
+    "mobile/src/repositories/notification.ts",
+    "mobile/src/hooks/useNotifications.ts",
+    "mobile/src/hooks/useUnreadCount.ts",
+    "mobile/src/hooks/useNotificationListeners.ts",
+    "mobile/src/hooks/usePushRegistration.ts",
+    "mobile/src/store/inbox.ts",
+    "mobile/src/store/push.ts",
+    "mobile/src/components/features/NotificationRow.tsx",
+    "mobile/src/components/features/NotificationFilters.tsx",
+    "mobile/src/components/features/BulkActionBar.tsx",
+    "mobile/src/components/features/InAppNotificationBanner.tsx",
+    "mobile/src/lib/notificationRouter.ts",
+    "mobile/src/lib/notifications.ts",
+    "mobile/src/realtime/rules/notification.ts"
+  ],
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Add mark-all-read and archive-all UI buttons",
+      "description": "Wire the existing useMarkAllAsRead() and useArchiveAll() hooks to visible UI actions in the inbox header.",
+      "priority": "P0",
+      "type": "feature",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Inbox header shows a menu with Mark All as Read and Archive All actions.",
+        "Both actions call the existing hook functions with optimistic updates and badge count sync.",
+        "Actions are disabled when there are no unread/unarchived notifications respectively."
+      ],
+      "filesToModify": [
+        "mobile/src/app/(app)/inbox/index.tsx"
+      ],
+      "filesToCreate": [],
+      "writeScope": [
+        "mobile/src/app/(app)/inbox/index.tsx"
+      ],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-002",
+      "title": "Add read/unread filter toggle",
+      "description": "Extend the notification filter UI to support filtering by read/unread status alongside existing type filters.",
+      "priority": "P0",
+      "type": "feature",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Filter bar adds a read/unread toggle that filters by isViewed status.",
+        "Read/unread filter composes with the existing type filter (e.g., unread mentions).",
+        "Switching between read/unread/all preserves type filter selection and scroll position."
+      ],
+      "filesToModify": [
+        "mobile/src/app/(app)/inbox/index.tsx",
+        "mobile/src/store/inbox.ts"
+      ],
+      "filesToCreate": [],
+      "writeScope": [
+        "mobile/src/app/(app)/inbox/index.tsx",
+        "mobile/src/store/inbox.ts"
+      ],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-003",
+      "title": "Extend repository for read/unread and unarchive queries",
+      "description": "Add repository-level query support for read/unread filtering and unarchive mutation.",
+      "priority": "P0",
+      "type": "feature",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "getNotifications() accepts an optional readStatus filter mapping to isViewed query conditions.",
+        "New unarchiveNotifications(ids) repository method sets archived: false on given IDs.",
+        "useUnarchiveNotifications() hook wraps the method with optimistic cache updates that re-insert items."
+      ],
+      "filesToModify": [
+        "mobile/src/repositories/notification.ts",
+        "mobile/src/hooks/useNotifications.ts"
+      ],
+      "filesToCreate": [],
+      "writeScope": [
+        "mobile/src/repositories/notification.ts",
+        "mobile/src/hooks/useNotifications.ts"
+      ],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-004",
+      "title": "Add unarchive flow",
+      "description": "Expose an unarchive action so users can recover accidentally archived notifications via an undo toast.",
+      "priority": "P1",
+      "type": "feature",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [
+        "TASK-003"
+      ],
+      "acceptanceCriteria": [
+        "After archiving via swipe, a brief undo toast appears (3s) allowing unarchive.",
+        "Undo calls useUnarchiveNotifications() and restores the item to its original position.",
+        "If the undo window expires, the archive is final and no stale item appears."
+      ],
+      "filesToModify": [
+        "mobile/src/app/(app)/inbox/index.tsx",
+        "mobile/src/components/features/NotificationRow.tsx"
+      ],
+      "filesToCreate": [],
+      "writeScope": [
+        "mobile/src/app/(app)/inbox/index.tsx",
+        "mobile/src/components/features/NotificationRow.tsx"
+      ],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-005",
+      "title": "Add notification grouping by document context",
+      "description": "Group notifications by their source document (DocNotifyContext) matching the web inbox pattern.",
+      "priority": "P1",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [
+        "TASK-002",
+        "TASK-003",
+        "TASK-004"
+      ],
+      "acceptanceCriteria": [
+        "Inbox list groups notifications by docNotifyContext, rendering a card per document with collapsed count.",
+        "Expanding a group card shows the individual notifications within that document context.",
+        "Documents with no displayable title show the object class as a fallback label, not a raw ref ID."
+      ],
+      "filesToModify": [
+        "mobile/src/app/(app)/inbox/index.tsx",
+        "mobile/src/repositories/notification.ts"
+      ],
+      "filesToCreate": [
+        "mobile/src/components/features/NotificationGroupCard.tsx"
+      ],
+      "writeScope": [
+        "mobile/src/app/(app)/inbox/index.tsx",
+        "mobile/src/components/features/NotificationGroupCard.tsx",
+        "mobile/src/repositories/notification.ts"
+      ],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-006",
+      "title": "Expand deep-link coverage for notification routing",
+      "description": "Add more object class mappings so fewer notifications fall through to the generic detail screen.",
+      "priority": "P1",
+      "type": "feature",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Router handles hr:class:Department, recruit:class:Applicant, document:class:Document, and board:class:Card with appropriate fallback routes.",
+        "Unknown object classes still fall back to the notification detail screen without crashing.",
+        "isKnownObjectClass() returns true for all newly added classes."
+      ],
+      "filesToModify": [
+        "mobile/src/lib/notificationRouter.ts"
+      ],
+      "filesToCreate": [],
+      "writeScope": [
+        "mobile/src/lib/notificationRouter.ts"
+      ],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-007",
+      "title": "Add per-type notification settings UI",
+      "description": "Expose fine-grained notification type toggles beyond the current 3 categories.",
+      "priority": "P2",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Notification settings screen shows per-type toggles within each category (e.g., under Chat: mentions, replies, reactions).",
+        "Preferences persist to AsyncStorage and are checked before showing foreground banners.",
+        "Disabling a parent category disables all child types; re-enabling restores previous per-type state."
+      ],
+      "filesToModify": [
+        "mobile/src/app/(app)/settings/notifications.tsx",
+        "mobile/src/store/push.ts"
+      ],
+      "filesToCreate": [],
+      "writeScope": [
+        "mobile/src/app/(app)/settings/notifications.tsx",
+        "mobile/src/store/push.ts"
+      ],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-008",
+      "title": "Add delete notification action",
+      "description": "Allow permanent deletion of notifications (not just archive).",
+      "priority": "P2",
+      "type": "feature",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [
+        "TASK-003",
+        "TASK-005"
+      ],
+      "acceptanceCriteria": [
+        "Bulk action bar in selection mode shows a Delete action alongside Mark Read and Archive.",
+        "Delete uses removeDoc to permanently remove selected notifications with a confirmation dialog.",
+        "Attempting to delete already-removed notifications does not crash; stale IDs are silently skipped."
+      ],
+      "filesToModify": [
+        "mobile/src/app/(app)/inbox/index.tsx",
+        "mobile/src/repositories/notification.ts"
+      ],
+      "filesToCreate": [],
+      "writeScope": [
+        "mobile/src/app/(app)/inbox/index.tsx",
+        "mobile/src/repositories/notification.ts"
+      ],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    }
+  ],
+  "failureModes": [
+    {
+      "failure": "Mark-all-read optimistic update miscounts",
+      "detection": "Badge shows wrong number after mark-all",
+      "recovery": "Invalidate unread count query on settle; re-sync from server"
+    },
+    {
+      "failure": "Unarchive restores notification to wrong position",
+      "detection": "Item appears at top instead of original sort position",
+      "recovery": "Insert at correct modifiedOn position or invalidate full list"
+    },
+    {
+      "failure": "Group card shows raw ref instead of title",
+      "detection": "DocNotifyContext has no resolved display name",
+      "recovery": "Fall back to objectClass human-readable label"
+    },
+    {
+      "failure": "Delete removes wrong notification",
+      "detection": "Race between optimistic delete and server response",
+      "recovery": "Confirm by ID match before cache eviction; rollback on mismatch"
+    },
+    {
+      "failure": "Per-type toggle state desyncs from parent category",
+      "detection": "Child enabled but parent disabled",
+      "recovery": "Enforce parent-child invariant in toggle handler"
+    }
+  ],
+  "shipCut": {
+    "minimumCoherentCutAfter": "TASK-006",
+    "delivers": [
+      "mark-all-read and archive-all buttons",
+      "read/unread filter toggle",
+      "unarchive flow",
+      "document-level notification grouping",
+      "expanded deep-link coverage"
+    ],
+    "safeToDefer": [
+      "per-type notification settings",
+      "permanent delete action"
+    ]
+  },
+  "testCoverageMap": [
+    "TASK-001: mark-all-read/archive-all success + disabled state when empty",
+    "TASK-002: read/unread filter composability + scroll position preservation",
+    "TASK-003: repository readStatus filter + unarchive mutation + optimistic rollback",
+    "TASK-004: undo toast lifecycle + re-insertion position + expired-undo cleanup",
+    "TASK-005: group card rendering + expand/collapse + fallback title for unknown docs",
+    "TASK-006: new class mappings + unknown class fallback + isKnownObjectClass truth table",
+    "TASK-007: per-type toggle persistence + parent-child invariant + foreground banner suppression",
+    "TASK-008: delete confirmation + stale-ID skip + bulk delete with partial failure"
+  ],
+  "executionSummary": {
+    "taskCount": 8,
+    "parallelP0Foundations": [
+      "TASK-001",
+      "TASK-002",
+      "TASK-003"
+    ],
+    "criticalPath": [
+      "TASK-003",
+      "TASK-004",
+      "TASK-005",
+      "TASK-008"
+    ],
+    "independentTasks": [
+      "TASK-006",
+      "TASK-007"
+    ]
+  },
+  "dependencyMap": {
+    "TASK-001": [],
+    "TASK-002": [],
+    "TASK-003": [],
+    "TASK-004": [
+      "TASK-003"
+    ],
+    "TASK-005": [
+      "TASK-002",
+      "TASK-003",
+      "TASK-004"
+    ],
+    "TASK-006": [],
+    "TASK-007": [],
+    "TASK-008": [
+      "TASK-003",
+      "TASK-005"
+    ]
+  }
+}
