@@ -251,6 +251,56 @@ export function useToggleReaction(): UseMutationResult<void, Error, ToggleReacti
         }
       )
 
+      const threadQueries = queryClient.getQueriesData<{ parent: MessageItem; replies: MessageItem[] }>({ queryKey: ['chat', 'thread'] })
+      for (const [key, data] of threadQueries) {
+        if (!data) continue
+        const allMessages = [data.parent, ...data.replies]
+        const target = allMessages.find((m) => m._id === variables.messageId)
+        if (target) {
+          const updatedMessages = allMessages.map((m) => {
+            if (m._id !== variables.messageId) return m
+            const reactions = [...m.reactions]
+            const existingIdx = reactions.findIndex((r) => r.emoji === variables.emoji)
+
+            if (variables.hasReacted) {
+              if (existingIdx >= 0) {
+                const existing = reactions[existingIdx]!
+                if (existing.count <= 1) {
+                  reactions.splice(existingIdx, 1)
+                } else {
+                  reactions[existingIdx] = {
+                    ...existing,
+                    count: existing.count - 1,
+                    userIds: existing.userIds.filter((uid) => uid !== currentSocialId),
+                  }
+                }
+              }
+            } else {
+              if (existingIdx >= 0) {
+                const existing = reactions[existingIdx]!
+                reactions[existingIdx] = {
+                  ...existing,
+                  count: existing.count + 1,
+                  userIds: [...existing.userIds, currentSocialId],
+                }
+              } else {
+                reactions.push({
+                  emoji: variables.emoji,
+                  count: 1,
+                  userIds: [currentSocialId],
+                })
+              }
+            }
+
+            return { ...m, reactions }
+          })
+          queryClient.setQueryData(key, {
+            parent: updatedMessages[0],
+            replies: updatedMessages.slice(1),
+          })
+        }
+      }
+
       return { previousData }
     },
 
@@ -264,14 +314,12 @@ export function useToggleReaction(): UseMutationResult<void, Error, ToggleReacti
     },
 
     onSettled: (_data, _error, variables) => {
-      // Invalidate both the channel messages and any thread containing this message
       void queryClient.invalidateQueries({
         queryKey: ['chat', 'messages', variables.spaceId],
       })
       void queryClient.invalidateQueries({
         queryKey: ['chat', 'thread', variables.messageId],
       })
-      // Also invalidate any thread where this message might be a reply
       void queryClient.invalidateQueries({
         predicate: (query) =>
           query.queryKey[0] === 'chat' && query.queryKey[1] === 'thread',

@@ -75,7 +75,6 @@ interface SendThreadReplyContext {
 
 export function useSendThreadReply(): UseMutationResult<MessageItem, Error, SendThreadReplyParams, SendThreadReplyContext> {
   const queryClient = useQueryClient()
-  const currentSocialId = useConnectionStore((s) => s.currentSocialId) ?? 'unknown'
 
   return useMutation<MessageItem, Error, SendThreadReplyParams, SendThreadReplyContext>({
     mutationFn: (params) => sendThreadReply(params.messageId, params.content, params.attachmentIds),
@@ -83,6 +82,8 @@ export function useSendThreadReply(): UseMutationResult<MessageItem, Error, Send
     onMutate: async (variables) => {
       await queryClient.cancelQueries({ queryKey: ['chat', 'thread', variables.messageId] })
       const previousData = queryClient.getQueryData<ThreadData>(['chat', 'thread', variables.messageId])
+
+      const currentSocialId = useConnectionStore.getState().currentSocialId ?? 'unknown'
 
       // Optimistically add the reply
       if (previousData != null) {

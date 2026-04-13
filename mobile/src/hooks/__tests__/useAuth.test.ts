@@ -71,7 +71,6 @@ describe('useLogin', () => {
       account: null,
       tfaToken: null,
       isAuthenticated: false,
-      isBootstrapping: false,
     })
   })
 
@@ -172,7 +171,6 @@ describe('useOtpLogin', () => {
       account: null,
       tfaToken: null,
       isAuthenticated: false,
-      isBootstrapping: false,
     })
   })
 
@@ -222,7 +220,6 @@ describe('useTwoFactor', () => {
       account: null,
       tfaToken: 'tfa-token',
       isAuthenticated: false,
-      isBootstrapping: false,
     })
   })
 

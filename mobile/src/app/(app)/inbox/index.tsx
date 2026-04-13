@@ -20,7 +20,6 @@ import { FlashList } from '@shopify/flash-list'
 import { Ionicons } from '@expo/vector-icons'
 
 import { useNotifications, useMarkAsRead, useArchiveNotifications } from '@/hooks/useNotifications'
-import { useUnreadCount } from '@/hooks/useUnreadCount'
 import { useInboxStore } from '@/store/inbox'
 import { NotificationFilters } from '@/components/features/NotificationFilters'
 import { NotificationRow } from '@/components/features/NotificationRow'
@@ -79,9 +78,6 @@ export default function InboxScreen(): React.ReactNode {
     isFetchingNextPage,
   } = useNotifications(activeFilter)
 
-  // Unread count -- polls every 30s, syncs to store for tab badge
-  useUnreadCount()
-
   // Mutations
   const markAsReadMutation = useMarkAsRead()
   const archiveMutation = useArchiveNotifications()
@@ -125,12 +121,8 @@ export default function InboxScreen(): React.ReactNode {
       }
 
       // Navigate to the source or to the detail screen
-      const result = resolveNotificationRoute(notification.objectClass, notification.objectId)
-      if (result.isKnown) {
-        router.push(result.path as never)
-      } else {
-        router.push(`/(app)/inbox/notification/${notification._id}` as never)
-      }
+      const result = resolveNotificationRoute(notification.objectClass, notification.objectId, notification._id)
+      router.push(result.path as never)
     },
     [isSelectionMode, toggleSelected, markAsReadMutation]
   )

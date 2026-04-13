@@ -14,7 +14,7 @@ import { create } from 'zustand'
 
 interface ChatState {
   /** Unread message count per channel/DM. */
-  unreadCounts: Map<string, number>
+  unreadCounts: Record<string, number>
 
   /** In-memory draft messages per channel/DM. */
   draftMessages: Map<string, string>
@@ -42,11 +42,11 @@ interface ChatState {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function computeTotal(counts: Map<string, number>): number {
+function computeTotal(counts: Record<string, number>): number {
   let total = 0
-  counts.forEach((count) => {
-    total += count
-  })
+  for (const key in counts) {
+    total += counts[key]!
+  }
   return total
 }
 
@@ -55,18 +55,18 @@ function computeTotal(counts: Map<string, number>): number {
 // ---------------------------------------------------------------------------
 
 export const useChatStore = create<ChatState>((set, get) => ({
-  unreadCounts: new Map(),
+  unreadCounts: {},
   draftMessages: new Map(),
   activeChannelId: null,
   unreadTotal: 0,
 
   setUnreadCount: (channelId: string, count: number) => {
     set((state) => {
-      const next = new Map(state.unreadCounts)
+      const next = { ...state.unreadCounts }
       if (count <= 0) {
-        next.delete(channelId)
+        delete next[channelId]
       } else {
-        next.set(channelId, count)
+        next[channelId] = count
       }
       return { unreadCounts: next, unreadTotal: computeTotal(next) }
     })
@@ -74,23 +74,23 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   clearUnread: (channelId: string) => {
     set((state) => {
-      const next = new Map(state.unreadCounts)
-      next.delete(channelId)
+      const next = { ...state.unreadCounts }
+      delete next[channelId]
       return { unreadCounts: next, unreadTotal: computeTotal(next) }
     })
   },
 
   incrementUnread: (channelId: string) => {
     set((state) => {
-      const next = new Map(state.unreadCounts)
-      const current = next.get(channelId) ?? 0
-      next.set(channelId, current + 1)
+      const next = { ...state.unreadCounts }
+      const current = next[channelId] ?? 0
+      next[channelId] = current + 1
       return { unreadCounts: next, unreadTotal: computeTotal(next) }
     })
   },
 
   resetAllUnread: () => {
-    set({ unreadCounts: new Map(), unreadTotal: 0 })
+    set({ unreadCounts: {}, unreadTotal: 0 })
   },
 
   saveDraft: (channelId: string, text: string) => {

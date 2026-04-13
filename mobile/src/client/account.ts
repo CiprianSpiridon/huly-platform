@@ -12,6 +12,7 @@ import { getServerUrl, loadServerConfig } from './config'
 
 let cachedClient: AccountClient | null = null
 let cachedToken: string | undefined
+let pendingPromise: Promise<AccountClient> | null = null
 
 /**
  * Returns (or creates) a cached `AccountClient` instance.
@@ -24,12 +25,25 @@ export async function getOrCreateAccountClient(token?: string): Promise<AccountC
     return cachedClient
   }
 
-  const serverUrl = getServerUrl()
-  const config = await loadServerConfig(serverUrl)
+  if (pendingPromise !== null && cachedToken === token) {
+    return await pendingPromise
+  }
 
-  cachedClient = getClient(config.ACCOUNTS_URL, token)
-  cachedToken = token
-  return cachedClient
+  const promise = (async () => {
+    const serverUrl = getServerUrl()
+    const config = await loadServerConfig(serverUrl)
+
+    cachedClient = getClient(config.ACCOUNTS_URL, token)
+    cachedToken = token
+    return cachedClient
+  })()
+
+  pendingPromise = promise
+  try {
+    return await promise
+  } finally {
+    pendingPromise = null
+  }
 }
 
 /**

@@ -234,7 +234,7 @@ export async function markAsRead(ids: string[]): Promise<void> {
     )
     const txes = notifications.map((notif) =>
       factory.createTxUpdateDoc(
-        NOTIFICATION_CLASS.InboxNotification as Ref<Class<Doc>>,
+        notif._class,
         notif.space,
         notif._id,
         { isViewed: true } as Record<string, unknown>
@@ -272,7 +272,7 @@ export async function markAllAsRead(): Promise<void> {
 
     const txes = [...result].map((doc) =>
       factory.createTxUpdateDoc(
-        NOTIFICATION_CLASS.InboxNotification as Ref<Class<Doc>>,
+        doc._class,
         doc.space,
         doc._id,
         { isViewed: true } as Record<string, unknown>
@@ -308,7 +308,7 @@ export async function archiveNotifications(ids: string[]): Promise<void> {
     )
     const txes = notifications.map((notif) =>
       factory.createTxUpdateDoc(
-        NOTIFICATION_CLASS.InboxNotification as Ref<Class<Doc>>,
+        notif._class,
         notif.space,
         notif._id,
         { archived: true, isViewed: true } as Record<string, unknown>
@@ -345,7 +345,7 @@ export async function archiveAll(): Promise<void> {
 
     const txes = [...result].map((doc) =>
       factory.createTxUpdateDoc(
-        NOTIFICATION_CLASS.InboxNotification as Ref<Class<Doc>>,
+        doc._class,
         doc.space,
         doc._id,
         { archived: true, isViewed: true } as Record<string, unknown>

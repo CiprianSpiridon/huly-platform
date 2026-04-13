@@ -40,6 +40,8 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   currentSocialId: null,
 
   connect: async (endpoint: string, workspaceId: string, token: string) => {
+    if (get().status === 'connecting') return
+
     set({ status: 'connecting', error: null })
 
     try {

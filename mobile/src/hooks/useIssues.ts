@@ -66,8 +66,10 @@ export function useIssues(
       if (!lastPage.hasMore) return undefined
       const lastItem = lastPage.items[lastPage.items.length - 1]
       if (lastItem == null) return undefined
-      // Use the sort key value from the last item as cursor
-      return (lastItem as unknown as Record<string, unknown>)[sortKey] as number | undefined
+      return {
+        sortValue: (lastItem as unknown as Record<string, unknown>)[sortKey] as number,
+        id: lastItem._id as string,
+      }
     },
     staleTime: wsConnected ? ISSUES_STALE_TIME_WS : ISSUES_STALE_TIME,
     gcTime: ISSUES_GC_TIME,

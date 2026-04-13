@@ -115,23 +115,7 @@ function IssueDetailView({
           </Pressable>
         </PropertyRow>
 
-        {/* Component */}
-        {issue.component ? (
-          <PropertyRow label="Component">
-            <Text className="font-sans text-sm text-caption">
-              {issue.component as unknown as string}
-            </Text>
-          </PropertyRow>
-        ) : null}
-
-        {/* Milestone */}
-        {issue.milestone ? (
-          <PropertyRow label="Milestone">
-            <Text className="font-sans text-sm text-caption">
-              {issue.milestone as unknown as string}
-            </Text>
-          </PropertyRow>
-        ) : null}
+        {/* Component and Milestone omitted: raw Ref IDs lack lookup resolution */}
 
         {/* Due date */}
         {issue.dueDate ? (

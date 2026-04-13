@@ -22,6 +22,7 @@ export default function OtpScreen(): React.ReactNode {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const { requestOtp, validateOtp, isLoading, error } = useOtpLogin()
+  const isSubmitting = useRef(false)
 
   // Countdown timer for OTP retry
   useEffect(() => {
@@ -47,27 +48,31 @@ export default function OtpScreen(): React.ReactNode {
   }, [retryAt])
 
   const handleRequestOtp = useCallback(async () => {
+    if (isSubmitting.current) return
+    isSubmitting.current = true
     try {
       const otpInfo = await requestOtp(email)
       setRetryAt(otpInfo.retryOn)
       setStep('code')
     } catch {
       Alert.alert('Error', 'Failed to send verification code. Please try again.')
+    } finally {
+      isSubmitting.current = false
     }
   }, [email, requestOtp])
 
   const handleValidateOtp = useCallback(async () => {
+    if (isSubmitting.current) return
+    isSubmitting.current = true
     try {
       const loginInfo = await validateOtp(email, code)
 
       if (loginInfo.tfaRequired === true) {
-        // OTP validated but account has 2FA — route to TOTP screen
         router.replace('/(auth)/two-factor')
         return
       }
 
       if (loginInfo.token == null) {
-        // Unconfirmed email — show message, don't navigate
         Alert.alert('Email not confirmed', 'Please confirm your email before signing in.')
         return
       }
@@ -75,6 +80,8 @@ export default function OtpScreen(): React.ReactNode {
       router.replace('/(auth)/workspace-select')
     } catch {
       Alert.alert('Error', 'Invalid verification code. Please try again.')
+    } finally {
+      isSubmitting.current = false
     }
   }, [email, code, validateOtp])
 

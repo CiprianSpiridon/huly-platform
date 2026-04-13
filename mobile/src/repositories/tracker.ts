@@ -94,9 +94,13 @@ export async function getProjects(): Promise<Project[]> {
 
 /**
  * Cursor value for keyset pagination. Undefined for the first page.
- * Contains the sort-key value of the last item from the previous page.
+ * Contains the sort-key value and _id of the last item for tiebreaking.
  */
-export type IssueCursor = number | undefined
+export interface IssueCursorValue {
+  sortValue: number
+  id: string
+}
+export type IssueCursor = IssueCursorValue | undefined
 
 export async function getIssues(
   projectId: Ref<Space>,
@@ -125,16 +129,17 @@ export async function getIssues(
     const sortOrder = sort?.order === 'ascending' ? SortingOrder.Ascending : SortingOrder.Descending
     const sortKey = sort?.key ?? 'modifiedOn'
 
-    // Use cursor-based (keyset) pagination to avoid O(n^2) re-fetch.
-    // The cursor is the sort-key value of the last item from the
-    // previous page. We fetch one extra item to detect hasMore.
     if (cursor !== undefined) {
       const cursorOp = sortOrder === SortingOrder.Descending ? '$lt' : '$gt'
-      ;(query as Record<string, unknown>)[sortKey] = { [cursorOp]: cursor }
+      const idOp = sortOrder === SortingOrder.Descending ? '$lt' : '$gt'
+      ;(query as Record<string, unknown>).$or = [
+        { [sortKey]: { [cursorOp]: cursor.sortValue } },
+        { [sortKey]: cursor.sortValue, _id: { [idOp]: cursor.id } },
+      ]
     }
 
     const options: FindOptions<Issue> = {
-      sort: { [sortKey]: sortOrder } as Record<string, SortingOrder>,
+      sort: { [sortKey]: sortOrder, _id: sortOrder } as Record<string, SortingOrder>,
       limit: DEFAULT_PAGE_SIZE + 1,
       total: true,
       // Expand status and assignee refs so UI can show human-readable values

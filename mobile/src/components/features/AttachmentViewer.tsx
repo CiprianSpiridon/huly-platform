@@ -7,7 +7,7 @@
  * - Other: Opens native share sheet for the user's OS to handle
  */
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Modal } from 'react-native'
 
 import { downloadAndShare } from '@/repositories/attachment'
@@ -77,22 +77,17 @@ interface NonImageHandlerProps {
 }
 
 function NonImageHandler({ blobId, filename, onClose }: NonImageHandlerProps): React.ReactNode {
-  const [triggered, setTriggered] = useState(false)
-
   const triggerShare = useCallback(async () => {
-    if (triggered) return
-    setTriggered(true)
     try {
       await downloadAndShare(blobId, filename)
     } finally {
       onClose()
     }
-  }, [blobId, filename, onClose, triggered])
+  }, [blobId, filename, onClose])
 
-  // Trigger on first render
-  if (!triggered) {
+  useEffect(() => {
     void triggerShare()
-  }
+  }, [])
 
   return null
 }

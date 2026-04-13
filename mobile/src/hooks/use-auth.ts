@@ -12,6 +12,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import type { LoginInfo, OtpInfo } from '@hcengineering/account-client'
 
 import { getOrCreateAccountClient, clearAccountClient } from '@/client/account'
+import { clearConfig } from '@/client/config'
 import { useAuthStore } from '@/store/auth'
 import { useWorkspaceStore } from '@/store/workspace'
 import { useConnectionStore } from '@/store/connection'
@@ -205,6 +206,7 @@ export function useLogout(): () => Promise<void> {
     queryClient.clear()
     disconnect()
     clearAccountClient()
+    clearConfig()
     resetPush()
     await clearBadge()
     await clearWorkspace()

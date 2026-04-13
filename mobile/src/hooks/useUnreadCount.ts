@@ -74,7 +74,7 @@ export function useUnreadCount(): UseQueryResult<number, Error> {
     return () => {
       subscription.remove()
     }
-  }, [query])
+  }, [query.refetch])
 
   return query
 }

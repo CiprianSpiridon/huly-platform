@@ -72,7 +72,9 @@ export default function SearchScreen(): React.ReactNode {
   }, [])
 
   const clearRecentSearches = useCallback(async () => {
-    await AsyncStorage.removeItem(RECENT_SEARCHES_KEY)
+    try {
+      await AsyncStorage.removeItem(RECENT_SEARCHES_KEY)
+    } catch { /* ignore */ }
     setRecentSearches([])
   }, [])
 

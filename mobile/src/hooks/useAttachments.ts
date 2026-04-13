@@ -15,6 +15,8 @@ import { uploadFile, getLocalFileSize, getAuthenticatedFileUrl, getAuthenticated
 import { getClient } from '@/client'
 import { useUploadStore } from '@/store/upload'
 import type { UploadEntry, UploadStatus } from '@/store/upload'
+import { useAuthStore } from '@/store/auth'
+import { useShallow } from 'zustand/react/shallow'
 
 // ---------------------------------------------------------------------------
 // useUploadAttachment
@@ -47,9 +49,12 @@ export function useUploadAttachment(): UseUploadAttachmentReturn {
   const failUpload = useUploadStore((s) => s.failUpload)
   const clearCompleted = useUploadStore((s) => s.clearCompleted)
   const uploads = useUploadStore((s) => [...s.uploads.values()])
-  const hasActiveUploads = useUploadStore((s) => s.hasActiveUploads)
-
-  const hasActive = hasActiveUploads()
+  const hasActive = useUploadStore((s) => {
+    for (const e of s.uploads.values()) {
+      if (e.status === 'pending' || e.status === 'uploading') return true
+    }
+    return false
+  })
 
   const upload = useCallback(
     async (localUri: string, filename: string, mimeType: string): Promise<string | null> => {
@@ -99,10 +104,12 @@ export function useAttachmentUrl(
   thumbnailWidth: number = 200,
   thumbnailHeight: number = 200
 ): UseAttachmentUrlReturn {
-  const fileUrl = useMemo(() => getAuthenticatedFileUrl(blobId), [blobId])
+  const token = useAuthStore((s) => s.token)
+
+  const fileUrl = useMemo(() => getAuthenticatedFileUrl(blobId), [blobId, token])
   const thumbnailUrl = useMemo(
     () => getAuthenticatedThumbnailUrl(blobId, thumbnailWidth, thumbnailHeight),
-    [blobId, thumbnailWidth, thumbnailHeight]
+    [blobId, thumbnailWidth, thumbnailHeight, token]
   )
 
   return { fileUrl, thumbnailUrl }
@@ -140,5 +147,5 @@ export function useDocAttachments(
  * filtered set has not changed.
  */
 export function useUploadsByStatus(status: UploadStatus): UploadEntry[] {
-  return useUploadStore((s) => s.getUploadsByStatus(status))
+  return useUploadStore(useShallow((s) => [...s.uploads.values()].filter(e => e.status === status)))
 }

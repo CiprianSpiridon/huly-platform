@@ -302,10 +302,10 @@ function optimisticallyRemoveItems(data: unknown, ids: string[]): unknown {
   if (Array.isArray(record.pages)) {
     return {
       ...record,
-      pages: (record.pages as PaginatedNotifications[]).map((page) => ({
+      pages: (record.pages as PaginatedNotifications[]).map((page, index) => ({
         ...page,
         items: page.items.filter((item) => !idSet.has(item._id)),
-        total: Math.max(0, page.total - ids.length),
+        total: index === 0 ? Math.max(0, page.total - ids.length) : page.total,
       })),
     }
   }

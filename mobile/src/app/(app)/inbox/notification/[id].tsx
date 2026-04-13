@@ -51,7 +51,7 @@ export default function NotificationDetailScreen(): React.ReactNode {
       hasMarkedRead.current = true
       markAsReadMutation.mutate([id])
     }
-  }, [id, markAsReadMutation])
+  }, [id])
 
   // Try to navigate to the source document
   const handleNavigateToSource = useCallback(() => {
@@ -61,7 +61,7 @@ export default function NotificationDetailScreen(): React.ReactNode {
     const objectId = String(record.objectId ?? '')
 
     if (objectClass && objectId) {
-      const result = resolveNotificationRoute(objectClass, objectId)
+      const result = resolveNotificationRoute(objectClass, objectId, id)
       if (result.isKnown) {
         router.push(result.path as never)
         return
@@ -69,10 +69,11 @@ export default function NotificationDetailScreen(): React.ReactNode {
     }
   }, [record])
 
-  if (!id) {
-    router.back()
-    return null
-  }
+  useEffect(() => {
+    if (!id) router.replace('/(app)/inbox' as never)
+  }, [id])
+
+  if (!id) return null
 
   // Loading state
   if (isLoading) {

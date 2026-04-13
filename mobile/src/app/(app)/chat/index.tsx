@@ -12,7 +12,6 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, type Href } from 'expo-router'
 
 import { useChannels } from '@/hooks/useChannels'
-import { useChatUnreadSync } from '@/hooks/useChatUnread'
 import { useChatStore } from '@/store/chat'
 import { ChannelRow } from '@/components/features/ChannelRow'
 import type { ChannelItem } from '@/repositories/chat'
@@ -32,7 +31,6 @@ interface ChannelSection {
 
 export default function ChannelListScreen(): React.ReactNode {
   const { data, isLoading, error, refetch, fetchStatus } = useChannels()
-  useChatUnreadSync() // Polls DocNotifyContext and syncs unread counts to store
   const unreadCounts = useChatStore((s) => s.unreadCounts)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -68,7 +66,7 @@ export default function ChannelListScreen(): React.ReactNode {
     ({ item }: SectionListRenderItemInfo<ChannelItem, ChannelSection>) => (
       <ChannelRow
         channel={item}
-        unreadCount={unreadCounts.get(item._id) ?? 0}
+        unreadCount={unreadCounts[item._id] ?? 0}
         onPress={handleChannelPress}
       />
     ),

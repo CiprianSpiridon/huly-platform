@@ -30,7 +30,16 @@ export default function GlobalSearchScreen(): React.ReactNode {
 
   // Load recent searches on mount
   useEffect(() => {
-    void loadRecentSearches()
+    void (async () => {
+      try {
+        const stored = await AsyncStorage.getItem(RECENT_SEARCHES_KEY)
+        if (stored !== null) {
+          setRecentSearches(JSON.parse(stored) as string[])
+        }
+      } catch {
+        // Ignore parse errors
+      }
+    })()
   }, [])
 
   // Debounce query
@@ -49,17 +58,6 @@ export default function GlobalSearchScreen(): React.ReactNode {
     }
   }, [query])
 
-  const loadRecentSearches = async (): Promise<void> => {
-    try {
-      const stored = await AsyncStorage.getItem(RECENT_SEARCHES_KEY)
-      if (stored !== null) {
-        setRecentSearches(JSON.parse(stored) as string[])
-      }
-    } catch {
-      // Ignore parse errors
-    }
-  }
-
   const saveRecentSearch = useCallback(async (search: string) => {
     if (search.trim().length < 2) return
     try {
@@ -74,8 +72,12 @@ export default function GlobalSearchScreen(): React.ReactNode {
   }, [])
 
   const clearRecentSearches = useCallback(async () => {
-    await AsyncStorage.removeItem(RECENT_SEARCHES_KEY)
-    setRecentSearches([])
+    try {
+      await AsyncStorage.removeItem(RECENT_SEARCHES_KEY)
+      setRecentSearches([])
+    } catch {
+      // Ignore storage errors
+    }
   }, [])
 
   const handleResultPress = useCallback(

@@ -69,10 +69,13 @@ export function useSwitchWorkspace(): {
         // 3. Disconnect existing API client
         disconnect()
 
-        // 3. Update workspace Zustand store (all 4 keys)
+        // 4. Clear all cached queries from previous workspace before connecting
+        queryClient.clear()
+
+        // 5. Update workspace Zustand store (all 4 keys)
         await setWorkspace(wsInfo)
 
-        // 4. Reconnect with new workspace credentials
+        // 6. Reconnect with new workspace credentials
         try {
           await connect(wsInfo.endpoint, wsInfo.workspace, wsInfo.token)
         } catch (connectErr) {
@@ -89,10 +92,7 @@ export function useSwitchWorkspace(): {
           throw connectErr
         }
 
-        // 5. Clear all cached queries from previous workspace
-        queryClient.clear()
-
-        // 6. Navigate to the default tab
+        // 7. Navigate to the default tab
         router.replace('/(app)/tracker' as Href)
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to switch workspace'

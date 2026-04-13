@@ -180,9 +180,14 @@ export async function getMessages(
       space: spaceId as Ref<Space>,
     }
 
-    // If we have a cursor (timestamp), fetch messages older than that
+    // Cursor format: "timestamp:messageId" — use $lte with $nin to avoid
+    // skipping messages that share the same timestamp as the cursor message.
     if (pagination?.cursor != null) {
-      query.createdOn = { $lt: Number(pagination.cursor) }
+      const [cursorTs, cursorId] = pagination.cursor.split(':')
+      query.createdOn = { $lte: Number(cursorTs) }
+      if (cursorId != null) {
+        query._id = { $nin: [cursorId as Ref<Doc>] }
+      }
     }
 
     // Use ChatMessage class (not ActivityMessage) to exclude ThreadMessage replies
@@ -201,13 +206,17 @@ export async function getMessages(
     const items = hasMore ? docs.slice(0, limit) : docs
 
     const lastItem = items[items.length - 1]
-    const lastTimestamp = lastItem != null
-      ? Number((lastItem as unknown as Record<string, unknown>).createdOn ?? 0)
-      : undefined
+    let nextCursor: string | undefined
+    if (hasMore && lastItem != null) {
+      const lastRecord = lastItem as unknown as Record<string, unknown>
+      const lastTimestamp = Number(lastRecord.createdOn ?? 0)
+      const lastId = String(lastRecord._id ?? '')
+      nextCursor = `${lastTimestamp}:${lastId}`
+    }
 
     return {
       items: items.map(docToMessageItem),
-      nextCursor: hasMore && lastTimestamp != null ? String(lastTimestamp) : undefined,
+      nextCursor,
       hasMore,
     }
   } catch (error) {
@@ -317,9 +326,9 @@ export async function getThread(
       throw new RepositoryError('Message not found', DOMAIN, 'getThread')
     }
 
-    // Fetch replies attached to this message
+    // Fetch replies attached to this message (ChatMessage excludes system messages)
     const repliesResult = await client.findAll<Doc>(
-      ACTIVITY_MESSAGE_CLASS,
+      CHUNTER_CLASS.ChatMessage,
       { attachedTo: messageId as Ref<Doc> } as Record<string, unknown>,
       {
         sort: { createdOn: SortingOrder.Ascending } as Record<string, SortingOrder>,

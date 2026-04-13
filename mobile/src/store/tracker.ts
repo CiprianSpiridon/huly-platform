@@ -74,6 +74,7 @@ interface TrackerState {
     value: TrackerIssueFilters[K]
   ) => void
   clearFilters: () => void
+  clearProjectSpecificFilters: () => void
 
   // Sort (persisted)
   issueSort: TrackerIssueSort
@@ -103,6 +104,10 @@ export const useTrackerStore = create<TrackerState>()(
           issueFilters: { ...state.issueFilters, [key]: value },
         })),
       clearFilters: () => set({ issueFilters: EMPTY_FILTERS }),
+      clearProjectSpecificFilters: () =>
+        set((state) => ({
+          issueFilters: { ...state.issueFilters, status: [], assignee: [] },
+        })),
 
       // Sort
       issueSort: DEFAULT_SORT,

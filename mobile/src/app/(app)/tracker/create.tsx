@@ -9,6 +9,7 @@ import { useTrackerStore } from '@/store/tracker'
 import { useCreateIssue } from '@/hooks/useIssues'
 import { useProjects } from '@/hooks/useProjects'
 import { IssueForm } from '@/components/features/IssueForm'
+import { textToMarkup } from '@/components/features/RichTextEditor'
 
 /**
  * Create issue modal screen.
@@ -43,10 +44,15 @@ export default function CreateIssueScreen(): React.ReactNode {
       return
     }
 
+    let description = draft.description
+    if (description.length > 0 && !description.startsWith('{')) {
+      description = JSON.stringify(textToMarkup(description))
+    }
+
     createIssue.mutate(
       {
         title: draft.title,
-        description: draft.description,
+        description,
         priority: draft.priority,
         status: resolvedStatus as Ref<IssueStatus>,
         assignee: draft.assigneeId,
@@ -62,7 +68,7 @@ export default function CreateIssueScreen(): React.ReactNode {
         },
       }
     )
-  }, [draft, selectedProjectId, createIssue, clearDraft])
+  }, [draft, selectedProjectId, createIssue, clearDraft, defaultStatus])
 
   const handleCancel = useCallback(() => {
     if (isDirty) {

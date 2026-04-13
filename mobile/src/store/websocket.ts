@@ -20,6 +20,7 @@ import NetInfo, { type NetInfoState } from '@react-native-community/netinfo'
 import { create } from 'zustand'
 
 import { queryClient } from '@/client/queryClient'
+import { useWorkspaceStore } from '@/store/workspace'
 import {
   TransactorConnection,
   type TransactorStatus,
@@ -148,7 +149,8 @@ function setupAppStateListener(
     } else if (nextState === 'active' && _wasBackgrounded) {
       // Reconnect on foreground
       _wasBackgrounded = false
-      if (_wsEndpoint !== null && _wsToken !== null) {
+      const freshToken = useWorkspaceStore.getState().workspaceToken
+      if (_wsEndpoint !== null && freshToken !== null) {
         // Always create a fresh connection to avoid reusing a stale socket
         if (_connection !== null) {
           _connection.disconnect()
@@ -163,7 +165,7 @@ function setupAppStateListener(
             set({ status: status as WsStatus })
           },
         })
-        _connection.connect(_wsEndpoint, _wsToken)
+        _connection.connect(_wsEndpoint, freshToken)
         set({ status: 'connecting' })
 
         // Invalidate all queries on foreground return so stale data refreshes
@@ -201,7 +203,8 @@ function setupNetInfoListener(
     } else if (wasDisconnected) {
       // Network restored -- reconnect
       wasDisconnected = false
-      if (_wsEndpoint !== null && _wsToken !== null) {
+      const freshToken = useWorkspaceStore.getState().workspaceToken
+      if (_wsEndpoint !== null && freshToken !== null) {
         // Always create a fresh connection to avoid reusing a stale socket
         if (_connection !== null) {
           _connection.disconnect()
@@ -216,7 +219,7 @@ function setupNetInfoListener(
             set({ status: status as WsStatus })
           },
         })
-        _connection.connect(_wsEndpoint, _wsToken)
+        _connection.connect(_wsEndpoint, freshToken)
         set({ status: 'connecting' })
 
         // Invalidate all queries to refresh stale data

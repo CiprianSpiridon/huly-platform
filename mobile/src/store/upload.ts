@@ -123,11 +123,11 @@ export const useUploadStore = create<UploadState>((set, get) => ({
   clearCompleted: () => {
     set((state) => {
       const next = new Map(state.uploads)
+      const toDelete: string[] = []
       for (const [key, entry] of next) {
-        if (entry.status === 'completed') {
-          next.delete(key)
-        }
+        if (entry.status === 'completed') toDelete.push(key)
       }
+      for (const key of toDelete) next.delete(key)
       return { uploads: next }
     })
   },

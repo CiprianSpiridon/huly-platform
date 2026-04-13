@@ -40,6 +40,7 @@ export function usePushRegistration(): void {
   const restorePreferences = usePushStore((s) => s.restorePreferences)
 
   const previousTokenRef = useRef<string | null>(null)
+  const previousWorkspaceRef = useRef<string | null | undefined>(undefined)
 
   // Restore persisted preferences on mount
   useEffect(() => {
@@ -92,14 +93,14 @@ export function usePushRegistration(): void {
               previousTokenRef.current = pushToken
             }
           } catch (error) {
-            console.error('Failed to register push token with backend:', error)
+            if (__DEV__) console.error('Failed to register push token with backend:', error)
             if (!cancelled) {
               setIsRegistered(false)
             }
           }
         }
       } catch (error) {
-        console.error('Push registration failed:', error)
+        if (__DEV__) console.error('Push registration failed:', error)
       }
     }
 
@@ -117,15 +118,17 @@ export function usePushRegistration(): void {
     setIsRegistered,
   ])
 
-  // Deregister previous token on workspace switch or logout
   useEffect(() => {
-    return () => {
-      const token = previousTokenRef.current
-      if (token != null) {
-        void deregisterPushToken(token).catch(() => {
-          // Best-effort deregistration -- ignore errors
-        })
-      }
+    const prevWs = previousWorkspaceRef.current
+    previousWorkspaceRef.current = workspaceId
+
+    if (prevWs === undefined) {
+      return
+    }
+
+    const token = previousTokenRef.current
+    if (token != null) {
+      void deregisterPushToken(token).catch(() => {})
     }
   }, [workspaceId])
 }

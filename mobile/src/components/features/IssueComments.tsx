@@ -13,8 +13,6 @@ import {
   Pressable,
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 
@@ -167,37 +165,33 @@ function IssueComments({ issueId, projectId, testID }: IssueCommentsProps): Reac
       )}
 
       {/* Compose input */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <View className="flex-row items-end gap-2 mt-3">
-          <TextInput
-            className="flex-1 bg-surface-tertiary text-content-primary font-sans text-sm rounded-md px-3 py-2.5 border border-border-primary min-h-[44px]"
-            placeholder="Add a comment..."
-            placeholderTextColor="#77818B"
-            value={newComment}
-            onChangeText={setNewComment}
-            multiline
-            accessibilityLabel="Comment input"
-            accessibilityHint="Type your comment and press Send"
-            editable={!createComment.isPending}
-          />
-          <Pressable
-            className="bg-accent-primary rounded-md p-2.5 min-h-[44px] min-w-[44px] items-center justify-center"
-            onPress={handleSend}
-            disabled={newComment.trim().length === 0 || createComment.isPending}
-            accessibilityRole="button"
-            accessibilityLabel="Send comment"
-            accessibilityState={{ disabled: newComment.trim().length === 0 || createComment.isPending }}
-          >
-            {createComment.isPending ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Ionicons name="send" size={18} color="#FFFFFF" />
-            )}
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
+      <View className="flex-row items-end gap-2 mt-3">
+        <TextInput
+          className="flex-1 bg-surface-tertiary text-content-primary font-sans text-sm rounded-md px-3 py-2.5 border border-border-primary min-h-[44px]"
+          placeholder="Add a comment..."
+          placeholderTextColor="#77818B"
+          value={newComment}
+          onChangeText={setNewComment}
+          multiline
+          accessibilityLabel="Comment input"
+          accessibilityHint="Type your comment and press Send"
+          editable={!createComment.isPending}
+        />
+        <Pressable
+          className="bg-accent-primary rounded-md p-2.5 min-h-[44px] min-w-[44px] items-center justify-center"
+          onPress={handleSend}
+          disabled={newComment.trim().length === 0 || createComment.isPending}
+          accessibilityRole="button"
+          accessibilityLabel="Send comment"
+          accessibilityState={{ disabled: newComment.trim().length === 0 || createComment.isPending }}
+        >
+          {createComment.isPending ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Ionicons name="send" size={18} color="#FFFFFF" />
+          )}
+        </Pressable>
+      </View>
     </View>
   )
 }

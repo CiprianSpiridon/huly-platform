@@ -7,7 +7,7 @@
  */
 
 import { useCallback } from 'react'
-import { View, Pressable, Text, Dimensions } from 'react-native'
+import { View, Pressable, Text, useWindowDimensions } from 'react-native'
 import { Image } from 'expo-image'
 import { Ionicons } from '@expo/vector-icons'
 
@@ -28,9 +28,8 @@ interface ImageViewerProps {
 // Component
 // ---------------------------------------------------------------------------
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
-
 function ImageViewer({ blobId, filename, onClose }: ImageViewerProps): React.ReactNode {
+  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions()
   const { fileUrl } = useAttachmentUrl(blobId)
 
   const handleShare = useCallback(() => {

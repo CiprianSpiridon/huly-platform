@@ -10,7 +10,7 @@ import { useChatStore } from '../chat'
 describe('chat store', () => {
   beforeEach(() => {
     useChatStore.setState({
-      unreadCounts: new Map(),
+      unreadCounts: {},
       draftMessages: new Map(),
       activeChannelId: null,
       unreadTotal: 0,
@@ -22,14 +22,14 @@ describe('chat store', () => {
   it('starts with zero unread', () => {
     const state = useChatStore.getState()
     expect(state.unreadTotal).toBe(0)
-    expect(state.unreadCounts.size).toBe(0)
+    expect(Object.keys(state.unreadCounts).length).toBe(0)
   })
 
   it('sets unread count for a channel', () => {
     useChatStore.getState().setUnreadCount('ch-1', 5)
 
     const state = useChatStore.getState()
-    expect(state.unreadCounts.get('ch-1')).toBe(5)
+    expect(state.unreadCounts['ch-1']).toBe(5)
     expect(state.unreadTotal).toBe(5)
   })
 
@@ -37,7 +37,7 @@ describe('chat store', () => {
     useChatStore.getState().setUnreadCount('ch-1', 5)
     useChatStore.getState().setUnreadCount('ch-1', 0)
 
-    expect(useChatStore.getState().unreadCounts.has('ch-1')).toBe(false)
+    expect('ch-1' in useChatStore.getState().unreadCounts).toBe(false)
     expect(useChatStore.getState().unreadTotal).toBe(0)
   })
 
@@ -46,7 +46,7 @@ describe('chat store', () => {
     useChatStore.getState().setUnreadCount('ch-2', 7)
     useChatStore.getState().clearUnread('ch-1')
 
-    expect(useChatStore.getState().unreadCounts.has('ch-1')).toBe(false)
+    expect('ch-1' in useChatStore.getState().unreadCounts).toBe(false)
     expect(useChatStore.getState().unreadTotal).toBe(7)
   })
 
@@ -54,14 +54,14 @@ describe('chat store', () => {
     useChatStore.getState().setUnreadCount('ch-1', 3)
     useChatStore.getState().incrementUnread('ch-1')
 
-    expect(useChatStore.getState().unreadCounts.get('ch-1')).toBe(4)
+    expect(useChatStore.getState().unreadCounts['ch-1']).toBe(4)
     expect(useChatStore.getState().unreadTotal).toBe(4)
   })
 
   it('increments unread for new channel from zero', () => {
     useChatStore.getState().incrementUnread('ch-new')
 
-    expect(useChatStore.getState().unreadCounts.get('ch-new')).toBe(1)
+    expect(useChatStore.getState().unreadCounts['ch-new']).toBe(1)
     expect(useChatStore.getState().unreadTotal).toBe(1)
   })
 
@@ -78,7 +78,7 @@ describe('chat store', () => {
     useChatStore.getState().setUnreadCount('ch-2', 7)
     useChatStore.getState().resetAllUnread()
 
-    expect(useChatStore.getState().unreadCounts.size).toBe(0)
+    expect(Object.keys(useChatStore.getState().unreadCounts).length).toBe(0)
     expect(useChatStore.getState().unreadTotal).toBe(0)
   })
 

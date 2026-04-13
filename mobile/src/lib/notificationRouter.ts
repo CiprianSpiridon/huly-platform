@@ -42,7 +42,8 @@ export interface DeepLinkResult {
  */
 export function resolveNotificationRoute(
   objectClass: string,
-  objectId: string
+  objectId: string,
+  notificationId?: string
 ): DeepLinkResult {
   switch (objectClass) {
     case TRACKER_ISSUE:
@@ -60,17 +61,26 @@ export function resolveNotificationRoute(
 
     case CHUNTER_CHAT_MESSAGE:
     case ACTIVITY_MESSAGE:
-      // Activity/chat messages -- navigate to the parent context
-      // For now, show the fallback detail since we don't have the
-      // parent channel ID readily available
+      if (notificationId != null) {
+        return {
+          path: `/(app)/inbox/notification/${notificationId}`,
+          isKnown: false,
+        }
+      }
       return {
-        path: `/(app)/inbox/notification/${objectId}`,
+        path: '/(app)/inbox',
         isKnown: false,
       }
 
     default:
+      if (notificationId != null) {
+        return {
+          path: `/(app)/inbox/notification/${notificationId}`,
+          isKnown: false,
+        }
+      }
       return {
-        path: `/(app)/inbox/notification/${objectId}`,
+        path: '/(app)/inbox',
         isKnown: false,
       }
   }

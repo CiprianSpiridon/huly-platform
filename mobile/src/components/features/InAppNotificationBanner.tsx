@@ -114,12 +114,19 @@ function InAppNotificationBanner({
     }
   }, [notification, onPress, clearDismissTimer, translateY])
 
-  if (notification == null) return null
+  const lastNotificationRef = useRef<BannerNotification | null>(null)
+  if (notification != null) {
+    lastNotificationRef.current = notification
+  }
+  const displayNotification = lastNotificationRef.current
 
-  const iconName = getIconForType(notification.type)
+  if (displayNotification == null) return null
+
+  const iconName = getIconForType(displayNotification.type)
 
   return (
     <Animated.View
+      pointerEvents={notification != null ? 'auto' : 'none'}
       style={[
         {
           position: 'absolute',
@@ -143,7 +150,7 @@ function InAppNotificationBanner({
         }}
         onPress={handlePress}
         accessibilityRole="button"
-        accessibilityLabel={`Notification: ${notification.title}. ${notification.body}. Tap to view.`}
+        accessibilityLabel={`Notification: ${displayNotification.title}. ${displayNotification.body}. Tap to view.`}
         accessibilityHint="Double tap to navigate to this notification"
       >
         <View className="w-9 h-9 rounded-full bg-accent-primary/20 items-center justify-center mr-3">
@@ -154,14 +161,14 @@ function InAppNotificationBanner({
             className="font-sans-semibold text-sm text-content-primary"
             numberOfLines={1}
           >
-            {notification.title}
+            {displayNotification.title}
           </Text>
-          {notification.body.length > 0 && (
+          {displayNotification.body.length > 0 && (
             <Text
               className="font-sans text-xs text-content-secondary mt-0.5"
               numberOfLines={2}
             >
-              {notification.body}
+              {displayNotification.body}
             </Text>
           )}
         </View>

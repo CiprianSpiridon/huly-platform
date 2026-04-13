@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import {
   View,
   Text,
@@ -16,13 +16,18 @@ import { useTwoFactor } from '@/hooks/use-auth'
 export default function TwoFactorScreen(): React.ReactNode {
   const [code, setCode] = useState('')
   const { verify, isLoading, error } = useTwoFactor()
+  const isSubmitting = useRef(false)
 
   const handleVerify = useCallback(async () => {
+    if (isSubmitting.current) return
+    isSubmitting.current = true
     try {
       await verify(code)
       router.replace('/(auth)/workspace-select')
     } catch {
       Alert.alert('Error', 'Invalid verification code. Please try again.')
+    } finally {
+      isSubmitting.current = false
     }
   }, [code, verify])
 

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { View, Text, ActivityIndicator, RefreshControl, Pressable, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { FlashList } from '@shopify/flash-list'
@@ -66,10 +66,17 @@ export default function IssueListScreen(): React.ReactNode {
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
-  if (!id) {
-    router.back()
-    return null
-  }
+  useEffect(() => {
+    if (!id) router.replace('/(app)/tracker' as Href)
+  }, [id])
+
+  useEffect(() => {
+    if (id) {
+      useTrackerStore.getState().clearProjectSpecificFilters()
+    }
+  }, [id])
+
+  if (!id) return null
 
   // Loading state
   if (isLoading) {
@@ -199,6 +206,14 @@ export default function IssueListScreen(): React.ReactNode {
           ) : null
         }
       />
+      <Pressable
+        className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-primary items-center justify-center shadow-lg"
+        onPress={handleCreatePress}
+        accessibilityRole="button"
+        accessibilityLabel="Create new issue"
+      >
+        <Ionicons name="add" size={28} color="#FFFFFF" />
+      </Pressable>
     </SafeAreaView>
   )
 }

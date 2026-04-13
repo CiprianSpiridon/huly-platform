@@ -28,17 +28,15 @@ describe('auth store', () => {
       account: null,
       tfaToken: null,
       isAuthenticated: false,
-      isBootstrapping: true,
     })
     jest.clearAllMocks()
   })
 
-  it('starts unauthenticated with bootstrapping true', () => {
+  it('starts unauthenticated', () => {
     const state = useAuthStore.getState()
     expect(state.isAuthenticated).toBe(false)
     expect(state.token).toBeNull()
     expect(state.account).toBeNull()
-    expect(state.isBootstrapping).toBe(true)
   })
 
   it('sets auth from login info', async () => {
@@ -120,7 +118,6 @@ describe('auth store', () => {
     expect(state.isAuthenticated).toBe(true)
     expect(state.token).toBe('stored-token')
     expect(state.account).toBe('stored-account')
-    expect(state.isBootstrapping).toBe(false)
   })
 
   it('clears state when no stored token exists', async () => {
@@ -130,7 +127,6 @@ describe('auth store', () => {
 
     const state = useAuthStore.getState()
     expect(state.isAuthenticated).toBe(false)
-    expect(state.isBootstrapping).toBe(false)
   })
 
   it('clears state when stored token validation fails', async () => {
@@ -150,7 +146,6 @@ describe('auth store', () => {
 
     const state = useAuthStore.getState()
     expect(state.isAuthenticated).toBe(false)
-    expect(state.isBootstrapping).toBe(false)
 
     // Should have cleaned up all secure store keys
     expect(mockSecureStore.deleteItemAsync).toHaveBeenCalledWith('auth_token')

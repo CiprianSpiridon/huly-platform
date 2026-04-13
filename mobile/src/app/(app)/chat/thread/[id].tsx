@@ -6,11 +6,11 @@
  * useSendThreadReply mutation for new replies.
  */
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { View, Text, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useLocalSearchParams, router, Stack } from 'expo-router'
-import { FlashList } from '@shopify/flash-list'
+import { useLocalSearchParams, router, Stack, type Href } from 'expo-router'
+import { FlashList, type FlashListRef } from '@shopify/flash-list'
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
 
 import { useThread, useSendThreadReply } from '@/hooks/useThread'
@@ -34,6 +34,7 @@ export default function ThreadScreen(): React.ReactNode {
   const sendReply = useSendThreadReply()
   const toggleReaction = useToggleReaction()
 
+  const listRef = useRef<FlashListRef<MessageItem>>(null)
   const reactionPickerRef = useRef<BottomSheetModal>(null)
   const [selectedMessage, setSelectedMessage] = useState<MessageItem | null>(null)
   // Track pending attachment blob IDs to include in the next sent reply
@@ -44,12 +45,21 @@ export default function ThreadScreen(): React.ReactNode {
     (content: string) => {
       if (data == null) return
       const attachmentIds = pendingAttachmentIds.length > 0 ? [...pendingAttachmentIds] : undefined
-      sendReply.mutate({
-        messageId: id,
-        spaceId: data.parent.space,
-        content,
-        attachmentIds,
-      })
+      sendReply.mutate(
+        {
+          messageId: id,
+          spaceId: data.parent.space,
+          content,
+          attachmentIds,
+        },
+        {
+          onSuccess: () => {
+            setTimeout(() => {
+              listRef.current?.scrollToEnd({ animated: true })
+            }, 100)
+          },
+        }
+      )
       setPendingAttachmentIds([])
     },
     [id, data, sendReply, pendingAttachmentIds]
@@ -115,10 +125,11 @@ export default function ThreadScreen(): React.ReactNode {
     [currentUserId, handleLongPress, handleReactionToggle]
   )
 
-  if (!id) {
-    router.back()
-    return null
-  }
+  useEffect(() => {
+    if (!id) router.replace('/(app)/chat' as Href)
+  }, [id])
+
+  if (!id) return null
 
   // Loading state
   if (isLoading) {
@@ -177,6 +188,7 @@ export default function ThreadScreen(): React.ReactNode {
           </View>
         ) : (
           <FlashList
+            ref={listRef}
             data={data.replies}
             renderItem={renderItem}
             keyExtractor={(item) => item._id}

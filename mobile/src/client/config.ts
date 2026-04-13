@@ -33,7 +33,19 @@ export async function loadServerConfig(url: string): Promise<ServerConfig> {
   }
 
   const configUrl = url.endsWith('/') ? `${url}config.json` : `${url}/config.json`
-  const response = await fetch(configUrl)
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => { controller.abort() }, 15_000)
+  let response: Response
+  try {
+    response = await fetch(configUrl, { signal: controller.signal })
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error('Server config request timed out')
+    }
+    throw err
+  } finally {
+    clearTimeout(timeoutId)
+  }
 
   if (!response.ok) {
     throw new Error(`Failed to load server config: ${response.status.toString()}`)

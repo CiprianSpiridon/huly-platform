@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import {
   View,
   Text,
@@ -17,8 +17,11 @@ export default function LoginScreen(): React.ReactNode {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const { login, isLoading, error } = useLogin()
+  const isSubmitting = useRef(false)
 
   const handleLogin = useCallback(async () => {
+    if (isSubmitting.current) return
+    isSubmitting.current = true
     try {
       const result = await login(email, password)
 
@@ -27,7 +30,6 @@ export default function LoginScreen(): React.ReactNode {
         return
       }
 
-      // Unconfirmed email — token is null, useLogin() already set the error message
       if (result.token == null) {
         return
       }
@@ -35,6 +37,8 @@ export default function LoginScreen(): React.ReactNode {
       router.replace('/(auth)/workspace-select')
     } catch {
       Alert.alert('Error', 'Login failed. Please check your credentials and try again.')
+    } finally {
+      isSubmitting.current = false
     }
   }, [email, password, login])
 

@@ -9,7 +9,7 @@
  */
 
 import { useCallback, useRef, useEffect, useState } from 'react'
-import { View, Text, KeyboardAvoidingView, Platform, FlatList } from 'react-native'
+import { View, Text, KeyboardAvoidingView, Platform, FlatList, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, router, Stack, type Href } from 'expo-router'
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
@@ -74,10 +74,20 @@ export default function ChannelDetailScreen(): React.ReactNode {
   const handleSend = useCallback(
     (content: string) => {
       const attachmentIds = pendingAttachmentIds.length > 0 ? [...pendingAttachmentIds] : undefined
-      sendMessage.mutate({ spaceId: id, content, attachmentIds })
+      sendMessage.mutate(
+        { spaceId: id, content, attachmentIds },
+        {
+          onSuccess: () => {
+            saveDraft(id, '')
+          },
+          onError: () => {
+            Alert.alert('Send failed', 'Message could not be sent. Please try again.')
+          },
+        }
+      )
       setPendingAttachmentIds([])
     },
-    [id, sendMessage, pendingAttachmentIds]
+    [id, sendMessage, pendingAttachmentIds, saveDraft]
   )
 
   // Handle attachment uploaded -- store blob ID for next send
@@ -171,10 +181,11 @@ export default function ChannelDetailScreen(): React.ReactNode {
     [currentUserId, handleLongPress, handleReactionToggle, handleThreadPress, handleAttachmentPress]
   )
 
-  if (!id) {
-    router.back()
-    return null
-  }
+  useEffect(() => {
+    if (!id) router.replace('/(app)/chat' as Href)
+  }, [id])
+
+  if (!id) return null
 
   const messages = messagesData?.items ?? []
 

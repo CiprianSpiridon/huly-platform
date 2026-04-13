@@ -34,7 +34,6 @@ describe('settings repository', () => {
       token: 'test-token',
       account: 'test-account' as never,
       isAuthenticated: true,
-      isBootstrapping: false,
       tfaToken: null,
     })
     useWorkspaceStore.setState({

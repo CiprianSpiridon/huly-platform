@@ -1,7 +1,7 @@
-import { useCallback, useRef, useState } from 'react'
-import { View, Text, ScrollView, RefreshControl, ActivityIndicator, Pressable } from 'react-native'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Alert, View, Text, ScrollView, RefreshControl, ActivityIndicator, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useLocalSearchParams, router, Stack } from 'expo-router'
+import { useLocalSearchParams, router, Stack, type Href } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import type { Doc, Ref, Space } from '@hcengineering/core'
@@ -71,11 +71,18 @@ export default function IssueDetailScreen(): React.ReactNode {
   const handleAssigneeSelect = useCallback(
     (memberId: Ref<Doc> | null) => {
       if (issue == null) return
-      updateIssue.mutate({
-        issueId: issue._id as Ref<Issue>,
-        projectId: issue.space as Ref<Space>,
-        update: { assignee: memberId },
-      })
+      updateIssue.mutate(
+        {
+          issueId: issue._id as Ref<Issue>,
+          projectId: issue.space as Ref<Space>,
+          update: { assignee: memberId },
+        },
+        {
+          onError: () => {
+            Alert.alert('Update failed', 'Could not update the issue.')
+          },
+        }
+      )
     },
     [issue, updateIssue]
   )
@@ -94,11 +101,18 @@ export default function IssueDetailScreen(): React.ReactNode {
   const handleStatusSelect = useCallback(
     (statusId: Ref<IssueStatus>) => {
       if (issue == null) return
-      updateIssue.mutate({
-        issueId: issue._id as Ref<Issue>,
-        projectId: issue.space as Ref<Space>,
-        update: { status: statusId },
-      })
+      updateIssue.mutate(
+        {
+          issueId: issue._id as Ref<Issue>,
+          projectId: issue.space as Ref<Space>,
+          update: { status: statusId },
+        },
+        {
+          onError: () => {
+            Alert.alert('Update failed', 'Could not update the issue.')
+          },
+        }
+      )
     },
     [issue, updateIssue]
   )
@@ -106,19 +120,27 @@ export default function IssueDetailScreen(): React.ReactNode {
   const handlePrioritySelect = useCallback(
     (priority: IssuePriorityValue) => {
       if (issue == null) return
-      updateIssue.mutate({
-        issueId: issue._id as Ref<Issue>,
-        projectId: issue.space as Ref<Space>,
-        update: { priority },
-      })
+      updateIssue.mutate(
+        {
+          issueId: issue._id as Ref<Issue>,
+          projectId: issue.space as Ref<Space>,
+          update: { priority },
+        },
+        {
+          onError: () => {
+            Alert.alert('Update failed', 'Could not update the issue.')
+          },
+        }
+      )
     },
     [issue, updateIssue]
   )
 
-  if (!id) {
-    router.back()
-    return null
-  }
+  useEffect(() => {
+    if (!id) router.replace('/(app)/tracker' as Href)
+  }, [id])
+
+  if (!id) return null
 
   // Loading state
   if (isLoading) {
