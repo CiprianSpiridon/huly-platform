@@ -6,6 +6,7 @@ import { useLocalSearchParams, router, Stack, type Href } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import type { Ref, Space } from '@hcengineering/core'
 import type { Issue } from '@hcengineering/tracker'
+import { getStatusName, getAssigneeName } from '@/lib/lookup'
 
 import { useIssues } from '@/hooks/useIssues'
 import { useTrackerStore } from '@/store/tracker'
@@ -169,16 +170,8 @@ export default function IssueListScreen(): React.ReactNode {
             identifier={item.identifier}
             title={item.title}
             priority={item.priority}
-            statusName={
-              (item as unknown as Record<string, unknown>).$lookup != null
-                ? ((item as unknown as Record<string, unknown>).$lookup as Record<string, Record<string, string>>)?.status?.name ?? 'Unknown'
-                : 'Unknown'
-            }
-            assigneeName={
-              (item as unknown as Record<string, unknown>).$lookup != null
-                ? ((item as unknown as Record<string, unknown>).$lookup as Record<string, Record<string, string>>)?.assignee?.name
-                : undefined
-            }
+            statusName={getStatusName(item)}
+            assigneeName={getAssigneeName(item)}
             onPress={handleIssuePress}
           />
         )}

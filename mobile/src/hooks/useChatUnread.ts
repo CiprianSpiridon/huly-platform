@@ -1,51 +1,70 @@
 /**
  * Chat unread count sync hook.
  *
- * Polls for unread message counts per channel and syncs to the chat
- * Zustand store for tab badge and channel row indicators.
+ * Polls DocNotifyContext documents filtered by current user and
+ * Channel/DirectMessage object classes. Rebuilds unread state from
+ * scratch on each poll to prevent stale counts.
  */
 
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import type { Doc, Ref, Class, Space } from '@hcengineering/core'
+import type { Doc, Ref, Class } from '@hcengineering/core'
 
 import { getClient } from '@/client'
 import { useChatStore } from '@/store/chat'
+import { useConnectionStore } from '@/store/connection'
+import { useAuthStore } from '@/store/auth'
 import { useWebSocketStore } from '@/store/websocket'
 
 const NOTIFY_CONTEXT_CLASS = 'notification:class:DocNotifyContext' as Ref<Class<Doc>>
+const CHANNEL_CLASS = 'chunter:class:Channel'
+const DM_CLASS = 'chunter:class:DirectMessage'
 const POLL_INTERVAL = 30_000         // 30 seconds (polling fallback)
 const POLL_INTERVAL_WS = 2 * 60_000 // 2 minutes (WS connected)
 
 /**
  * Polls DocNotifyContext documents to determine which channels have
- * unread messages, then syncs counts to useChatStore.
+ * unread messages, then rebuilds the chat Zustand store from scratch.
  *
- * Call this once in the chat tab layout or channel list screen.
+ * Filters by:
+ * - current user (account UUID)
+ * - objectClass in [Channel, DirectMessage]
+ * - hidden !== true
+ *
+ * Call this once in the authenticated app layout.
  */
 export function useChatUnreadSync(): void {
+  const resetAllUnread = useChatStore((s) => s.resetAllUnread)
   const setUnreadCount = useChatStore((s) => s.setUnreadCount)
+  const account = useAuthStore((s) => s.account)
   const wsConnected = useWebSocketStore((s) => s.status === 'connected')
   const effectiveInterval = wsConnected ? POLL_INTERVAL_WS : POLL_INTERVAL
 
   const { data: contexts } = useQuery({
-    queryKey: ['chat', 'unread-contexts'],
+    queryKey: ['chat', 'unread-contexts', account],
     queryFn: async () => {
       const client = getClient()
-      if (client === null) return []
+      if (client === null || account === null) return []
 
       return await client.findAll<Doc>(
         NOTIFY_CONTEXT_CLASS,
-        {} as Record<string, unknown>
+        {
+          user: account,
+          objectClass: { $in: [CHANNEL_CLASS, DM_CLASS] },
+          hidden: { $ne: true },
+        } as Record<string, unknown>
       )
     },
-    enabled: getClient() !== null,
+    enabled: getClient() !== null && account !== null,
     staleTime: effectiveInterval,
     refetchInterval: effectiveInterval,
   })
 
   useEffect(() => {
     if (contexts == null) return
+
+    // Rebuild from scratch — prevents stale counts from persisting
+    resetAllUnread()
 
     for (const ctx of contexts) {
       const record = ctx as unknown as Record<string, unknown>
@@ -55,8 +74,10 @@ export function useChatUnreadSync(): void {
 
       if (objectId != null && lastUpdate != null) {
         const hasUnread = lastViewed == null || lastUpdate > lastViewed
-        setUnreadCount(objectId, hasUnread ? 1 : 0)
+        if (hasUnread) {
+          setUnreadCount(objectId, 1)
+        }
       }
     }
-  }, [contexts, setUnreadCount])
+  }, [contexts, resetAllUnread, setUnreadCount])
 }

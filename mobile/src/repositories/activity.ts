@@ -24,10 +24,11 @@ import { RepositoryError, wrapRepositoryError } from './base'
 // ---------------------------------------------------------------------------
 
 /**
- * String ref to activity:class:ActivityMessage -- avoids value import
- * from @hcengineering/activity which transitively pulls in svelte.
+ * Use ChatMessage class for comments — excludes system messages like
+ * DocUpdateMessage, ActivityInfoMessage, ActivityReference that would
+ * pollute the comments feed if we queried the base ActivityMessage class.
  */
-const ACTIVITY_MESSAGE_CLASS = 'activity:class:ActivityMessage' as Ref<Class<Doc>>
+const CHAT_MESSAGE_CLASS = 'chunter:class:ChatMessage' as Ref<Class<Doc>>
 
 const DOMAIN = 'activity'
 const DEFAULT_LIMIT = 50
@@ -68,7 +69,7 @@ export async function getComments(
 
   try {
     const result = await client.findAll<Doc>(
-      ACTIVITY_MESSAGE_CLASS,
+      CHAT_MESSAGE_CLASS,
       { attachedTo: attachedTo as Ref<Doc> } as Record<string, unknown>,
       {
         sort: { createdOn: SortingOrder.Ascending } as Record<string, SortingOrder>,

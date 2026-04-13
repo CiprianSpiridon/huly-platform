@@ -7,6 +7,7 @@
 
 import { View, Text, Pressable } from 'react-native'
 import type { Issue } from '@hcengineering/tracker'
+import { getStatusName, getAssigneeName } from '@/lib/lookup'
 
 import { PriorityIcon, ISSUE_PRIORITY } from '@/components/ui/PriorityIcon'
 import { AvatarCircle } from '@/components/ui/AvatarCircle'
@@ -34,10 +35,8 @@ function IssueDetailView({
   onAssigneePress,
   testID,
 }: IssueDetailViewProps): React.ReactNode {
-  // Read from $lookup if available (populated by REST lookup expansion)
-  const lookup = (issue as unknown as Record<string, unknown>).$lookup as Record<string, Record<string, string>> | undefined
-  const lookupStatusName = lookup?.status?.name ?? 'Unknown'
-  const lookupAssigneeName = lookup?.assignee?.name
+  const lookupStatusName = getStatusName(issue)
+  const lookupAssigneeName = getAssigneeName(issue)
 
   return (
     <View className="px-4 py-3" testID={testID}>
