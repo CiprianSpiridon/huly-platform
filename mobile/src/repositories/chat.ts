@@ -61,6 +61,14 @@ export interface ChannelItem {
   modifiedOn: number
 }
 
+/** Inline attachment metadata embedded in a message. */
+export interface MessageAttachment {
+  blobId: string
+  name: string
+  size: number
+  contentType: string
+}
+
 /** Minimal message representation for the mobile UI. */
 export interface MessageItem {
   _id: string
@@ -74,6 +82,8 @@ export interface MessageItem {
   replyCount: number
   threadLastReply: number
   attachedTo?: string
+  /** Attachments associated with this message (populated from $lookup or embedded). */
+  attachments: MessageAttachment[]
 }
 
 /** Reaction data for a message. */
@@ -253,6 +263,7 @@ export async function sendMessage(
       reactions: [],
       replyCount: 0,
       threadLastReply: 0,
+      attachments: [],
     }
   } catch (error) {
     throw wrapRepositoryError(DOMAIN, 'sendMessage', error)
@@ -357,6 +368,7 @@ export async function sendThreadReply(
       replyCount: 0,
       threadLastReply: 0,
       attachedTo: messageId,
+      attachments: [],
     }
   } catch (error) {
     throw wrapRepositoryError(DOMAIN, 'sendThreadReply', error)
@@ -493,6 +505,19 @@ function docToMessageItem(doc: Doc): MessageItem {
       }))
     : []
 
+  // Extract attachments from $lookup or embedded array
+  const rawAttachments = Array.isArray(record.attachments)
+    ? (record.attachments as Array<Record<string, unknown>>)
+    : []
+  const attachments: MessageAttachment[] = rawAttachments
+    .filter((a) => typeof a.blobId === 'string' || typeof a.uuid === 'string' || typeof a.file === 'string')
+    .map((a) => ({
+      blobId: String(a.blobId ?? a.uuid ?? a.file ?? ''),
+      name: String(a.name ?? a.filename ?? 'file'),
+      size: Number(a.size ?? 0),
+      contentType: String(a.contentType ?? a.type ?? 'application/octet-stream'),
+    }))
+
   return {
     _id: String(record._id ?? ''),
     content: String(record.message ?? record.content ?? ''),
@@ -505,5 +530,6 @@ function docToMessageItem(doc: Doc): MessageItem {
     replyCount: Number(record.replies ?? 0),
     threadLastReply: Number(record.lastReply ?? 0),
     attachedTo: record.attachedTo != null ? String(record.attachedTo) : undefined,
+    attachments,
   }
 }

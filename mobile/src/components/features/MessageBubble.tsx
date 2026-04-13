@@ -7,10 +7,12 @@
  */
 
 import { memo, useCallback } from 'react'
-import { View, Text, Pressable } from 'react-native'
+import { View, Text, Pressable, ScrollView } from 'react-native'
+import { Image } from 'expo-image'
 
 import { AvatarCircle } from '@/components/ui/AvatarCircle'
 import { ReactionPills } from '@/components/features/ReactionPills'
+import { getAuthenticatedThumbnailUrl } from '@/repositories/attachment'
 import type { MessageItem } from '@/repositories/chat'
 
 // ---------------------------------------------------------------------------
@@ -23,6 +25,7 @@ interface MessageBubbleProps {
   onLongPress?: (message: MessageItem) => void
   onReactionToggle: (messageId: string, emoji: string, hasReacted: boolean) => void
   onThreadPress?: (message: MessageItem) => void
+  onAttachmentPress?: (blobId: string, filename: string, mimeType: string) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -62,6 +65,7 @@ function MessageBubbleInner({
   onLongPress,
   onReactionToggle,
   onThreadPress,
+  onAttachmentPress,
 }: MessageBubbleProps): React.ReactNode {
   const handleLongPress = useCallback(() => {
     onLongPress?.(message)
@@ -119,6 +123,53 @@ function MessageBubbleInner({
         <Text className="font-sans text-sm text-content-primary leading-5">
           {textContent}
         </Text>
+
+        {/* Inline attachments */}
+        {message.attachments.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="mt-1.5"
+            contentContainerClassName="gap-1.5"
+          >
+            {message.attachments.map((att) => {
+              const isImage = att.contentType.startsWith('image/')
+              if (isImage) {
+                const thumbUrl = getAuthenticatedThumbnailUrl(att.blobId, 240, 160)
+                return (
+                  <Pressable
+                    key={att.blobId}
+                    onPress={() => onAttachmentPress?.(att.blobId, att.name, att.contentType)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Image attachment: ${att.name}`}
+                    className="active:opacity-80"
+                  >
+                    <Image
+                      source={{ uri: thumbUrl }}
+                      className="w-[200px] h-[140px] rounded-md"
+                      contentFit="cover"
+                      transition={200}
+                      recyclingKey={att.blobId}
+                    />
+                  </Pressable>
+                )
+              }
+              return (
+                <Pressable
+                  key={att.blobId}
+                  onPress={() => onAttachmentPress?.(att.blobId, att.name, att.contentType)}
+                  className="bg-surface-tertiary rounded-md px-3 py-2 active:opacity-80"
+                  accessibilityRole="button"
+                  accessibilityLabel={`File attachment: ${att.name}`}
+                >
+                  <Text className="font-sans-medium text-xs text-content-primary" numberOfLines={1}>
+                    {att.name}
+                  </Text>
+                </Pressable>
+              )
+            })}
+          </ScrollView>
+        )}
 
         {/* Reactions */}
         <ReactionPills

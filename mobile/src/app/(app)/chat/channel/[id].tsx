@@ -20,6 +20,8 @@ import { useConnectionStore } from '@/store/connection'
 import { MessageBubble } from '@/components/features/MessageBubble'
 import { MessageInput } from '@/components/features/MessageInput'
 import { ReactionPicker } from '@/components/features/ReactionPicker'
+import { AttachmentViewer } from '@/components/features/AttachmentViewer'
+import { UploadProgress } from '@/components/features/UploadProgress'
 import type { MessageItem } from '@/repositories/chat'
 
 // ---------------------------------------------------------------------------
@@ -55,6 +57,11 @@ export default function ChannelDetailScreen(): React.ReactNode {
 
   const reactionPickerRef = useRef<BottomSheetModal>(null)
   const [selectedMessage, setSelectedMessage] = useState<MessageItem | null>(null)
+  const [viewedAttachment, setViewedAttachment] = useState<{
+    blobId: string
+    filename: string
+    mimeType: string
+  } | null>(null)
 
   // Mark channel as read and set active on mount
   useEffect(() => {
@@ -115,6 +122,18 @@ export default function ChannelDetailScreen(): React.ReactNode {
     [id, toggleReaction]
   )
 
+  // Handle attachment press
+  const handleAttachmentPress = useCallback(
+    (blobId: string, filename: string, mimeType: string) => {
+      setViewedAttachment({ blobId, filename, mimeType })
+    },
+    []
+  )
+
+  const handleCloseAttachmentViewer = useCallback(() => {
+    setViewedAttachment(null)
+  }, [])
+
   // Handle thread navigation
   const handleThreadPress = useCallback(
     (message: MessageItem) => {
@@ -138,9 +157,10 @@ export default function ChannelDetailScreen(): React.ReactNode {
         onLongPress={handleLongPress}
         onReactionToggle={handleReactionToggle}
         onThreadPress={handleThreadPress}
+        onAttachmentPress={handleAttachmentPress}
       />
     ),
-    [handleLongPress, handleReactionToggle, handleThreadPress]
+    [handleLongPress, handleReactionToggle, handleThreadPress, handleAttachmentPress]
   )
 
   const messages = messagesData?.items ?? []
@@ -225,8 +245,18 @@ export default function ChannelDetailScreen(): React.ReactNode {
           onDraftChange={handleDraftChange}
           initialDraft={getDraft(id)}
           isSending={sendMessage.isPending}
+          showAttachButton
         />
       </KeyboardAvoidingView>
+
+      {/* Upload progress overlay */}
+      <UploadProgress />
+
+      {/* Attachment viewer modal */}
+      <AttachmentViewer
+        attachment={viewedAttachment}
+        onClose={handleCloseAttachmentViewer}
+      />
 
       {/* Reaction picker */}
       <ReactionPicker

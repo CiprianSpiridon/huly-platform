@@ -42,3 +42,12 @@ export type {
   PaginatedNotifications,
 } from './notification'
 export { registerPushToken, deregisterPushToken } from './push'
+export {
+  uploadFile,
+  downloadFile,
+  downloadAndShare,
+  getLocalFileSize,
+  getAuthenticatedFileUrl,
+  getAuthenticatedThumbnailUrl,
+} from './attachment'
+export type { UploadResult, AttachmentMeta } from './attachment'

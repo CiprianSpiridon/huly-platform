@@ -97,6 +97,7 @@ export function useSendThreadReply(): UseMutationResult<MessageItem, Error, Send
           replyCount: 0,
           threadLastReply: 0,
           attachedTo: variables.messageId,
+          attachments: [],
         }
 
         queryClient.setQueryData<ThreadData>(

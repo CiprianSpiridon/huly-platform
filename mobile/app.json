@@ -9,7 +9,11 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "icon": "./assets/images/icon.png",
-      "bundleIdentifier": "com.huly.mobile"
+      "bundleIdentifier": "com.huly.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Huly needs camera access to take photos for attachments.",
+        "NSPhotoLibraryUsageDescription": "Huly needs photo library access to attach images to issues and messages."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -43,6 +47,13 @@
         {
           "icon": "./assets/images/notification-icon.png",
           "color": "#205DC2"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Huly needs photo library access to attach images to issues and messages.",
+          "cameraPermission": "Huly needs camera access to take photos for attachments."
         }
       ]
     ],

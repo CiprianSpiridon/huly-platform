@@ -112,6 +112,7 @@ export function useSendMessage(): UseMutationResult<MessageItem, Error, SendMess
         reactions: [],
         replyCount: 0,
         threadLastReply: 0,
+        attachments: [],
       }
 
       queryClient.setQueryData<InfiniteData<CursorPaginatedResult<MessageItem>>>(

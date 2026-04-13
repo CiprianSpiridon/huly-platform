@@ -5,18 +5,28 @@
  * assignee, component, milestone, time tracking, and sub-issues.
  */
 
-import { View, Text, Pressable } from 'react-native'
+import { View, Text, Pressable, ScrollView } from 'react-native'
 import type { Issue } from '@hcengineering/tracker'
 import { getStatusName, getAssigneeName } from '@/lib/lookup'
 
 import { PriorityIcon, ISSUE_PRIORITY } from '@/components/ui/PriorityIcon'
 import { AvatarCircle } from '@/components/ui/AvatarCircle'
+import { AttachmentThumbnail } from '@/components/features/AttachmentThumbnail'
+
+interface AttachmentInfo {
+  blobId: string
+  name: string
+  size: number
+  contentType: string
+}
 
 interface IssueDetailViewProps {
   issue: Issue
+  attachments?: AttachmentInfo[]
   onStatusPress?: () => void
   onPriorityPress?: () => void
   onAssigneePress?: () => void
+  onAttachmentPress?: (blobId: string, filename: string, mimeType: string) => void
   testID?: string
 }
 
@@ -30,9 +40,11 @@ const PRIORITY_LABELS: Record<number, string> = {
 
 function IssueDetailView({
   issue,
+  attachments,
   onStatusPress,
   onPriorityPress,
   onAssigneePress,
+  onAttachmentPress,
   testID,
 }: IssueDetailViewProps): React.ReactNode {
   const lookupStatusName = getStatusName(issue)
@@ -168,6 +180,31 @@ function IssueDetailView({
               {issue.description as unknown as string}
             </Text>
           </View>
+        </View>
+      ) : null}
+
+      {/* Attachments */}
+      {attachments != null && attachments.length > 0 ? (
+        <View className="mt-6">
+          <Text className="font-sans-semibold text-sm text-content-secondary mb-2">
+            Attachments ({attachments.length})
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerClassName="gap-2"
+          >
+            {attachments.map((att) => (
+              <AttachmentThumbnail
+                key={att.blobId}
+                blobId={att.blobId}
+                filename={att.name}
+                mimeType={att.contentType}
+                size={att.size}
+                onPress={onAttachmentPress ?? (() => {})}
+              />
+            ))}
+          </ScrollView>
         </View>
       ) : null}
     </View>

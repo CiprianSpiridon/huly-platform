@@ -10,6 +10,8 @@ import { memo, useState, useCallback, useEffect } from 'react'
 import { View, TextInput, Pressable, ActivityIndicator } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 
+import { AttachmentButton } from '@/components/features/AttachmentButton'
+
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
@@ -17,9 +19,11 @@ import { Ionicons } from '@expo/vector-icons'
 interface MessageInputProps {
   onSend: (content: string) => void
   onDraftChange?: (text: string) => void
+  onAttachmentUploaded?: (blobId: string) => void
   initialDraft?: string
   placeholder?: string
   isSending?: boolean
+  showAttachButton?: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -29,9 +33,11 @@ interface MessageInputProps {
 function MessageInputInner({
   onSend,
   onDraftChange,
+  onAttachmentUploaded,
   initialDraft = '',
   placeholder = 'Type a message...',
   isSending = false,
+  showAttachButton = true,
 }: MessageInputProps): React.ReactNode {
   const [text, setText] = useState(initialDraft)
 
@@ -61,6 +67,13 @@ function MessageInputInner({
 
   return (
     <View className="flex-row items-end px-4 py-2 bg-surface-primary border-t border-border-primary">
+      {showAttachButton && (
+        <AttachmentButton
+          onUploaded={onAttachmentUploaded}
+          color="#77818B"
+          size={22}
+        />
+      )}
       <TextInput
         className="flex-1 bg-surface-tertiary text-content-primary font-sans text-sm rounded-xl px-4 py-2.5 mr-2 min-h-[44px] max-h-[120px]"
         value={text}

@@ -13,6 +13,9 @@ import { IssueDetailView } from '@/components/features/IssueDetail'
 import { IssueComments } from '@/components/features/IssueComments'
 import { StatusPicker } from '@/components/features/StatusPicker'
 import { PriorityPicker } from '@/components/features/PriorityPicker'
+import { AttachmentButton } from '@/components/features/AttachmentButton'
+import { AttachmentViewer } from '@/components/features/AttachmentViewer'
+import { UploadProgress } from '@/components/features/UploadProgress'
 import type { IssuePriorityValue } from '@/components/ui/PriorityIcon'
 
 /**
@@ -30,6 +33,13 @@ export default function IssueDetailScreen(): React.ReactNode {
   // Bottom sheet refs
   const statusPickerRef = useRef<BottomSheetModal>(null)
   const priorityPickerRef = useRef<BottomSheetModal>(null)
+
+  // Attachment viewer state
+  const [viewedAttachment, setViewedAttachment] = useState<{
+    blobId: string
+    filename: string
+    mimeType: string
+  } | null>(null)
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
@@ -50,6 +60,17 @@ export default function IssueDetailScreen(): React.ReactNode {
       'Coming soon',
       'Assignee picker requires fetching workspace members and will be available in a future update.'
     )
+  }, [])
+
+  const handleAttachmentPress = useCallback(
+    (blobId: string, filename: string, mimeType: string) => {
+      setViewedAttachment({ blobId, filename, mimeType })
+    },
+    []
+  )
+
+  const handleCloseAttachmentViewer = useCallback(() => {
+    setViewedAttachment(null)
   }, [])
 
   const handleStatusSelect = useCallback(
@@ -149,7 +170,13 @@ export default function IssueDetailScreen(): React.ReactNode {
           onStatusPress={handleStatusPress}
           onPriorityPress={handlePriorityPress}
           onAssigneePress={handleAssigneePress}
+          onAttachmentPress={handleAttachmentPress}
         />
+
+        {/* Attach button */}
+        <View className="flex-row items-center px-4 pb-2">
+          <AttachmentButton />
+        </View>
 
         <View className="h-px bg-divider mx-4" />
 
@@ -158,6 +185,15 @@ export default function IssueDetailScreen(): React.ReactNode {
           projectId={issue.space as string}
         />
       </ScrollView>
+
+      {/* Upload progress overlay */}
+      <UploadProgress />
+
+      {/* Attachment viewer modal */}
+      <AttachmentViewer
+        attachment={viewedAttachment}
+        onClose={handleCloseAttachmentViewer}
+      />
 
       {/* Bottom sheet pickers */}
       <StatusPicker
