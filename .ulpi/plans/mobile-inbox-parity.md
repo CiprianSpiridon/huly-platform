@@ -90,12 +90,14 @@ in the inbox header.
 ### TASK-002: Add read/unread filter toggle
 
 Extend the notification filter UI to support filtering by read/unread status alongside the
-existing type filters.
+existing type filters. Depends on TASK-003 for the `readStatus` query parameter and on
+TASK-001 for `inbox/index.tsx` write ordering.
 
 - **Type:** feature
 - **Effort:** S
 - **Agent:** expo-react-native-engineer
 - **Priority:** P0
+- **Depends on:** `TASK-001`, `TASK-003`
 - **writeScope:** `mobile/src/app/(app)/inbox/index.tsx`, `mobile/src/components/features/NotificationFilters.tsx`, `mobile/src/store/inbox.ts`
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
@@ -116,8 +118,8 @@ that the UI tasks depend on.
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. `getNotifications()` accepts an optional `readStatus` filter ('read' | 'unread' | 'all') that maps to `isViewed` query conditions.
-  2. New `unarchiveNotifications(ids)` repository method sets `archived: false` on the given notification IDs.
-  3. `useUnarchiveNotifications()` hook wraps the repository method with optimistic cache updates that re-insert items into the visible list.
+  2. `NotificationItem` type and `toNotificationItem()` mapper extract `docNotifyContext` from the server's `InboxNotification` so TASK-005 can group by document.
+  3. New `unarchiveNotifications(ids)` repository method sets `archived: false` on the given notification IDs; `useUnarchiveNotifications()` hook wraps it with optimistic cache updates.
 
 ### TASK-004: Add unarchive flow
 
@@ -143,7 +145,7 @@ Group notifications by their source document (DocNotifyContext) matching the web
 - **Effort:** M
 - **Agent:** expo-react-native-engineer
 - **Priority:** P1
-- **Depends on:** `TASK-002`, `TASK-003`
+- **Depends on:** `TASK-002`, `TASK-003`, `TASK-004`
 - **writeScope:** `mobile/src/app/(app)/inbox/index.tsx`, `mobile/src/components/features/NotificationGroupCard.tsx`, `mobile/src/repositories/notification.ts`
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
@@ -189,12 +191,12 @@ Allow permanent deletion of notifications (not just archive).
 - **Effort:** S
 - **Agent:** expo-react-native-engineer
 - **Priority:** P2
-- **Depends on:** `TASK-003`
+- **Depends on:** `TASK-003`, `TASK-005`
 - **writeScope:** `mobile/src/app/(app)/inbox/index.tsx`, `mobile/src/components/features/BulkActionBar.tsx`, `mobile/src/repositories/notification.ts`
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Bulk action bar in selection mode shows a "Delete" action alongside "Mark Read" and "Archive".
-  2. Delete uses `removeDoc` to permanently remove selected notifications with a confirmation dialog.
+  2. Delete uses `TxFactory.createTxRemoveDoc()` to permanently remove selected notifications with a confirmation dialog.
   3. Attempting to delete already-removed notifications does not crash; stale IDs are silently skipped.
 
 ## Failure Modes
@@ -236,8 +238,8 @@ Items below that cut and safe to defer:
 ## Execution Summary
 
 - Tasks: 8
-- P0 foundations (parallel): `TASK-001`, `TASK-002`, `TASK-003`
-- Critical path: `TASK-003 -> TASK-005`
+- P0 foundation: `TASK-001`, `TASK-003` (parallel); then `TASK-002` (needs both)
+- Critical path: `TASK-003 -> TASK-004 -> TASK-005 -> TASK-008`
 - Secondary paths:
   - `TASK-003 -> TASK-004`
   - `TASK-003 -> TASK-008`
@@ -261,10 +263,11 @@ execution of TASK-001 then TASK-002 is safer.
 Derived from per-task `Depends on` fields.
 
 ```text
+TASK-001 -> TASK-002  (file: inbox/index.tsx write ordering)
 TASK-002 -> TASK-005
+TASK-003 -> TASK-002  (data: readStatus query parameter)
 TASK-003 -> TASK-004
 TASK-003 -> TASK-005  (file: repositories/notification.ts)
-TASK-003 -> TASK-008  (file: repositories/notification.ts)
 TASK-004 -> TASK-005  (file: inbox/index.tsx)
-TASK-005 -> TASK-008  (file: inbox/index.tsx)
+TASK-005 -> TASK-008  (file: inbox/index.tsx + repositories/notification.ts)
 ```

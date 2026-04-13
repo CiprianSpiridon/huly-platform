@@ -80,12 +80,12 @@
     {
       "id": "TASK-002",
       "title": "Add read/unread filter toggle",
-      "description": "Extend the notification filter UI to support filtering by read/unread status alongside existing type filters.",
+      "description": "Extend the notification filter UI to support filtering by read/unread status alongside existing type filters. Depends on TASK-003 for readStatus query parameter and TASK-001 for inbox/index.tsx write ordering.",
       "priority": "P0",
       "type": "feature",
       "effort": "S",
       "agent": "expo-react-native-engineer",
-      "dependsOn": [],
+      "dependsOn": ["TASK-001", "TASK-003"],
       "acceptanceCriteria": [
         "Filter bar adds a read/unread toggle that filters by isViewed status.",
         "Read/unread filter composes with the existing type filter (e.g., unread mentions).",
@@ -116,8 +116,8 @@
       "dependsOn": [],
       "acceptanceCriteria": [
         "getNotifications() accepts an optional readStatus filter mapping to isViewed query conditions.",
-        "New unarchiveNotifications(ids) repository method sets archived: false on given IDs.",
-        "useUnarchiveNotifications() hook wraps the method with optimistic cache updates that re-insert items."
+        "NotificationItem type and toNotificationItem() mapper extract docNotifyContext from the server InboxNotification so TASK-005 can group by document.",
+        "New unarchiveNotifications(ids) repository method sets archived: false on given IDs; useUnarchiveNotifications() hook wraps it with optimistic cache updates."
       ],
       "filesToModify": [
         "mobile/src/repositories/notification.ts",
@@ -258,7 +258,7 @@
       ],
       "acceptanceCriteria": [
         "Bulk action bar in selection mode shows a Delete action alongside Mark Read and Archive.",
-        "Delete uses removeDoc to permanently remove selected notifications with a confirmation dialog.",
+        "Delete uses TxFactory.createTxRemoveDoc() to permanently remove selected notifications with a confirmation dialog.",
         "Attempting to delete already-removed notifications does not crash; stale IDs are silently skipped."
       ],
       "filesToModify": [
@@ -331,7 +331,6 @@
     "taskCount": 8,
     "parallelP0Foundations": [
       "TASK-001",
-      "TASK-002",
       "TASK-003"
     ],
     "criticalPath": [
@@ -347,7 +346,7 @@
   },
   "dependencyMap": {
     "TASK-001": [],
-    "TASK-002": [],
+    "TASK-002": ["TASK-001", "TASK-003"],
     "TASK-003": [],
     "TASK-004": [
       "TASK-003"
