@@ -58,13 +58,9 @@ export default function ChannelDetailScreen(): React.ReactNode {
     mimeType: string
   } | null>(null)
 
-  if (!id) {
-    router.back()
-    return null
-  }
-
   // Mark channel as read and set active on mount
   useEffect(() => {
+    if (id == null) return
     clearUnread(id)
     setActiveChannel(id)
     return () => {
@@ -111,7 +107,7 @@ export default function ChannelDetailScreen(): React.ReactNode {
         hasReacted,
       })
     },
-    [selectedMessage, id, toggleReaction]
+    [selectedMessage, id, toggleReaction, currentUserId]
   )
 
   // Handle inline reaction toggle from pills
@@ -162,6 +158,11 @@ export default function ChannelDetailScreen(): React.ReactNode {
     ),
     [currentUserId, handleLongPress, handleReactionToggle, handleThreadPress, handleAttachmentPress]
   )
+
+  if (!id) {
+    router.back()
+    return null
+  }
 
   const messages = messagesData?.items ?? []
 

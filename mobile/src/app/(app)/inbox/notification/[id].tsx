@@ -38,11 +38,6 @@ export default function NotificationDetailScreen(): React.ReactNode {
   const markAsReadMutation = useMarkAsRead()
   const hasMarkedRead = useRef(false)
 
-  if (!id) {
-    router.back()
-    return null
-  }
-
   const { data: notification, isLoading, error } = useHulyFindOne(
     NOTIFICATION_CLASS,
     { _id: id as Ref<Doc> }
@@ -73,6 +68,11 @@ export default function NotificationDetailScreen(): React.ReactNode {
       }
     }
   }, [record])
+
+  if (!id) {
+    router.back()
+    return null
+  }
 
   // Loading state
   if (isLoading) {

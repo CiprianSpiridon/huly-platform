@@ -180,7 +180,6 @@ interface ToggleReactionContext {
 
 export function useToggleReaction(): UseMutationResult<void, Error, ToggleReactionParams, ToggleReactionContext> {
   const queryClient = useQueryClient()
-  const currentSocialId = useConnectionStore((s) => s.currentSocialId) ?? 'unknown'
 
   return useMutation<void, Error, ToggleReactionParams, ToggleReactionContext>({
     mutationFn: async (params) => {
@@ -194,6 +193,9 @@ export function useToggleReaction(): UseMutationResult<void, Error, ToggleReacti
     onMutate: async (variables) => {
       await queryClient.cancelQueries({ queryKey: ['chat', 'messages', variables.spaceId] })
       const previousData = queryClient.getQueryData(['chat', 'messages', variables.spaceId])
+
+      // Read currentSocialId fresh from the store to avoid stale closure captures
+      const currentSocialId = useConnectionStore.getState().currentSocialId ?? 'unknown'
 
       // Optimistically update reaction counts
       queryClient.setQueryData<InfiniteData<CursorPaginatedResult<MessageItem>>>(

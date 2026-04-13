@@ -37,11 +37,6 @@ export default function ThreadScreen(): React.ReactNode {
   const reactionPickerRef = useRef<BottomSheetModal>(null)
   const [selectedMessage, setSelectedMessage] = useState<MessageItem | null>(null)
 
-  if (!id) {
-    router.back()
-    return null
-  }
-
   // Handle send reply
   const handleSend = useCallback(
     (content: string) => {
@@ -78,7 +73,7 @@ export default function ThreadScreen(): React.ReactNode {
         hasReacted,
       })
     },
-    [selectedMessage, data, toggleReaction]
+    [selectedMessage, data, toggleReaction, currentUserId]
   )
 
   // Handle inline reaction toggle
@@ -104,8 +99,13 @@ export default function ThreadScreen(): React.ReactNode {
         onReactionToggle={handleReactionToggle}
       />
     ),
-    [handleLongPress, handleReactionToggle]
+    [currentUserId, handleLongPress, handleReactionToggle]
   )
+
+  if (!id) {
+    router.back()
+    return null
+  }
 
   // Loading state
   if (isLoading) {

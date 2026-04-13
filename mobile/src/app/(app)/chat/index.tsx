@@ -38,8 +38,11 @@ export default function ChannelListScreen(): React.ReactNode {
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
-    await refetch()
-    setRefreshing(false)
+    try {
+      await refetch()
+    } finally {
+      setRefreshing(false)
+    }
   }, [refetch])
 
   const handleChannelPress = useCallback((channel: ChannelItem) => {
