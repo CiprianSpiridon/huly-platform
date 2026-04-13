@@ -1,0 +1,273 @@
+{
+  "plan": {
+    "name": "mobile-infra-parity",
+    "title": "Mobile Infrastructure Parity",
+    "mode": "EXPANSION",
+    "defaultReview": "claude",
+    "agent": "expo-react-native-engineer"
+  },
+  "overview": "Close cross-cutting infrastructure gaps: i18n framework, Sentry crash reporting, code syntax highlighting, inline images in markup, global error toast, clipboard support, offline mutation queue, universal links, and haptic feedback.",
+  "scopeChallenge": {
+    "assumedMode": "EXPANSION",
+    "assumedDefaultReview": "claude",
+    "scopeCuts": [
+      "Focus on cross-cutting infrastructure inside mobile/src/ affecting multiple modules",
+      "Exclude mermaid rendering (P3), analytics/telemetry (needs privacy review), module-specific features"
+    ]
+  },
+  "prerequisites": [
+    "Existing mobile app scaffold with NativeWind, expo-router, TanStack Query, Zustand",
+    "MarkupRenderer handles basic rich text already",
+    "ErrorBoundary wraps the app at root layout level",
+    "WebSocket sidecar operational for real-time invalidation"
+  ],
+  "nonGoals": [
+    "Mermaid diagram rendering (P3, deferred)",
+    "Analytics / telemetry (requires privacy review)",
+    "Full offline-first architecture (only mutation queue, not offline reads)",
+    "Server-side changes for universal link verification"
+  ],
+  "contracts": [
+    "i18n framework must be non-invasive: wrap existing strings progressively",
+    "Sentry must not transmit PII in crash reports",
+    "Offline mutation queue must replay in order and handle conflict resolution",
+    "Universal links must coexist with the existing huly:// custom scheme",
+    "Haptic feedback must respect system Reduce Motion settings"
+  ],
+  "existingCodeLeverage": [
+    "mobile/src/components/features/MarkupRenderer.tsx",
+    "mobile/src/components/features/ErrorBoundary.tsx",
+    "mobile/src/realtime/TransactorConnection.ts",
+    "mobile/src/store/websocket.ts",
+    "mobile/src/lib/format.ts",
+    "mobile/app.json",
+    "mobile/src/app/_layout.tsx"
+  ],
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Add i18n framework with progressive string extraction",
+      "description": "Set up react-i18next with baseline English and wrap the most visible screens as proof of progressive adoption.",
+      "priority": "P0",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "react-i18next configured with English default and lazy-loaded locale files from assets/locales/.",
+        "At least 3 screens (login, settings index, tab labels) use useTranslation() instead of hardcoded strings.",
+        "Missing translation keys fall back to English and log a dev warning, not a crash or empty string."
+      ],
+      "filesToModify": ["mobile/src/app/_layout.tsx"],
+      "filesToCreate": ["mobile/src/lib/i18n.ts", "mobile/assets/locales/en.json"],
+      "writeScope": ["mobile/src/lib/i18n.ts", "mobile/src/app/_layout.tsx", "mobile/assets/locales/en.json"],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-002",
+      "title": "Add Sentry crash reporting",
+      "description": "Integrate @sentry/react-native for crash reporting and unhandled exception tracking.",
+      "priority": "P0",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Sentry initializes at app startup with DSN from environment config; disabled in dev mode.",
+        "ErrorBoundary componentDidCatch sends errors to Sentry with breadcrumbs (screen name, last action).",
+        "No PII (auth tokens, emails, workspace URLs) appears in Sentry payloads; scrubbing rules configured."
+      ],
+      "filesToModify": ["mobile/src/app/_layout.tsx", "mobile/app.json"],
+      "filesToCreate": ["mobile/src/lib/sentry.ts"],
+      "writeScope": ["mobile/src/lib/sentry.ts", "mobile/src/app/_layout.tsx", "mobile/app.json"],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-003",
+      "title": "Add code syntax highlighting in MarkupRenderer",
+      "description": "Upgrade code blocks to render with syntax highlighting using a lightweight RN-compatible highlighter.",
+      "priority": "P1",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Code blocks with language annotation render with syntax-highlighted tokens.",
+        "Code blocks without language annotation render as plain monospace text.",
+        "Highlighting does not block main thread for large blocks (>100 lines); uses memo."
+      ],
+      "filesToModify": ["mobile/src/components/features/MarkupRenderer.tsx"],
+      "filesToCreate": ["mobile/src/lib/syntax-highlight.ts"],
+      "writeScope": ["mobile/src/components/features/MarkupRenderer.tsx", "mobile/src/lib/syntax-highlight.ts"],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-004",
+      "title": "Add inline image rendering in MarkupRenderer",
+      "description": "Upgrade image references in markup from text links to actual inline images.",
+      "priority": "P1",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-003"],
+      "acceptanceCriteria": [
+        "Markup <img> tags render as inline expo-image components with automatic caching.",
+        "Images respect max width (screen width - padding) and maintain aspect ratio; tap opens full-screen viewer.",
+        "Broken image URLs show a placeholder icon instead of crashing or showing blank space."
+      ],
+      "filesToModify": ["mobile/src/components/features/MarkupRenderer.tsx"],
+      "filesToCreate": [],
+      "writeScope": ["mobile/src/components/features/MarkupRenderer.tsx"],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-005",
+      "title": "Add global error toast",
+      "description": "Replace per-screen error handling with a global toast/snackbar system.",
+      "priority": "P1",
+      "type": "feature",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-001", "TASK-002"],
+      "acceptanceCriteria": [
+        "Global toast component mounts at root layout and shows errors dispatched via Zustand store.",
+        "Toast auto-dismisses after 4s; multiple toasts queue rather than overlap.",
+        "Network errors from TanStack Query onError global handler route to the toast."
+      ],
+      "filesToModify": ["mobile/src/app/_layout.tsx"],
+      "filesToCreate": ["mobile/src/components/ui/ErrorToast.tsx", "mobile/src/store/toast.ts"],
+      "writeScope": ["mobile/src/components/ui/ErrorToast.tsx", "mobile/src/store/toast.ts", "mobile/src/app/_layout.tsx"],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-006",
+      "title": "Add clipboard copy for messages and code blocks",
+      "description": "Allow users to copy message text and code block content to clipboard.",
+      "priority": "P1",
+      "type": "feature",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-004"],
+      "acceptanceCriteria": [
+        "Long-press on a code block shows a Copy action via expo-clipboard.",
+        "Long-press on a message bubble includes a Copy Text option for plain-text representation.",
+        "Successful copy shows a brief Copied toast; clipboard errors show an error toast."
+      ],
+      "filesToModify": ["mobile/src/components/features/MarkupRenderer.tsx", "mobile/src/components/features/MessageBubble.tsx"],
+      "filesToCreate": [],
+      "writeScope": ["mobile/src/components/features/MarkupRenderer.tsx", "mobile/src/components/features/MessageBubble.tsx"],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-007",
+      "title": "Add offline mutation queue",
+      "description": "Queue mutations when offline and replay when connectivity returns.",
+      "priority": "P2",
+      "type": "feature",
+      "effort": "L",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-005"],
+      "acceptanceCriteria": [
+        "When offline, mutations are queued in a Zustand store persisted to AsyncStorage.",
+        "When connectivity returns, queued mutations replay in order; conflicts show user-actionable resolution.",
+        "Queue state visible via banner (X pending changes) and clears on successful replay."
+      ],
+      "filesToModify": ["mobile/src/app/_layout.tsx"],
+      "filesToCreate": ["mobile/src/lib/offline-queue.ts", "mobile/src/store/offline.ts"],
+      "writeScope": ["mobile/src/lib/offline-queue.ts", "mobile/src/store/offline.ts", "mobile/src/app/_layout.tsx"],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-008",
+      "title": "Add universal links (iOS/Android)",
+      "description": "Configure associated domains so huly.io links open directly in the mobile app.",
+      "priority": "P2",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-007"],
+      "acceptanceCriteria": [
+        "app.json configures associatedDomains (iOS) and intentFilters (Android) for huly.io.",
+        "Deep links from universal links route through resolveNotificationRoute() path.",
+        "Links to unknown routes open the app to the default tab instead of crashing."
+      ],
+      "filesToModify": ["mobile/app.json", "mobile/src/app/_layout.tsx"],
+      "filesToCreate": [],
+      "writeScope": ["mobile/app.json", "mobile/src/app/_layout.tsx"],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-009",
+      "title": "Add haptic feedback",
+      "description": "Add tactile feedback for key interactions using expo-haptics.",
+      "priority": "P2",
+      "type": "feature",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "expo-haptics is called on swipe-to-archive, bulk action confirmation, and pull-to-refresh.",
+        "Haptics respect system Reduce Motion setting; no vibration when enabled.",
+        "Devices without haptic hardware silently skip without errors."
+      ],
+      "filesToModify": ["mobile/src/components/features/NotificationRow.tsx"],
+      "filesToCreate": ["mobile/src/lib/haptics.ts"],
+      "writeScope": ["mobile/src/lib/haptics.ts", "mobile/src/components/features/NotificationRow.tsx"],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    }
+  ],
+  "failureModes": [
+    {"failure": "Sentry init fails", "detection": "DSN missing or network blocked", "recovery": "App continues without crash reporting; no user-visible error"},
+    {"failure": "i18n locale file fails to load", "detection": "Missing or corrupt JSON", "recovery": "Fall back to English; log warning in dev"},
+    {"failure": "Syntax highlighter blocks main thread", "detection": "Large code block causes frame drops", "recovery": "Limit highlighting to first 200 lines; show truncated indicator"},
+    {"failure": "Offline queue replays stale mutation", "detection": "Server rejects with conflict", "recovery": "Show resolution UI; allow discard or retry with fresh data"},
+    {"failure": "Universal link opens wrong screen", "detection": "Route parsing fails", "recovery": "Fall back to default tab; log the unparseable URL"},
+    {"failure": "Clipboard copy fails silently", "detection": "Expo-clipboard throws on restricted context", "recovery": "Show error toast instead of silent failure"}
+  ],
+  "shipCut": {
+    "minimumCoherentCutAfter": "TASK-006",
+    "delivers": ["i18n framework", "Sentry crash reporting", "code syntax highlighting", "inline images in markup", "global error toast", "clipboard copy"],
+    "safeToDefer": ["offline mutation queue", "universal links", "haptic feedback"]
+  },
+  "testCoverageMap": [
+    "TASK-001: i18n init + useTranslation on 3 screens + missing key fallback",
+    "TASK-002: Sentry init + ErrorBoundary integration + PII scrubbing",
+    "TASK-003: highlighted code block + plain fallback + large block performance",
+    "TASK-004: inline image rendering + broken URL placeholder + aspect ratio",
+    "TASK-005: toast dispatch + auto-dismiss + queue + global onError wiring",
+    "TASK-006: clipboard copy code + copy message + error toast on failure",
+    "TASK-007: offline queue + ordered replay + conflict resolution UI + banner state",
+    "TASK-008: associated domains config + universal link routing + unknown route fallback",
+    "TASK-009: haptic on actions + Reduce Motion respect + no-hardware graceful skip"
+  ],
+  "executionSummary": {
+    "taskCount": 9,
+    "parallelP0Foundations": ["TASK-001", "TASK-002"],
+    "criticalPath": ["TASK-003", "TASK-004", "TASK-006"],
+    "secondaryPaths": [
+      ["TASK-001", "TASK-005", "TASK-007", "TASK-008"],
+      ["TASK-002", "TASK-005"]
+    ],
+    "independentTasks": ["TASK-009"]
+  },
+  "dependencyMap": {
+    "TASK-001": [],
+    "TASK-002": [],
+    "TASK-003": [],
+    "TASK-004": ["TASK-003"],
+    "TASK-005": ["TASK-001", "TASK-002"],
+    "TASK-006": ["TASK-004"],
+    "TASK-007": ["TASK-005"],
+    "TASK-008": ["TASK-007"],
+    "TASK-009": []
+  }
+}

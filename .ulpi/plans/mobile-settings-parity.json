@@ -1,0 +1,251 @@
+{
+  "plan": {
+    "name": "mobile-settings-parity",
+    "title": "Mobile Settings Feature Parity",
+    "mode": "HOLD",
+    "defaultReview": "claude",
+    "agent": "expo-react-native-engineer"
+  },
+  "overview": "Close the remaining settings gaps: profile editing, workspace creation, member management (invite/remove/roles), password change, 2FA setup, language selector, and account deletion.",
+  "scopeChallenge": {
+    "assumedMode": "HOLD",
+    "assumedDefaultReview": "claude",
+    "scopeCuts": [
+      "Focus on settings parity inside mobile settings routes, hooks/store, and account client",
+      "Exclude admin-only workspace settings, workspace avatar editing, server-side administration"
+    ]
+  },
+  "prerequisites": [
+    "Existing scaffold/auth/api client/settings phases are already implemented in mobile/",
+    "AccountClient supports profile update, workspace creation, member management, password change, and 2FA",
+    "Settings repository and hooks exist for profile and workspace queries"
+  ],
+  "nonGoals": [
+    "Admin-only workspace settings (password aging, compliance rules)",
+    "Workspace avatar editing with image cropping",
+    "Server-side workspace administration beyond AccountClient API",
+    "Custom theme colors or advanced appearance settings"
+  ],
+  "contracts": [
+    "Settings state remains in mobile/src/store/settings.ts",
+    "Account operations use mobile/src/client/account.ts wrapping AccountClient",
+    "New settings routes stay under mobile/src/app/(app)/settings/**",
+    "Existing theme toggle, notification preferences, and logout must not regress",
+    "Member role changes validate against AccountRole enum from @hcengineering/core"
+  ],
+  "existingCodeLeverage": [
+    "mobile/src/app/(app)/settings/index.tsx",
+    "mobile/src/app/(app)/settings/about.tsx",
+    "mobile/src/app/(app)/settings/members.tsx",
+    "mobile/src/app/(app)/settings/notifications.tsx",
+    "mobile/src/app/(app)/settings/workspaces.tsx",
+    "mobile/src/app/(app)/settings/_layout.tsx",
+    "mobile/src/repositories/settings.ts",
+    "mobile/src/repositories/members.ts",
+    "mobile/src/store/settings.ts",
+    "mobile/src/client/account.ts",
+    "mobile/src/hooks/useWorkspaces.ts",
+    "mobile/src/hooks/useMembers.ts"
+  ],
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Add profile editing (name and avatar)",
+      "description": "Upgrade the read-only profile header to support editing name and uploading an avatar.",
+      "priority": "P0",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Profile section shows edit icons on name and avatar; tapping name opens inline editor, tapping avatar opens image picker.",
+        "Changes are saved via AccountClient and the profile display updates immediately without requiring a screen reload.",
+        "Upload failures or invalid names show recoverable errors without clearing the existing profile data."
+      ],
+      "filesToModify": ["mobile/src/app/(app)/settings/index.tsx", "mobile/src/repositories/settings.ts", "mobile/src/client/account.ts"],
+      "filesToCreate": [],
+      "writeScope": ["mobile/src/app/(app)/settings/index.tsx", "mobile/src/repositories/settings.ts", "mobile/src/client/account.ts"],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-002",
+      "title": "Add workspace creation flow",
+      "description": "Allow users to create a new workspace from the workspace list screen.",
+      "priority": "P1",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Workspace list screen shows a Create Workspace button that navigates to a creation form.",
+        "Successful creation calls AccountClient's workspace creation method and switches to the new workspace.",
+        "Duplicate URL slug or validation errors show recoverable inline errors without losing form data."
+      ],
+      "filesToModify": ["mobile/src/app/(app)/settings/workspaces.tsx", "mobile/src/client/account.ts"],
+      "filesToCreate": ["mobile/src/app/(app)/settings/create-workspace.tsx"],
+      "writeScope": ["mobile/src/app/(app)/settings/workspaces.tsx", "mobile/src/app/(app)/settings/create-workspace.tsx", "mobile/src/client/account.ts"],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-003",
+      "title": "Add member invite flow",
+      "description": "Allow workspace owners/maintainers to invite new members from the members screen.",
+      "priority": "P1",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Members screen shows an Invite button (visible only to owners/maintainers) that opens an invite form.",
+        "Successful invite sends the invitation via AccountClient and shows a confirmation toast.",
+        "Invalid email or permission errors show recoverable errors; the invite form does not close on failure."
+      ],
+      "filesToModify": ["mobile/src/app/(app)/settings/members.tsx", "mobile/src/repositories/members.ts"],
+      "filesToCreate": ["mobile/src/app/(app)/settings/invite-member.tsx"],
+      "writeScope": ["mobile/src/app/(app)/settings/members.tsx", "mobile/src/app/(app)/settings/invite-member.tsx", "mobile/src/repositories/members.ts"],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-004",
+      "title": "Add member remove and role change",
+      "description": "Allow workspace owners to remove members and change roles from the member detail.",
+      "priority": "P1",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-003"],
+      "acceptanceCriteria": [
+        "Tapping a member row opens a detail sheet with role selector and Remove action.",
+        "Role changes and removals call AccountClient and refresh the member list on success.",
+        "Cannot demote the last owner or remove self; both show explicit error messages."
+      ],
+      "filesToModify": ["mobile/src/app/(app)/settings/members.tsx", "mobile/src/components/features/MemberRow.tsx", "mobile/src/repositories/members.ts"],
+      "filesToCreate": [],
+      "writeScope": ["mobile/src/app/(app)/settings/members.tsx", "mobile/src/components/features/MemberRow.tsx", "mobile/src/repositories/members.ts"],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-005",
+      "title": "Add change password screen",
+      "description": "Allow users to change their password from settings.",
+      "priority": "P1",
+      "type": "feature",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-001"],
+      "acceptanceCriteria": [
+        "Settings index shows a Change Password row that navigates to a form with current, new, and confirm fields.",
+        "Successful change calls AccountClient's password change method and shows confirmation; session remains active.",
+        "Wrong current password or weak new password shows field-level validation errors without clearing the form."
+      ],
+      "filesToModify": ["mobile/src/app/(app)/settings/index.tsx"],
+      "filesToCreate": ["mobile/src/app/(app)/settings/change-password.tsx"],
+      "writeScope": ["mobile/src/app/(app)/settings/change-password.tsx", "mobile/src/app/(app)/settings/index.tsx"],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-006",
+      "title": "Add 2FA setup/management screen",
+      "description": "Allow users to enable, verify, and disable TOTP 2FA from settings.",
+      "priority": "P2",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-005"],
+      "acceptanceCriteria": [
+        "Settings shows a Two-Factor Authentication row with current status; tapping opens the setup/manage screen.",
+        "Enable flow shows QR code and manual secret, then verifies a TOTP code before activating; disable requires TOTP.",
+        "Invalid verification codes show inline errors; enable/disable state reflects correctly after change."
+      ],
+      "filesToModify": ["mobile/src/app/(app)/settings/index.tsx", "mobile/src/client/account.ts"],
+      "filesToCreate": ["mobile/src/app/(app)/settings/two-factor.tsx"],
+      "writeScope": ["mobile/src/app/(app)/settings/two-factor.tsx", "mobile/src/app/(app)/settings/index.tsx", "mobile/src/client/account.ts"],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-007",
+      "title": "Add language selector",
+      "description": "Allow users to select their preferred language from settings.",
+      "priority": "P2",
+      "type": "feature",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-006"],
+      "acceptanceCriteria": [
+        "Settings shows a Language row with the current language; tapping opens a picker with available languages.",
+        "Language selection persists to the settings store and AsyncStorage; restores on app restart.",
+        "Selecting a language with no translations shows fallback (English) and a note that translation is incomplete."
+      ],
+      "filesToModify": ["mobile/src/app/(app)/settings/index.tsx", "mobile/src/store/settings.ts"],
+      "filesToCreate": [],
+      "writeScope": ["mobile/src/app/(app)/settings/index.tsx", "mobile/src/store/settings.ts"],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-008",
+      "title": "Add account deletion flow",
+      "description": "Allow users to delete their account from settings with confirmation safeguards.",
+      "priority": "P2",
+      "type": "feature",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-005"],
+      "acceptanceCriteria": [
+        "Settings shows a Delete Account row in a danger zone section; tapping opens a confirmation dialog requiring password.",
+        "Successful deletion clears all local state (auth, workspace, settings, push), navigates to login screen.",
+        "Failed deletion (wrong password, server error) shows recoverable error and does not clear local state."
+      ],
+      "filesToModify": ["mobile/src/app/(app)/settings/index.tsx", "mobile/src/client/account.ts"],
+      "filesToCreate": [],
+      "writeScope": ["mobile/src/app/(app)/settings/index.tsx", "mobile/src/client/account.ts"],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    }
+  ],
+  "failureModes": [
+    {"failure": "Profile avatar upload fails mid-upload", "detection": "Progress stalls or error returned", "recovery": "Show retry button; preserve existing avatar"},
+    {"failure": "Workspace creation returns duplicate slug", "detection": "Server rejects with conflict", "recovery": "Show inline error on slug field"},
+    {"failure": "Last-owner role change attempted", "detection": "Server rejects demotion", "recovery": "Show explicit cannot demote last owner message"},
+    {"failure": "2FA enable with wrong code", "detection": "Server rejects verification", "recovery": "Show inline error; allow retry without restarting flow"},
+    {"failure": "Account deletion with active workspaces", "detection": "Server may reject or cascade", "recovery": "Show warning listing affected workspaces before confirming"}
+  ],
+  "shipCut": {
+    "minimumCoherentCutAfter": "TASK-005",
+    "delivers": ["profile editing", "workspace creation", "member invite", "member remove + role change", "change password"],
+    "safeToDefer": ["2FA setup/management", "language selector", "account deletion"]
+  },
+  "testCoverageMap": [
+    "TASK-001: profile edit save + avatar upload failure + name validation",
+    "TASK-002: workspace creation + duplicate slug error + switch after create",
+    "TASK-003: invite form + permission gate + invalid email error",
+    "TASK-004: role change + remove member + last-owner protection",
+    "TASK-005: password change + wrong current password + weak password validation",
+    "TASK-006: QR code display + TOTP verify + enable/disable state",
+    "TASK-007: language picker + persistence + missing translation fallback",
+    "TASK-008: delete confirmation + password verification + cleanup + failure recovery"
+  ],
+  "executionSummary": {
+    "taskCount": 8,
+    "p0Foundation": "TASK-001",
+    "criticalPath": ["TASK-001", "TASK-005", "TASK-006", "TASK-007"],
+    "secondaryPath": ["TASK-003", "TASK-004"],
+    "independentTasks": ["TASK-002"]
+  },
+  "dependencyMap": {
+    "TASK-001": [],
+    "TASK-002": [],
+    "TASK-003": [],
+    "TASK-004": ["TASK-003"],
+    "TASK-005": ["TASK-001"],
+    "TASK-006": ["TASK-005"],
+    "TASK-007": ["TASK-006"],
+    "TASK-008": ["TASK-005"]
+  }
+}

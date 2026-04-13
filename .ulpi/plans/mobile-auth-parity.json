@@ -1,0 +1,157 @@
+{
+  "plan": {
+    "name": "mobile-auth-parity",
+    "title": "Mobile Auth Feature Parity",
+    "mode": "HOLD",
+    "defaultReview": "claude",
+    "agent": "expo-react-native-engineer"
+  },
+  "overview": "Close the remaining auth gaps: password reset link, Google social login, sign-up flow, and biometric authentication.",
+  "scopeChallenge": {
+    "assumedMode": "HOLD",
+    "assumedDefaultReview": "claude",
+    "scopeCuts": [
+      "Focus on auth parity inside mobile auth routes, hooks/store, and account client",
+      "Exclude server-side OAuth provider config, new server endpoints, enterprise SSO"
+    ]
+  },
+  "prerequisites": [
+    "Existing scaffold/auth/api client phases are already implemented in mobile/",
+    "AccountClient supports login, validateOtp, verify2fa, getUserWorkspaces, and social provider OAuth",
+    "expo-secure-store is already configured for token persistence"
+  ],
+  "nonGoals": [
+    "Adding social providers beyond Google",
+    "Modifying server-side auth endpoints",
+    "Enterprise SSO / SAML integration",
+    "Password strength enforcement (server handles this)"
+  ],
+  "contracts": [
+    "Auth state remains in mobile/src/store/auth.ts",
+    "Token persistence uses expo-secure-store exclusively",
+    "OAuth redirect uses expo-auth-session or expo-web-browser",
+    "New auth routes stay under mobile/src/app/(auth)/**",
+    "Existing login/OTP/2FA flows must not regress"
+  ],
+  "existingCodeLeverage": [
+    "mobile/src/app/(auth)/login.tsx",
+    "mobile/src/app/(auth)/otp.tsx",
+    "mobile/src/app/(auth)/two-factor.tsx",
+    "mobile/src/app/(auth)/workspace-select.tsx",
+    "mobile/src/app/(auth)/_layout.tsx",
+    "mobile/src/client/account.ts",
+    "mobile/src/store/auth.ts",
+    "mobile/src/hooks/use-auth.ts"
+  ],
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Add password reset / forgot password flow",
+      "description": "Add a Forgot Password link on the login screen that triggers the server's password reset email flow.",
+      "priority": "P0",
+      "type": "feature",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Login screen shows a Forgot Password link below the password field that navigates to a reset screen.",
+        "Reset screen accepts an email, calls AccountClient's password reset method, and shows a confirmation message.",
+        "Invalid or unregistered emails show a user-friendly error without revealing whether the email exists."
+      ],
+      "filesToModify": ["mobile/src/app/(auth)/login.tsx"],
+      "filesToCreate": ["mobile/src/app/(auth)/forgot-password.tsx"],
+      "writeScope": ["mobile/src/app/(auth)/login.tsx", "mobile/src/app/(auth)/forgot-password.tsx"],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-002",
+      "title": "Add Google social login",
+      "description": "Add a Continue with Google button on the login screen using the server's existing OAuth provider configuration.",
+      "priority": "P1",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Login screen shows a Continue with Google button that initiates an OAuth redirect via expo-auth-session.",
+        "Successful OAuth callback extracts the token and proceeds to workspace selection like email/password login.",
+        "OAuth failure or user cancellation returns to the login screen with a recoverable error state."
+      ],
+      "filesToModify": ["mobile/src/app/(auth)/login.tsx", "mobile/src/client/account.ts", "mobile/src/hooks/use-auth.ts"],
+      "filesToCreate": [],
+      "writeScope": ["mobile/src/app/(auth)/login.tsx", "mobile/src/client/account.ts", "mobile/src/hooks/use-auth.ts"],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-003",
+      "title": "Add sign-up / create account flow",
+      "description": "Add a sign-up screen accessible from the login screen for new users.",
+      "priority": "P1",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-001"],
+      "acceptanceCriteria": [
+        "Login screen shows a Create Account link that navigates to a signup form (name, email, optional password).",
+        "Successful signup calls AccountClient signUp() and routes to email confirmation or workspace selection.",
+        "Duplicate email or validation errors show recoverable inline errors without losing entered form data."
+      ],
+      "filesToModify": ["mobile/src/app/(auth)/login.tsx", "mobile/src/client/account.ts"],
+      "filesToCreate": ["mobile/src/app/(auth)/signup.tsx"],
+      "writeScope": ["mobile/src/app/(auth)/signup.tsx", "mobile/src/client/account.ts", "mobile/src/app/(auth)/login.tsx"],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-004",
+      "title": "Add biometric authentication (Face ID / Touch ID)",
+      "description": "Add optional biometric unlock after initial login so returning users skip password entry.",
+      "priority": "P2",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "After successful login, users are prompted to enable biometric unlock (opt-in, stored in expo-secure-store).",
+        "On app launch with valid stored token, biometric prompt appears; success proceeds to workspace, failure falls back to password.",
+        "Devices without biometric hardware skip the prompt entirely and fall back to standard login without error."
+      ],
+      "filesToModify": ["mobile/src/app/(auth)/login.tsx", "mobile/src/store/auth.ts", "mobile/src/hooks/use-auth.ts"],
+      "filesToCreate": [],
+      "writeScope": ["mobile/src/app/(auth)/login.tsx", "mobile/src/store/auth.ts", "mobile/src/hooks/use-auth.ts"],
+      "validateCommand": "cd mobile && npx tsc --noEmit",
+      "review": "claude"
+    }
+  ],
+  "failureModes": [
+    {"failure": "OAuth redirect stuck in browser", "detection": "User closes browser without completing", "recovery": "Auth state stays on login screen; no partial auth state persisted"},
+    {"failure": "Password reset email not received", "detection": "User waits and nothing arrives", "recovery": "Show Resend button after 30s; suggest checking spam"},
+    {"failure": "Biometric enrolled but token expired", "detection": "Biometric succeeds but API rejects token", "recovery": "Clear biometric enrollment and fall back to password login"},
+    {"failure": "Signup with existing email", "detection": "Server returns duplicate error", "recovery": "Show inline error on email field, preserve other form data"}
+  ],
+  "shipCut": {
+    "minimumCoherentCutAfter": "TASK-003",
+    "delivers": ["password reset link", "Google social login", "sign-up flow"],
+    "safeToDefer": ["biometric authentication"]
+  },
+  "testCoverageMap": [
+    "TASK-001: reset email send + invalid email error + confirmation UI",
+    "TASK-002: OAuth redirect + callback token extraction + cancellation recovery",
+    "TASK-003: signup form validation + duplicate email error + confirmation routing",
+    "TASK-004: biometric enrollment + success/failure + no-hardware fallback"
+  ],
+  "executionSummary": {
+    "taskCount": 4,
+    "parallelP0Foundation": "TASK-001",
+    "criticalPath": ["TASK-001", "TASK-003"],
+    "independentTasks": ["TASK-002", "TASK-004"]
+  },
+  "dependencyMap": {
+    "TASK-001": [],
+    "TASK-002": [],
+    "TASK-003": ["TASK-001"],
+    "TASK-004": []
+  }
+}

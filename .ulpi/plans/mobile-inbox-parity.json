@@ -6,7 +6,7 @@
     "defaultReview": "claude",
     "agent": "expo-react-native-engineer"
   },
-  "overview": "Close the remaining inbox/notification gaps: mark-all-read/archive-all buttons, read/unread filtering, notification grouping by document, unarchive flow, expanded deep-link coverage, per-type notification settings, and permanent delete.",
+  "overview": "Close the prioritized inbox/notification gaps except the already-deferred live-subscription gap: mark-all-read/archive-all buttons, read/unread filtering, notification grouping by document, unarchive flow, expanded deep-link coverage, per-type notification settings, and permanent delete.",
   "scopeChallenge": {
     "assumedMode": "HOLD",
     "assumedDefaultReview": "claude",
@@ -93,11 +93,13 @@
       ],
       "filesToModify": [
         "mobile/src/app/(app)/inbox/index.tsx",
+        "mobile/src/components/features/NotificationFilters.tsx",
         "mobile/src/store/inbox.ts"
       ],
       "filesToCreate": [],
       "writeScope": [
         "mobile/src/app/(app)/inbox/index.tsx",
+        "mobile/src/components/features/NotificationFilters.tsx",
         "mobile/src/store/inbox.ts"
       ],
       "validateCommand": "cd mobile && npx tsc --noEmit",
@@ -230,11 +232,13 @@
       ],
       "filesToModify": [
         "mobile/src/app/(app)/settings/notifications.tsx",
+        "mobile/src/hooks/useNotificationListeners.ts",
         "mobile/src/store/push.ts"
       ],
       "filesToCreate": [],
       "writeScope": [
         "mobile/src/app/(app)/settings/notifications.tsx",
+        "mobile/src/hooks/useNotificationListeners.ts",
         "mobile/src/store/push.ts"
       ],
       "validateCommand": "cd mobile && npx tsc --noEmit",
@@ -259,11 +263,13 @@
       ],
       "filesToModify": [
         "mobile/src/app/(app)/inbox/index.tsx",
+        "mobile/src/components/features/BulkActionBar.tsx",
         "mobile/src/repositories/notification.ts"
       ],
       "filesToCreate": [],
       "writeScope": [
         "mobile/src/app/(app)/inbox/index.tsx",
+        "mobile/src/components/features/BulkActionBar.tsx",
         "mobile/src/repositories/notification.ts"
       ],
       "validateCommand": "cd mobile && npx tsc --noEmit",

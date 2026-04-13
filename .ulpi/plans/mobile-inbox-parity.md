@@ -2,13 +2,14 @@
 
 ## Overview
 
-Close the remaining inbox/notification gaps between the web notification experience and the Expo
-mobile app. The mobile inbox already has a solid foundation: paginated list, 4-type filter chips,
-mark-as-read (individual + bulk), archive (swipe + bulk), push lifecycle, badge sync, deep linking,
-and optimistic updates. Functions for `markAllAsRead()` and `archiveAll()` exist in hooks but have
-no UI entry points. This plan wires missing UI to existing functions, adds read/unread filtering,
-mark-all/archive-all buttons, notification grouping by document, unarchive flow, and expanded
-deep-link coverage.
+Close the prioritized inbox/notification gaps between the web notification experience and the Expo
+mobile app, excluding the already-deferred live-subscription gap. The mobile inbox already has a
+solid foundation: paginated list, 4-type filter chips, mark-as-read (individual + bulk), archive
+(swipe + bulk), push lifecycle, badge sync, deep linking, and optimistic updates. Functions for
+`markAllAsRead()` and `archiveAll()` exist in hooks but have no UI entry points. This plan wires
+missing UI to existing functions, adds read/unread filtering, mark-all/archive-all buttons,
+notification grouping by document, unarchive flow, expanded deep-link coverage, per-type settings,
+and permanent delete.
 
 ## Scope Challenge
 
@@ -95,7 +96,7 @@ existing type filters.
 - **Effort:** S
 - **Agent:** expo-react-native-engineer
 - **Priority:** P0
-- **writeScope:** `mobile/src/app/(app)/inbox/index.tsx`, `mobile/src/store/inbox.ts`
+- **writeScope:** `mobile/src/app/(app)/inbox/index.tsx`, `mobile/src/components/features/NotificationFilters.tsx`, `mobile/src/store/inbox.ts`
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Filter bar adds a read/unread toggle (segmented control or chip) that filters the notification list by `isViewed` status.
@@ -173,7 +174,7 @@ Expose fine-grained notification type toggles beyond the current 3 categories (c
 - **Effort:** M
 - **Agent:** expo-react-native-engineer
 - **Priority:** P2
-- **writeScope:** `mobile/src/app/(app)/settings/notifications.tsx`, `mobile/src/store/push.ts`
+- **writeScope:** `mobile/src/app/(app)/settings/notifications.tsx`, `mobile/src/hooks/useNotificationListeners.ts`, `mobile/src/store/push.ts`
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Notification settings screen shows per-type toggles within each category (e.g., under Chat: mentions, replies, reactions).
@@ -189,7 +190,7 @@ Allow permanent deletion of notifications (not just archive).
 - **Agent:** expo-react-native-engineer
 - **Priority:** P2
 - **Depends on:** `TASK-003`
-- **writeScope:** `mobile/src/app/(app)/inbox/index.tsx`, `mobile/src/repositories/notification.ts`
+- **writeScope:** `mobile/src/app/(app)/inbox/index.tsx`, `mobile/src/components/features/BulkActionBar.tsx`, `mobile/src/repositories/notification.ts`
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Bulk action bar in selection mode shows a "Delete" action alongside "Mark Read" and "Archive".
