@@ -68,6 +68,14 @@ rush docker:up                      # local docker stack
 - **Never leave bugs behind.** If a review finds defects, fix them before moving to the next phase. No TODOs, no "known issues" deferred to nonexistent future plans. If it's broken, fix it now.
 - **Stay in the working directory.** Don't `cd` to other folders. Use absolute paths or `dev.sh` scripts.
 
+## Known Defects (fix before next release)
+
+1. **Hooks-of-Rules violation in AppLayout** — `useChatUnreadSync()` and `useUnreadCount()` called after conditional returns in `mobile/src/app/(app)/_layout.tsx`. Fix: split into child component or move hooks above redirects.
+2. **Chat unread query too broad** — `useChatUnread.ts` queries all DocNotifyContext with `{}`. Must filter by current user, restrict to Channel/DirectMessage objectClasses, exclude hidden contexts.
+3. **Chat unread counts never cleared** — stale badge counts persist when contexts disappear. Fix: rebuild from scratch on each poll instead of incremental patching.
+4. **Reaction identity still inconsistent** — useMessages optimistic reactions use auth store AccountUuid, useThread stamps 'me'. All must use `useConnectionStore.currentSocialId`. (Partially fixed but verify all paths.)
+5. **Tracker comments include system messages** — `activity.ts` fetches base ActivityMessage class. Fix: use `chunter:class:ChatMessage` for issue comments to exclude DocUpdateMessage/ActivityInfoMessage.
+
 ## Tools
 
 - **codemap** — indexed with `.codemapignore`. Use `codemap search`, `codemap symbols`, `codemap deps` for codebase exploration.
