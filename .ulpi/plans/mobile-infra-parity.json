@@ -88,7 +88,7 @@
     {
       "id": "TASK-003",
       "title": "Add code syntax highlighting in MarkupRenderer",
-      "description": "Upgrade code blocks to render with syntax highlighting using a lightweight RN-compatible highlighter.",
+      "description": "Upgrade code blocks to render with syntax highlighting using highlight.js core with a minimal language subset (TypeScript, Python, Go, JSON, bash) to keep bundle size under 200KB.",
       "priority": "P1",
       "type": "feature",
       "effort": "M",
@@ -116,7 +116,7 @@
       "dependsOn": ["TASK-003"],
       "acceptanceCriteria": [
         "Markup <img> tags render as inline expo-image components with automatic caching.",
-        "Images respect max width (screen width - padding) and maintain aspect ratio; tap opens full-screen viewer.",
+        "Images respect max width (screen width - padding) and maintain aspect ratio; tap opens existing ImageViewer or system viewer via Linking.openURL.",
         "Broken image URLs show a placeholder icon instead of crashing or showing blank space."
       ],
       "filesToModify": ["mobile/src/components/features/MarkupRenderer.tsx"],
@@ -232,7 +232,9 @@
     {"failure": "Syntax highlighter blocks main thread", "detection": "Large code block causes frame drops", "recovery": "Limit highlighting to first 200 lines; show truncated indicator"},
     {"failure": "Offline queue replays stale mutation", "detection": "Server rejects with conflict", "recovery": "Show resolution UI; allow discard or retry with fresh data"},
     {"failure": "Universal link opens wrong screen", "detection": "Route parsing fails", "recovery": "Fall back to default tab; log the unparseable URL"},
-    {"failure": "Clipboard copy fails silently", "detection": "Expo-clipboard throws on restricted context", "recovery": "Show error toast instead of silent failure"}
+    {"failure": "Clipboard copy fails silently", "detection": "Expo-clipboard throws on restricted context", "recovery": "Show error toast instead of silent failure"},
+    {"failure": "Offline queue fails to persist", "detection": "AsyncStorage write fails or app killed mid-write", "recovery": "Treat unsaved mutations as lost; show toast on next launch if queue state inconsistent"},
+    {"failure": "Haptics module fails to load", "detection": "expo-haptics unavailable on device/emulator", "recovery": "Silently skip; wrap all haptic calls in try/catch"}
   ],
   "shipCut": {
     "minimumCoherentCutAfter": "TASK-006",

@@ -93,6 +93,8 @@ Integrate `@sentry/react-native` for crash reporting and unhandled exception tra
 ### TASK-003: Add code syntax highlighting in MarkupRenderer
 
 Upgrade code blocks in MarkupRenderer to render with syntax highlighting.
+Use `highlight.js` core with a minimal language subset (TypeScript, Python, Go, JSON, bash)
+to keep bundle size under 200KB.
 
 - **Type:** feature
 - **Effort:** M
@@ -118,7 +120,7 @@ Upgrade image references in markup from text links to actual inline images.
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Markup `<img>` tags and image references render as inline `expo-image` components with automatic caching.
-  2. Images respect a maximum width (screen width - padding) and maintain aspect ratio; tapping opens full-screen viewer.
+  2. Images respect a maximum width (screen width - padding) and maintain aspect ratio; tapping opens the image in the existing `ImageViewer` component or system viewer via `Linking.openURL`.
   3. Broken image URLs show a placeholder icon instead of crashing the renderer or showing a blank space.
 
 ### TASK-005: Add global error toast
@@ -130,6 +132,7 @@ mutation errors.
 - **Effort:** S
 - **Agent:** expo-react-native-engineer
 - **Priority:** P1
+- **Depends on:** `TASK-001`, `TASK-002`
 - **writeScope:** `mobile/src/components/ui/ErrorToast.tsx`, `mobile/src/store/toast.ts`, `mobile/src/client/queryClient.ts`, `mobile/src/app/_layout.tsx`
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
@@ -145,7 +148,7 @@ Allow users to copy message text and code block content to clipboard.
 - **Effort:** S
 - **Agent:** expo-react-native-engineer
 - **Priority:** P1
-- **Depends on:** `TASK-005`
+- **Depends on:** `TASK-004`, `TASK-005`
 - **writeScope:** `mobile/package.json`, `mobile/src/components/features/MarkupRenderer.tsx`, `mobile/src/components/features/MessageBubble.tsx`
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
@@ -161,6 +164,7 @@ Queue shared Huly mutations when offline and replay them when connectivity retur
 - **Effort:** L
 - **Agent:** expo-react-native-engineer
 - **Priority:** P2
+- **Depends on:** `TASK-005`
 - **writeScope:** `mobile/src/lib/offline-queue.ts`, `mobile/src/store/offline.ts`, `mobile/src/hooks/useHulyMutation.ts`, `mobile/src/client/queryClient.ts`, `mobile/src/app/_layout.tsx`
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
@@ -176,6 +180,7 @@ Configure associated domains so `https://huly.io/...` links can open directly in
 - **Effort:** M
 - **Agent:** expo-react-native-engineer
 - **Priority:** P2
+- **Depends on:** `TASK-007`
 - **writeScope:** `mobile/app.json`, `mobile/src/app/_layout.tsx`
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
@@ -208,6 +213,8 @@ Add tactile feedback for key inbox interactions.
 | Offline queue replays stale mutation | Server rejects with conflict | Show resolution UI; allow discard or retry with fresh data |
 | Universal link opens wrong screen | Route parsing fails | Fall back to default tab; log the unparseable URL |
 | Clipboard copy fails silently | Expo-clipboard throws on restricted context | Show error toast instead of silent failure |
+| Offline queue fails to persist | AsyncStorage write fails or app killed mid-write | Treat unsaved mutations as lost; show toast on next launch if queue state is inconsistent |
+| Haptics module fails to load | expo-haptics unavailable on device/emulator | Silently skip; wrap all haptic calls in try/catch with no user-visible error |
 
 ## Ship Cut
 

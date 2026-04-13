@@ -43,6 +43,7 @@ profile editing, workspace creation, member management (invite/remove/roles), pa
 - New settings routes must stay under `mobile/src/app/(app)/settings/**`
 - Existing theme toggle, notification preferences, and logout must not regress
 - Member role changes must validate against AccountRole enum from `@hcengineering/core`
+- New route screens use inline `<Stack.Screen options={...}>` for header config (following the pattern in `members.tsx`), not `_layout.tsx` registration
 - Member role changes use AccountClient; member removal uses workspace membership mutation via the members repository / Huly client
 
 ## Existing Code Leverage
@@ -72,7 +73,7 @@ Upgrade the read-only profile header to support editing name and uploading an av
 - **Effort:** M
 - **Agent:** expo-react-native-engineer
 - **Priority:** P0
-- **writeScope:** `mobile/src/app/(app)/settings/index.tsx`, `mobile/src/components/features/ProfileHeader.tsx`, `mobile/src/repositories/settings.ts`, `mobile/src/client/account.ts`
+- **writeScope:** `mobile/src/app/(app)/settings/index.tsx`, `mobile/src/components/features/ProfileHeader.tsx`, `mobile/src/repositories/settings.ts`
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Profile section shows edit icons on name and avatar; tapping name opens an inline editor, tapping avatar opens the image picker.
@@ -122,7 +123,7 @@ Allow workspace owners to remove members and change roles from the member detail
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Tapping a member row opens a detail sheet with role selector (Guest, User, Maintainer, Owner) and a "Remove" action.
-  2. Role changes call `AccountClient.updateWorkspaceRole()`; removals call a workspace membership mutation via the members repository, and both refresh the member list on success.
+  2. Role changes call `AccountClient.updateWorkspaceRole()`; removals call `AccountClient.leaveWorkspace()` with the target account, and both refresh the member list on success.
   3. Cannot demote the last owner or remove self; both show explicit error messages instead of silent failures.
 
 ### TASK-005: Add change password screen
@@ -182,9 +183,9 @@ Allow users to delete their account from settings with confirmation safeguards.
 - **writeScope:** `mobile/src/app/(app)/settings/index.tsx`, `mobile/src/client/account.ts`
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
-  1. Settings shows a "Delete Account" row in a danger zone section; tapping opens a confirmation dialog requiring password entry.
-  2. Successful deletion clears all local state (auth, workspace, settings, push), navigates to login screen.
-  3. Failed deletion (wrong password, server error) shows a recoverable error and does not clear local state.
+  1. Settings shows a "Delete Account" row in a danger zone section; tapping opens a two-step confirmation (type workspace name to confirm, then final confirm button).
+  2. Successful deletion calls `AccountClient.deleteAccount(accountUuid)` (obtained from auth store), clears all local state, and navigates to login screen.
+  3. Failed deletion (server error, network failure) shows a recoverable error and does not clear local state.
 
 ## Failure Modes
 
@@ -199,13 +200,13 @@ Allow users to delete their account from settings with confirmation safeguards.
 
 ## Ship Cut
 
-If execution stops halfway, the minimum coherent cut is after `TASK-005`.
+If execution stops halfway, the minimum coherent cut is after both `TASK-005` and `TASK-004`
+complete (they are on separate branches that must both finish).
 
 That cut yields:
 - profile editing (name + avatar)
 - workspace creation
-- member invite
-- member remove + role change
+- member invite + remove + role change
 - change password
 
 Items below that cut and safe to defer:
@@ -237,9 +238,9 @@ Items below that cut and safe to defer:
 
 - Tasks: 8
 - P0 foundation: `TASK-001`
-- Critical path: `TASK-001 -> TASK-005 -> TASK-008`
+- Critical path: `TASK-001 -> TASK-005 -> TASK-006 -> TASK-007`
 - Secondary path: `TASK-003 -> TASK-004`
-- Independent: `TASK-002`, `TASK-006`, `TASK-007`
+- Independent: `TASK-002`, `TASK-003`
 
 ## Task Dependencies
 

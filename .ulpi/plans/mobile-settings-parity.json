@@ -65,9 +65,9 @@
         "Name changes are saved via AccountClient; avatar changes use the existing workspace/person mutation path, and the profile display updates immediately without requiring a screen reload.",
         "Upload failures or invalid names show recoverable errors without clearing the existing profile data."
       ],
-      "filesToModify": ["mobile/src/app/(app)/settings/index.tsx", "mobile/src/components/features/ProfileHeader.tsx", "mobile/src/repositories/settings.ts", "mobile/src/client/account.ts"],
+      "filesToModify": ["mobile/src/app/(app)/settings/index.tsx", "mobile/src/components/features/ProfileHeader.tsx", "mobile/src/repositories/settings.ts"],
       "filesToCreate": [],
-      "writeScope": ["mobile/src/app/(app)/settings/index.tsx", "mobile/src/components/features/ProfileHeader.tsx", "mobile/src/repositories/settings.ts", "mobile/src/client/account.ts"],
+      "writeScope": ["mobile/src/app/(app)/settings/index.tsx", "mobile/src/components/features/ProfileHeader.tsx", "mobile/src/repositories/settings.ts"],
       "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     },
@@ -122,7 +122,7 @@
       "dependsOn": ["TASK-003"],
       "acceptanceCriteria": [
         "Tapping a member row opens a detail sheet with role selector and Remove action.",
-        "Role changes call AccountClient.updateWorkspaceRole(); removals call a workspace membership mutation via the members repository, and both refresh the member list on success.",
+        "Role changes call AccountClient.updateWorkspaceRole(); removals call AccountClient.leaveWorkspace() with the target account, and both refresh the member list on success.",
         "Cannot demote the last owner or remove self; both show explicit error messages."
       ],
       "filesToModify": ["mobile/src/app/(app)/settings/members.tsx", "mobile/src/components/features/MemberRow.tsx", "mobile/src/repositories/members.ts"],
@@ -201,9 +201,9 @@
       "agent": "expo-react-native-engineer",
       "dependsOn": ["TASK-005"],
       "acceptanceCriteria": [
-        "Settings shows a Delete Account row in a danger zone section; tapping opens a confirmation dialog requiring password.",
-        "Successful deletion clears all local state (auth, workspace, settings, push), navigates to login screen.",
-        "Failed deletion (wrong password, server error) shows recoverable error and does not clear local state."
+        "Settings shows a Delete Account row in a danger zone section; tapping opens a two-step confirmation (type workspace name to confirm).",
+        "Successful deletion calls AccountClient.deleteAccount(accountUuid) (from auth store), clears all local state, navigates to login screen.",
+        "Failed deletion (server error, network failure) shows recoverable error and does not clear local state."
       ],
       "filesToModify": ["mobile/src/app/(app)/settings/index.tsx", "mobile/src/client/account.ts"],
       "filesToCreate": [],
@@ -239,7 +239,7 @@
     "p0Foundation": "TASK-001",
     "criticalPath": ["TASK-001", "TASK-005", "TASK-006", "TASK-007"],
     "secondaryPath": ["TASK-003", "TASK-004"],
-    "independentTasks": ["TASK-002"]
+    "independentTasks": ["TASK-002", "TASK-003"]
   },
   "dependencyMap": {
     "TASK-001": [],
