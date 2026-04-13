@@ -1,5 +1,6 @@
 .heft/
 lib/
+!mobile/src/lib/
 _api-extractor-temp/
 temp/
 .idea
