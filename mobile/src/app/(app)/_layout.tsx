@@ -8,6 +8,7 @@ import { useChatStore } from '@/store/chat'
 import { useInboxStore } from '@/store/inbox'
 import { useChatUnreadSync } from '@/hooks/useChatUnread'
 import { useUnreadCount } from '@/hooks/useUnreadCount'
+import { usePushRegistration } from '@/hooks/usePushRegistration'
 import { ConnectionStatusBar } from '@/components/features/ConnectionStatusBar'
 
 /**
@@ -41,6 +42,8 @@ function AuthenticatedTabShell(): React.ReactNode {
   // Unread sync hooks — always mounted when authenticated
   useChatUnreadSync()
   useUnreadCount()
+  // Push token registration — acquires token and registers with backend
+  usePushRegistration()
 
   const chatBadge = useChatStore((s) => s.unreadTotal)
   const inboxBadge = useInboxStore((s) => s.unreadTotal)

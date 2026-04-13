@@ -10,6 +10,8 @@ export interface ServerConfig {
   COLLABORATOR_URL: string
   FILES_URL: string
   UPLOAD_URL: string
+  /** Optional VAPID public key for web push. Used to detect push support. */
+  PUSH_PUBLIC_KEY?: string
 }
 
 let cachedConfig: ServerConfig | null = null

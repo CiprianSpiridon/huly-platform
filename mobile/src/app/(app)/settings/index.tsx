@@ -129,6 +129,10 @@ export default function SettingsScreen(): React.ReactNode {
     router.push('/(app)/settings/workspaces' as Href)
   }, [])
 
+  const handleNotifications = useCallback(() => {
+    router.push('/(app)/settings/notifications' as Href)
+  }, [])
+
   return (
     <SafeAreaView className="flex-1 bg-surface-primary" edges={['top']}>
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 32 }}>
@@ -170,6 +174,17 @@ export default function SettingsScreen(): React.ReactNode {
           onPress={handleSwitchWorkspace}
           showChevron
           accessibilityLabel="Switch to a different workspace"
+        />
+
+        <Divider />
+
+        {/* Notifications section */}
+        <SectionHeader title="Notifications" />
+        <SettingsRow
+          label="Notification Preferences"
+          onPress={handleNotifications}
+          showChevron
+          accessibilityLabel="Configure notification preferences"
         />
 
         <Divider />

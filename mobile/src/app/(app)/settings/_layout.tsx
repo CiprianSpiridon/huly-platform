@@ -12,6 +12,7 @@ export default function SettingsLayout(): React.ReactNode {
     >
       <Stack.Screen name="index" options={{ title: 'Settings' }} />
       <Stack.Screen name="workspaces" options={{ title: 'Switch Workspace' }} />
+      <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
     </Stack>
   )
 }

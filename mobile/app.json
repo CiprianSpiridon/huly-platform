@@ -37,11 +37,26 @@
             "imageWidth": 76
           }
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#205DC2"
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "your-eas-project-id"
+      },
+      "router": {
+        "origin": "https://app.huly.io"
+      }
     }
   }
 }

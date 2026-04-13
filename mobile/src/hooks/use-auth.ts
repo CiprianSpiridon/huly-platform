@@ -15,6 +15,8 @@ import { getOrCreateAccountClient, clearAccountClient } from '@/client/account'
 import { useAuthStore } from '@/store/auth'
 import { useWorkspaceStore } from '@/store/workspace'
 import { useConnectionStore } from '@/store/connection'
+import { usePushStore } from '@/store/push'
+import { clearBadge } from '@/lib/notifications'
 
 // ---------------------------------------------------------------------------
 // useLogin -- email + password
@@ -185,13 +187,16 @@ export function useLogout(): () => Promise<void> {
   const clearAuth = useAuthStore((s) => s.clearAuth)
   const clearWorkspace = useWorkspaceStore((s) => s.clearWorkspace)
   const disconnect = useConnectionStore((s) => s.disconnect)
+  const resetPush = usePushStore((s) => s.reset)
   const queryClient = useQueryClient()
 
   return useCallback(async () => {
     queryClient.clear()
     disconnect()
     clearAccountClient()
+    resetPush()
+    await clearBadge()
     await clearWorkspace()
     await clearAuth()
-  }, [clearAuth, clearWorkspace, disconnect, queryClient])
+  }, [clearAuth, clearWorkspace, disconnect, resetPush, queryClient])
 }

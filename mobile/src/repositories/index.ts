@@ -41,3 +41,4 @@ export type {
   NotificationItem,
   PaginatedNotifications,
 } from './notification'
+export { registerPushToken, deregisterPushToken } from './push'

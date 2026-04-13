@@ -15,6 +15,8 @@ import { useAuthStore } from '@/store/auth'
 import { useWorkspaceStore } from '@/store/workspace'
 import { useConnectionStore } from '@/store/connection'
 import { useSettingsStore } from '@/store/settings'
+import { useNotificationListeners } from '@/hooks/useNotificationListeners'
+import { InAppNotificationBanner } from '@/components/features/InAppNotificationBanner'
 
 // Prevent the splash screen from auto-hiding before assets are loaded.
 SplashScreen.preventAutoHideAsync()
@@ -80,14 +82,34 @@ export default function RootLayout(): React.ReactNode {
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
           <BottomSheetModalProvider>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(auth)" />
-              <Stack.Screen name="(app)" />
-            </Stack>
+            <RootLayoutContent />
             <StatusBar style="light" />
           </BottomSheetModalProvider>
         </SafeAreaProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>
+  )
+}
+
+/**
+ * Inner layout content. Separated so notification listeners can
+ * access QueryClientProvider via useQueryClient().
+ */
+function RootLayoutContent(): React.ReactNode {
+  const { bannerNotification, dismissBanner, handleBannerPress } =
+    useNotificationListeners()
+
+  return (
+    <>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(app)" />
+      </Stack>
+      <InAppNotificationBanner
+        notification={bannerNotification}
+        onPress={handleBannerPress}
+        onDismiss={dismissBanner}
+      />
+    </>
   )
 }

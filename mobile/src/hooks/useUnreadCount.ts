@@ -3,15 +3,19 @@
  *
  * Polls every 30 seconds and syncs the count to the Zustand inbox store
  * so the tab badge can read it without a TanStack Query subscription.
+ *
+ * Also syncs the app icon badge count via expo-notifications.
  */
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useQuery, type UseQueryResult } from '@tanstack/react-query'
+import { AppState, type AppStateStatus } from 'react-native'
 
 import { getUnreadCount } from '@/repositories/notification'
 import { getClient } from '@/client'
 import { useInboxStore } from '@/store/inbox'
 import { useWebSocketStore } from '@/store/websocket'
+import { setBadgeCount } from '@/lib/notifications'
 import { notificationKeys } from './useNotifications'
 
 // ---------------------------------------------------------------------------
@@ -45,12 +49,32 @@ export function useUnreadCount(): UseQueryResult<number, Error> {
     enabled: getClient() !== null,
   })
 
-  // Sync to Zustand whenever the count changes
+  // Sync to Zustand and app icon badge whenever the count changes
   useEffect(() => {
     if (query.data !== undefined) {
       setUnreadTotal(query.data)
+      void setBadgeCount(query.data)
     }
   }, [query.data, setUnreadTotal])
+
+  // Re-sync badge when app comes to foreground
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState)
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (
+        appStateRef.current.match(/inactive|background/) != null &&
+        nextAppState === 'active'
+      ) {
+        // App came to foreground -- refetch to correct badge
+        void query.refetch()
+      }
+      appStateRef.current = nextAppState
+    })
+
+    return () => {
+      subscription.remove()
+    }
+  }, [query])
 
   return query
 }
