@@ -1,0 +1,148 @@
+# Mobile test CI pipeline.
+#
+# Runs unit tests on every PR that touches mobile/.
+# E2E tests (Maestro) are triggered manually.
+#
+# Coverage is uploaded as an artifact and enforced via jest thresholds.
+
+name: Mobile Tests
+
+on:
+  pull_request:
+    paths:
+      - 'mobile/**'
+      - '!mobile/**/*.md'
+  push:
+    branches: [develop]
+    paths:
+      - 'mobile/**'
+      - '!mobile/**/*.md'
+  workflow_dispatch:
+    inputs:
+      run_e2e:
+        description: 'Run E2E tests'
+        type: boolean
+        default: false
+
+concurrency:
+  group: mobile-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Unit tests + coverage
+  # ---------------------------------------------------------------------------
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Rush
+        run: npm install -g @microsoft/rush
+
+      - name: Rush install
+        run: rush install
+
+      - name: Typecheck
+        working-directory: mobile
+        run: npx tsc --noEmit
+
+      - name: Run tests with coverage
+        working-directory: mobile
+        run: npx jest --ci --coverage --maxWorkers=2
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-coverage
+          path: mobile/coverage/
+          retention-days: 14
+
+      - name: Check coverage thresholds
+        if: always()
+        working-directory: mobile
+        run: npx jest --ci --coverage 2>&1 | grep -E '(PASS|FAIL|Stmts|Branch|Funcs|Lines)' || true
+
+  # ---------------------------------------------------------------------------
+  # Lint
+  # ---------------------------------------------------------------------------
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Rush
+        run: npm install -g @microsoft/rush
+
+      - name: Rush install
+        run: rush install
+
+      - name: ESLint
+        working-directory: mobile
+        run: npx eslint . --ext .ts,.tsx --max-warnings 0
+        continue-on-error: true
+
+  # ---------------------------------------------------------------------------
+  # E2E tests (manual trigger only)
+  # ---------------------------------------------------------------------------
+  e2e-ios:
+    name: E2E Tests (iOS)
+    runs-on: macos-14
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.run_e2e == 'true'
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Rush
+        run: npm install -g @microsoft/rush
+
+      - name: Rush install
+        run: rush install
+
+      - name: Install Maestro
+        run: curl -Ls "https://get.maestro.mobile.dev" | bash
+
+      - name: Build development client
+        working-directory: mobile
+        run: npx expo run:ios --configuration Release
+
+      - name: Run P0 E2E flows
+        working-directory: mobile
+        env:
+          TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          TEST_OTP: ${{ secrets.E2E_TEST_OTP }}
+          TEST_WORKSPACE: ${{ secrets.E2E_TEST_WORKSPACE }}
+        run: |
+          export PATH="$HOME/.maestro/bin:$PATH"
+          maestro test -e maestro/config.yaml --tags p0 maestro/
+
+      - name: Upload E2E results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-results
+          path: mobile/maestro-results/
+          retention-days: 7

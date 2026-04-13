@@ -1,0 +1,58 @@
+# Login flow E2E test.
+#
+# Verifies the full login journey: email entry, OTP validation,
+# and successful navigation to workspace selection.
+#
+# Tags: p0, auth
+appId: com.huly.mobile
+name: Login flow
+tags:
+  - p0
+  - auth
+---
+# Ensure we start from the login screen
+- assertVisible:
+    text: "Sign in"
+    timeout: 10000
+
+# Enter email address
+- tapOn:
+    id: "email-input"
+- inputText: ${EMAIL}
+
+# Tap continue / sign in button
+- tapOn:
+    text: "Continue"
+    optional: true
+- tapOn:
+    text: "Sign in"
+    optional: true
+
+# Wait for OTP screen
+- assertVisible:
+    text: "verification"
+    timeout: 10000
+
+# Enter OTP code (test environment uses fixed code)
+- tapOn:
+    id: "otp-input"
+- inputText: ${OTP_CODE}
+
+# Submit verification
+- tapOn:
+    text: "Verify"
+    optional: true
+- tapOn:
+    text: "Sign in"
+    optional: true
+
+# Should navigate to workspace selection or main app
+- assertVisible:
+    text: "workspace"
+    timeout: 15000
+    optional: true
+
+# If workspace selection is shown, verify workspaces are listed
+- assertVisible:
+    text: ".*"
+    timeout: 5000

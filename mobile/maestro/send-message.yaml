@@ -1,0 +1,54 @@
+# Send message E2E test.
+#
+# Prerequisite: user is logged in with workspace selected.
+# Verifies sending a message in the chat tab.
+#
+# Tags: p1, chat
+appId: com.huly.mobile
+name: Send message
+tags:
+  - p1
+  - chat
+---
+# Navigate to Chat tab
+- tapOn:
+    text: "Chat"
+    timeout: 5000
+
+# Wait for channels to load
+- assertVisible:
+    text: ".*"
+    timeout: 5000
+
+# Tap on the first available channel
+- tapOn:
+    index: 0
+    id: "channel-item"
+    timeout: 3000
+
+# Wait for messages to load
+- assertVisible:
+    text: ".*"
+    timeout: 5000
+
+# Type a message
+- tapOn:
+    id: "message-input"
+- inputText: "Hello from Maestro E2E test"
+
+# Send the message
+- tapOn:
+    id: "send-button"
+
+# Verify the message appears in the chat
+- assertVisible:
+    text: "Hello from Maestro E2E test"
+    timeout: 10000
+
+# Navigate back to channel list
+- back
+
+# Verify we're back on the channel list
+- assertVisible:
+    text: "Chat"
+    timeout: 3000

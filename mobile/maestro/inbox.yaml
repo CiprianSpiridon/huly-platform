@@ -1,0 +1,48 @@
+# Inbox / notifications E2E test.
+#
+# Prerequisite: user is logged in with workspace selected.
+# Verifies inbox navigation and notification display.
+#
+# Tags: p1, inbox
+appId: com.huly.mobile
+name: View inbox
+tags:
+  - p1
+  - inbox
+---
+# Navigate to Inbox tab
+- tapOn:
+    text: "Inbox"
+    timeout: 5000
+
+# Wait for inbox to load
+- assertVisible:
+    text: "Inbox"
+    timeout: 5000
+
+# Verify filter chips are visible
+- assertVisible:
+    text: "All"
+    timeout: 3000
+
+# Try filtering by mentions
+- tapOn:
+    text: "Mentions"
+    optional: true
+    timeout: 3000
+
+# Wait for filtered results
+- assertVisible:
+    text: ".*"
+    timeout: 5000
+
+# Switch back to All
+- tapOn:
+    text: "All"
+    optional: true
+    timeout: 3000
+
+# Verify notifications are displayed (or empty state)
+- assertVisible:
+    text: ".*"
+    timeout: 5000

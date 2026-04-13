@@ -1,0 +1,54 @@
+# Create issue E2E test.
+#
+# Prerequisite: user is logged in and has a workspace selected.
+# Verifies issue creation via the tracker tab.
+#
+# Tags: p0, tracker
+appId: com.huly.mobile
+name: Create issue
+tags:
+  - p0
+  - tracker
+---
+# Navigate to Tracker tab
+- tapOn:
+    text: "Tracker"
+    timeout: 5000
+
+# Wait for the tracker screen to load
+- assertVisible:
+    text: "Issues"
+    timeout: 5000
+
+# Tap create issue button
+- tapOn:
+    id: "create-issue-button"
+    timeout: 3000
+
+# Fill in issue title
+- tapOn:
+    id: "issue-title-input"
+- inputText: "Test issue from Maestro E2E"
+
+# Fill in description (if editor is visible)
+- tapOn:
+    id: "issue-description-input"
+    optional: true
+- inputText:
+    text: "Automated test issue created by Maestro flow."
+    optional: true
+
+# Select priority
+- tapOn:
+    text: "Medium"
+    optional: true
+
+# Submit the form
+- tapOn:
+    text: "Create"
+    timeout: 3000
+
+# Verify the new issue appears in the list
+- assertVisible:
+    text: "Test issue from Maestro E2E"
+    timeout: 10000

@@ -1,0 +1,12 @@
+# Maestro E2E test configuration for Huly mobile app.
+#
+# Uses CI environment variables for credentials.
+# NEVER commit real credentials -- use CI secrets.
+
+appId: com.huly.mobile
+
+# Test environment variables (override via CI secrets)
+EMAIL: ${TEST_EMAIL:-test@huly.io}
+OTP_CODE: ${TEST_OTP:-123456}
+WORKSPACE_NAME: ${TEST_WORKSPACE:-Test Workspace}
+HULY_URL: ${TEST_HULY_URL:-https://staging.huly.io}

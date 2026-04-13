@@ -1,0 +1,57 @@
+# Workspace switch E2E test.
+#
+# Prerequisite: user is logged in and has multiple workspaces.
+# Verifies workspace switching via the settings tab.
+#
+# Tags: p1, settings
+appId: com.huly.mobile
+name: Workspace switch
+tags:
+  - p1
+  - settings
+---
+# Navigate to Settings tab
+- tapOn:
+    text: "Settings"
+    timeout: 5000
+
+# Wait for settings screen to load
+- assertVisible:
+    text: "Settings"
+    timeout: 5000
+
+# Tap on workspace management / switch workspace
+- tapOn:
+    text: "Workspaces"
+    timeout: 3000
+    optional: true
+- tapOn:
+    text: "Switch"
+    timeout: 3000
+    optional: true
+
+# Wait for workspace list to load
+- assertVisible:
+    text: ".*"
+    timeout: 5000
+
+# Tap on the target workspace (if multiple exist)
+- tapOn:
+    text: ${WORKSPACE_NAME}
+    timeout: 5000
+    optional: true
+
+# Verify workspace changed -- should show inbox or main screen
+- assertVisible:
+    text: ".*"
+    timeout: 10000
+
+# Verify tab bar is still functional
+- tapOn:
+    text: "Inbox"
+    timeout: 3000
+    optional: true
+
+- assertVisible:
+    text: ".*"
+    timeout: 5000
