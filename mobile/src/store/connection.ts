@@ -22,6 +22,8 @@ interface ConnectionCredentials {
 interface ConnectionState {
   status: ConnectionStatus
   error: string | null
+  /** The authenticated user's primarySocialId — use for reaction ownership, tx authoring */
+  currentSocialId: string | null
 
   connect: (endpoint: string, workspaceId: string, token: string) => Promise<void>
   disconnect: () => void
@@ -34,6 +36,7 @@ let _credentials: ConnectionCredentials | null = null
 export const useConnectionStore = create<ConnectionState>((set, get) => ({
   status: 'disconnected',
   error: null,
+  currentSocialId: null,
 
   connect: async (endpoint: string, workspaceId: string, token: string) => {
     set({ status: 'connecting', error: null })
@@ -45,7 +48,16 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
       setClient(client)
       _credentials = { endpoint, workspaceId, token }
 
-      set({ status: 'connected', error: null })
+      // Get the authenticated user's primarySocialId for reaction/tx authoring
+      let socialId: string | null = null
+      try {
+        const account = await client.getAccount()
+        socialId = account.primarySocialId
+      } catch {
+        // Non-fatal — socialId stays null, reactions won't highlight correctly
+      }
+
+      set({ status: 'connected', error: null, currentSocialId: socialId })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Connection failed'
       set({ status: 'error', error: message })
@@ -56,7 +68,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   disconnect: () => {
     clearClient()
     _credentials = null
-    set({ status: 'disconnected', error: null })
+    set({ status: 'disconnected', error: null, currentSocialId: null })
   },
 
   reconnect: async () => {

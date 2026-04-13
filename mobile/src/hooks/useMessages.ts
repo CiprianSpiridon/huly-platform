@@ -15,7 +15,7 @@ import {
   type InfiniteData,
 } from '@tanstack/react-query'
 
-import { useAuthStore } from '@/store/auth'
+import { useConnectionStore } from '@/store/connection'
 import {
   getMessages,
   sendMessage,
@@ -84,7 +84,7 @@ interface SendMessageContext {
 
 export function useSendMessage(): UseMutationResult<MessageItem, Error, SendMessageParams, SendMessageContext> {
   const queryClient = useQueryClient()
-  const currentAccountId = useAuthStore((s) => s.account) ?? 'unknown'
+  const currentSocialId = useConnectionStore((s) => s.currentSocialId) ?? 'unknown'
 
   return useMutation<MessageItem, Error, SendMessageParams, SendMessageContext>({
     mutationFn: (params) => sendMessage(params.spaceId, params.content),
@@ -100,7 +100,7 @@ export function useSendMessage(): UseMutationResult<MessageItem, Error, SendMess
       const optimisticMessage: MessageItem = {
         _id: `optimistic-${Date.now()}`,
         content: variables.content,
-        sender: currentAccountId,
+        sender: currentSocialId,
         senderName: 'You',
         createdOn: Date.now(),
         modifiedOn: Date.now(),
@@ -173,7 +173,7 @@ interface ToggleReactionContext {
 
 export function useToggleReaction(): UseMutationResult<void, Error, ToggleReactionParams, ToggleReactionContext> {
   const queryClient = useQueryClient()
-  const currentAccountId = useAuthStore((s) => s.account) ?? 'unknown'
+  const currentSocialId = useConnectionStore((s) => s.currentSocialId) ?? 'unknown'
 
   return useMutation<void, Error, ToggleReactionParams, ToggleReactionContext>({
     mutationFn: async (params) => {
@@ -212,7 +212,7 @@ export function useToggleReaction(): UseMutationResult<void, Error, ToggleReacti
                       reactions[existingIdx] = {
                         ...existing,
                         count: existing.count - 1,
-                        userIds: existing.userIds.filter((id) => id !== currentAccountId),
+                        userIds: existing.userIds.filter((id) => id !== currentSocialId),
                       }
                     }
                   }
@@ -223,13 +223,13 @@ export function useToggleReaction(): UseMutationResult<void, Error, ToggleReacti
                     reactions[existingIdx] = {
                       ...existing,
                       count: existing.count + 1,
-                      userIds: [...existing.userIds, currentAccountId],
+                      userIds: [...existing.userIds, currentSocialId],
                     }
                   } else {
                     reactions.push({
                       emoji: variables.emoji,
                       count: 1,
-                      userIds: [currentAccountId],
+                      userIds: [currentSocialId],
                     })
                   }
                 }

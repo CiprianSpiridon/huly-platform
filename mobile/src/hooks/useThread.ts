@@ -13,6 +13,8 @@ import {
   type UseMutationResult,
 } from '@tanstack/react-query'
 
+import { useConnectionStore } from '@/store/connection'
+
 import {
   getThread,
   sendThreadReply,
@@ -68,6 +70,7 @@ interface SendThreadReplyContext {
 
 export function useSendThreadReply(): UseMutationResult<MessageItem, Error, SendThreadReplyParams, SendThreadReplyContext> {
   const queryClient = useQueryClient()
+  const currentSocialId = useConnectionStore((s) => s.currentSocialId) ?? 'unknown'
 
   return useMutation<MessageItem, Error, SendThreadReplyParams, SendThreadReplyContext>({
     mutationFn: (params) => sendThreadReply(params.messageId, params.content),
@@ -81,7 +84,7 @@ export function useSendThreadReply(): UseMutationResult<MessageItem, Error, Send
         const optimisticReply: MessageItem = {
           _id: `optimistic-reply-${Date.now()}`,
           content: variables.content,
-          sender: 'me',
+          sender: currentSocialId,
           senderName: 'You',
           createdOn: Date.now(),
           modifiedOn: Date.now(),
