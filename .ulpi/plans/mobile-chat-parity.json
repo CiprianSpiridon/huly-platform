@@ -1,0 +1,413 @@
+{
+  "plan": {
+    "name": "mobile-chat-parity",
+    "title": "Mobile Chat Feature Parity",
+    "mode": "HOLD",
+    "defaultReview": "claude",
+    "agent": "expo-react-native-engineer"
+  },
+  "overview": "Close the highest-value chat gap between the web chunter/chat experience and the Expo mobile app by adding channel settings, members, pinned messages, thread correctness, history navigation, typing indicators, and basic channel administration.",
+  "scopeChallenge": {
+    "assumedMode": "HOLD",
+    "assumedDefaultReview": "claude",
+    "scopeCuts": [
+      "Focus on chat parity inside mobile chat routes, hooks, store, repository, and realtime rules",
+      "Exclude workbench-only side panels, inline comments, and mail/notifier presentation surfaces"
+    ]
+  },
+  "prerequisites": [
+    "Scaffold, auth, API client, and current chat phases are already implemented in mobile/",
+    "mobile-attachments should be complete before attachment-heavy channel/thread parity is called done",
+    "mobile-websocket should be complete before typing-indicator parity is called done"
+  ],
+  "nonGoals": [
+    "Recreating every Svelte side panel from workbench chat",
+    "Rewriting the chat domain away from the current repository/query/store architecture",
+    "Delivering new server-side chat models beyond what mobile already consumes"
+  ],
+  "contracts": [
+    "Repository ownership stays in mobile/src/repositories/chat.ts",
+    "Server state remains in TanStack Query; ephemeral draft/unread/typing state remains in Zustand",
+    "New chat routes stay under mobile/src/app/(app)/chat/**",
+    "Thread and channel timelines must not diverge on message identity, reaction ownership, or cache keys",
+    "If typing infrastructure is unavailable, the UI degrades cleanly without broken polling loops"
+  ],
+  "existingCodeLeverage": [
+    "mobile/src/app/(app)/chat/index.tsx",
+    "mobile/src/app/(app)/chat/channel/[id].tsx",
+    "mobile/src/app/(app)/chat/thread/[id].tsx",
+    "mobile/src/repositories/chat.ts",
+    "mobile/src/hooks/useMessages.ts",
+    "mobile/src/hooks/useThread.ts",
+    "mobile/src/store/chat.ts",
+    "plugins/chunter-resources/src/components/ChannelHeader.svelte",
+    "plugins/chunter-resources/src/components/ChannelMembers.svelte",
+    "plugins/chunter-resources/src/components/EditChannel.svelte",
+    "plugins/chunter-resources/src/components/PinnedMessages.svelte",
+    "plugins/chunter-resources/src/components/JumpToDateSelector.svelte",
+    "plugins/chunter-resources/src/components/ConvertDmToPrivateChannel.svelte",
+    "plugins/chunter-resources/src/components/ChannelTypingInfo.svelte",
+    "plugins/chunter-resources/src/components/threads/ThreadView.svelte"
+  ],
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Expand chat repository parity contract",
+      "description": "Add repository methods for channel detail, members, pinned messages, channel updates, DM conversion, history search/jump, and thread-message correctness.",
+      "priority": "P0",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Repository exposes typed methods for channel detail, members, pinned messages, channel update, DM conversion, and message-history search.",
+        "Thread fetch/send paths distinguish parent timeline messages from thread replies.",
+        "Removed or inaccessible channels return typed empty/failure states instead of crashing dependent screens."
+      ],
+      "filesToModify": [
+        "mobile/src/repositories/chat.ts",
+        "mobile/src/repositories/index.ts"
+      ],
+      "filesToCreate": [],
+      "writeScope": [
+        "mobile/src/repositories/chat.ts",
+        "mobile/src/repositories/index.ts"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-002",
+      "title": "Extend chat hooks for parity queries and mutations",
+      "description": "Wire the expanded repository contract into TanStack Query so channel settings, pins, history search, and thread correctness all share the same cache model.",
+      "priority": "P0",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-001"],
+      "acceptanceCriteria": [
+        "Hooks expose channel-detail, pinned-message, and history-search queries without screens calling repositories directly.",
+        "Pin/unpin, channel-update, DM-conversion, and thread-reaction mutations invalidate the exact channel or thread keys they affect.",
+        "Thread reaction and reply mutations update both active thread and parent channel caches consistently."
+      ],
+      "filesToModify": [
+        "mobile/src/hooks/useChannels.ts",
+        "mobile/src/hooks/useMessages.ts",
+        "mobile/src/hooks/useThread.ts"
+      ],
+      "filesToCreate": [],
+      "writeScope": [
+        "mobile/src/hooks/useChannels.ts",
+        "mobile/src/hooks/useMessages.ts",
+        "mobile/src/hooks/useThread.ts"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-003",
+      "title": "Fix chat store and unread/typing parity state",
+      "description": "Expand chat client state so unread, active thread, typing participants, and draft attachment state are consistent across channel and thread views.",
+      "priority": "P0",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-001"],
+      "acceptanceCriteria": [
+        "Unread sync uses the correct account identity and rebuilds unread state from fresh server contexts.",
+        "Active thread/channel state prevents self-generated replies from incrementing unread counts for the currently-open conversation.",
+        "Typing and draft attachment state clear on route teardown and workspace switch."
+      ],
+      "filesToModify": [
+        "mobile/src/store/chat.ts",
+        "mobile/src/hooks/useChatUnread.ts",
+        "mobile/src/realtime/rules/chat.ts"
+      ],
+      "filesToCreate": [],
+      "writeScope": [
+        "mobile/src/store/chat.ts",
+        "mobile/src/hooks/useChatUnread.ts",
+        "mobile/src/realtime/rules/chat.ts"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-004",
+      "title": "Add channel header and settings surfaces",
+      "description": "Add a first-class channel settings route so mobile users can inspect and edit channel metadata the way web users can.",
+      "priority": "P1",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-001", "TASK-002"],
+      "acceptanceCriteria": [
+        "Channel screen header exposes navigation into a typed settings route.",
+        "Settings route supports channel name, description, privacy, and basic metadata display/edit.",
+        "Channels removed or made inaccessible while settings are open render a recoverable error state."
+      ],
+      "filesToModify": [
+        "mobile/src/app/(app)/chat/channel/[id].tsx"
+      ],
+      "filesToCreate": [
+        "mobile/src/app/(app)/chat/channel/settings/[id].tsx",
+        "mobile/src/components/features/ChannelHeader.tsx"
+      ],
+      "writeScope": [
+        "mobile/src/app/(app)/chat/channel/[id].tsx",
+        "mobile/src/app/(app)/chat/channel/settings/[id].tsx",
+        "mobile/src/components/features/ChannelHeader.tsx"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-005",
+      "title": "Add channel members and DM conversion flow",
+      "description": "Bring member visibility and DM-to-private-channel conversion to mobile so channel collaboration flows match web behavior more closely.",
+      "priority": "P1",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-001", "TASK-002", "TASK-004"],
+      "acceptanceCriteria": [
+        "Mobile exposes a members route from channel settings with readable participant rows and empty/error states.",
+        "DM surfaces expose a conversion path to private channel only when the repository reports the action is valid.",
+        "Failed member fetches or conversion attempts do not leave the channel list in a stale optimistic state."
+      ],
+      "filesToModify": [
+        "mobile/src/app/(app)/chat/index.tsx"
+      ],
+      "filesToCreate": [
+        "mobile/src/app/(app)/chat/channel/members/[id].tsx",
+        "mobile/src/components/features/ChannelMemberRow.tsx"
+      ],
+      "writeScope": [
+        "mobile/src/app/(app)/chat/channel/members/[id].tsx",
+        "mobile/src/components/features/ChannelMemberRow.tsx",
+        "mobile/src/app/(app)/chat/index.tsx"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-006",
+      "title": "Add pinned messages parity",
+      "description": "Bring pin/unpin and pinned-message browsing to mobile so important channel context is available outside the live timeline.",
+      "priority": "P1",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-001", "TASK-002", "TASK-004"],
+      "acceptanceCriteria": [
+        "Message surfaces expose pin/unpin affordances and channel settings route exposes pinned-message browsing.",
+        "Pinned list renders stable previews that navigate back to the underlying message or thread context.",
+        "Removing a pin updates the pinned list and source timeline without requiring a full channel refetch."
+      ],
+      "filesToModify": [
+        "mobile/src/components/features/MessageBubble.tsx"
+      ],
+      "filesToCreate": [
+        "mobile/src/app/(app)/chat/channel/pins/[id].tsx",
+        "mobile/src/components/features/PinnedMessageRow.tsx"
+      ],
+      "writeScope": [
+        "mobile/src/app/(app)/chat/channel/pins/[id].tsx",
+        "mobile/src/components/features/PinnedMessageRow.tsx",
+        "mobile/src/components/features/MessageBubble.tsx"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-007",
+      "title": "Bring thread flow to parity-correctness",
+      "description": "Correct the thread model and screen behavior so thread replies, reactions, and attachments behave like a real thread surface instead of a channel-side variant.",
+      "priority": "P0",
+      "type": "feature",
+      "effort": "L",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-001", "TASK-002", "TASK-003"],
+      "acceptanceCriteria": [
+        "Thread screen reads and mutates thread-specific cache keys, including reactions and reply inserts.",
+        "Reply creation uses the correct thread semantics so replies do not leak back into the main channel timeline.",
+        "Thread attachment and reaction actions update the active thread view immediately and recover cleanly on failure."
+      ],
+      "filesToModify": [
+        "mobile/src/repositories/chat.ts",
+        "mobile/src/hooks/useThread.ts",
+        "mobile/src/app/(app)/chat/thread/[id].tsx"
+      ],
+      "filesToCreate": [],
+      "writeScope": [
+        "mobile/src/repositories/chat.ts",
+        "mobile/src/hooks/useThread.ts",
+        "mobile/src/app/(app)/chat/thread/[id].tsx"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-008",
+      "title": "Add channel history search and jump-to-date",
+      "description": "Expose history navigation beyond infinite scroll so mobile users can find older conversation context like they can on web.",
+      "priority": "P2",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-001", "TASK-002", "TASK-004"],
+      "acceptanceCriteria": [
+        "Channel routes expose searchable message history by text and date without collapsing the main message list state.",
+        "Jump-to-date loads the nearest history window and lands the user on a stable anchor message.",
+        "When the requested history window has no results, the UI reports that explicitly instead of silently resetting to newest messages."
+      ],
+      "filesToModify": [
+        "mobile/src/hooks/useMessages.ts"
+      ],
+      "filesToCreate": [
+        "mobile/src/app/(app)/chat/channel/search/[id].tsx",
+        "mobile/src/components/features/JumpToDatePicker.tsx"
+      ],
+      "writeScope": [
+        "mobile/src/app/(app)/chat/channel/search/[id].tsx",
+        "mobile/src/components/features/JumpToDatePicker.tsx",
+        "mobile/src/hooks/useMessages.ts"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-009",
+      "title": "Add channel create/edit surfaces",
+      "description": "Bring mobile up to basic channel administration parity so users can create channels and edit existing channel metadata without leaving mobile.",
+      "priority": "P2",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-001", "TASK-002", "TASK-004"],
+      "acceptanceCriteria": [
+        "Mobile exposes typed routes for creating a channel and editing an existing channel.",
+        "Channel form supports name, description, privacy, and member selection with validation.",
+        "Save failures keep the form open with recoverable field or transport errors."
+      ],
+      "filesToModify": [],
+      "filesToCreate": [
+        "mobile/src/app/(app)/chat/new.tsx",
+        "mobile/src/app/(app)/chat/edit/[id].tsx",
+        "mobile/src/components/features/ChannelForm.tsx"
+      ],
+      "writeScope": [
+        "mobile/src/app/(app)/chat/new.tsx",
+        "mobile/src/app/(app)/chat/edit/[id].tsx",
+        "mobile/src/components/features/ChannelForm.tsx"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-010",
+      "title": "Add typing indicator parity",
+      "description": "Use the websocket/realtime layer to show typing participants in channel view without introducing unstable polling loops.",
+      "priority": "P2",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-002", "TASK-003"],
+      "acceptanceCriteria": [
+        "Channel view renders typing participants only for the active conversation and clears them on navigation away.",
+        "Typing state degrades cleanly when websocket connectivity is unavailable.",
+        "Typing updates do not trigger full timeline refetches or duplicate unread-count changes."
+      ],
+      "filesToModify": [
+        "mobile/src/app/(app)/chat/channel/[id].tsx",
+        "mobile/src/hooks/useMessages.ts"
+      ],
+      "filesToCreate": [
+        "mobile/src/components/features/TypingIndicator.tsx"
+      ],
+      "writeScope": [
+        "mobile/src/app/(app)/chat/channel/[id].tsx",
+        "mobile/src/components/features/TypingIndicator.tsx",
+        "mobile/src/hooks/useMessages.ts"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
+    }
+  ],
+  "failureModes": [
+    {
+      "failure": "Thread reaction updates the wrong cache",
+      "detection": "Reaction changes do not appear in the open thread",
+      "recovery": "Invalidate and patch the thread cache directly, not only the channel cache"
+    },
+    {
+      "failure": "DM conversion succeeds server-side but list stays stale",
+      "detection": "Converted conversation remains rendered as a DM",
+      "recovery": "Invalidate DM and channel list keys together after conversion"
+    },
+    {
+      "failure": "Typing indicator leaks across channels",
+      "detection": "Typing names remain visible after navigation",
+      "recovery": "Clear typing state on active-channel change and route teardown"
+    },
+    {
+      "failure": "History search returns ids without stable anchor context",
+      "detection": "Jump opens the wrong part of the conversation",
+      "recovery": "Carry anchor metadata and refetch the surrounding history window before navigation"
+    },
+    {
+      "failure": "Pinned messages diverge from timeline",
+      "detection": "Pin state differs between pins screen and message bubble",
+      "recovery": "Treat pin/unpin as a shared mutation contract with one invalidation owner"
+    }
+  ],
+  "shipCut": {
+    "minimumCoherentCutAfter": "TASK-007",
+    "delivers": [
+      "channel settings",
+      "members and DM conversion",
+      "pinned messages",
+      "thread correctness"
+    ],
+    "safeToDefer": [
+      "history search / jump-to-date",
+      "channel create/edit administration",
+      "typing indicator parity"
+    ]
+  },
+  "testCoverageMap": [
+    "TASK-001: repository contract + inaccessible-channel handling",
+    "TASK-002: query invalidation and channel/thread cache consistency",
+    "TASK-003: unread identity, active-thread guard, and teardown cleanup",
+    "TASK-004: channel settings load/save + inaccessible-channel fallback",
+    "TASK-005: members route success + DM conversion failure rollback",
+    "TASK-006: pin/unpin optimistic flow + timeline/pins consistency",
+    "TASK-007: thread reply/reaction correctness + no-leak-to-channel invariant",
+    "TASK-008: history search empty-result and jump-anchor behavior",
+    "TASK-009: channel form validation + save failure retention",
+    "TASK-010: typing indicator realtime success + offline degradation"
+  ],
+  "executionSummary": {
+    "taskCount": 10,
+    "parallelizableFoundations": ["TASK-001", "TASK-003"],
+    "criticalPath": ["TASK-001", "TASK-002", "TASK-004", "TASK-006", "TASK-007"],
+    "secondaryPath": ["TASK-001", "TASK-002", "TASK-004", "TASK-005"],
+    "optionalPaths": [
+      ["TASK-003", "TASK-010"],
+      ["TASK-004", "TASK-008"],
+      ["TASK-004", "TASK-009"]
+    ]
+  },
+  "dependencyMap": {
+    "TASK-001": [],
+    "TASK-002": ["TASK-001"],
+    "TASK-003": ["TASK-001"],
+    "TASK-004": ["TASK-001", "TASK-002"],
+    "TASK-005": ["TASK-001", "TASK-002", "TASK-004"],
+    "TASK-006": ["TASK-001", "TASK-002", "TASK-004"],
+    "TASK-007": ["TASK-001", "TASK-002", "TASK-003"],
+    "TASK-008": ["TASK-001", "TASK-002", "TASK-004"],
+    "TASK-009": ["TASK-001", "TASK-002", "TASK-004"],
+    "TASK-010": ["TASK-002", "TASK-003"]
+  }
+}

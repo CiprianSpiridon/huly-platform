@@ -1,0 +1,373 @@
+{
+  "plan": {
+    "name": "mobile-tracker-parity",
+    "title": "Mobile Tracker Feature Parity",
+    "mode": "HOLD",
+    "defaultReview": "claude",
+    "agent": "expo-react-native-engineer"
+  },
+  "overview": "Close the highest-value tracker gap between the web workbench tracker and the Expo mobile app by adding project create/edit, metadata management, richer issue field parity, templates, and my-issues style surfaces.",
+  "scopeChallenge": {
+    "assumedMode": "HOLD",
+    "assumedDefaultReview": "claude",
+    "scopeCuts": [
+      "Focus on user-facing tracker parity inside mobile tracker routes, hooks, repositories, and adjacent components",
+      "Do not port workspace-admin tracker configuration or permission management"
+    ]
+  },
+  "prerequisites": [
+    "Scaffold, auth, API client, and current tracker phases are already implemented in mobile/",
+    "mobile-richtext should be complete before rich description editing is called done",
+    "mobile-attachments should be complete before attachment parity is called done"
+  ],
+  "nonGoals": [
+    "Rebuilding the full workbench viewlet/filter architecture on mobile",
+    "Porting tracker workspace settings screens from Svelte one-to-one",
+    "Changing server-side tracker models or web tracker behavior"
+  ],
+  "contracts": [
+    "Repository ownership stays in mobile/src/repositories/tracker.ts",
+    "Server state stays in TanStack Query; draft/preferences stay in Zustand",
+    "New tracker routes stay under mobile/src/app/(app)/tracker/**",
+    "Create/edit forms must block submission when required project metadata is unavailable"
+  ],
+  "existingCodeLeverage": [
+    "mobile/src/app/(app)/tracker/index.tsx",
+    "mobile/src/app/(app)/tracker/project/[id].tsx",
+    "mobile/src/app/(app)/tracker/issue/[id].tsx",
+    "mobile/src/app/(app)/tracker/create.tsx",
+    "mobile/src/app/(app)/tracker/search.tsx",
+    "mobile/src/repositories/tracker.ts",
+    "mobile/src/hooks/useIssues.ts",
+    "mobile/src/store/tracker.ts",
+    "plugins/tracker-resources/src/components/projects/CreateProject.svelte",
+    "plugins/tracker-resources/src/components/milestones/Milestones.svelte",
+    "plugins/tracker-resources/src/components/components/Components.svelte",
+    "plugins/tracker-resources/src/components/templates/IssueTemplates.svelte",
+    "plugins/tracker-resources/src/components/myissues/MyIssues.svelte"
+  ],
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Expand tracker repository parity contract",
+      "description": "Add repository methods for project detail, members, components, milestones, relations, template summaries, and time-report mutations so later UI tasks share one domain contract.",
+      "priority": "P0",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Repository exposes typed read methods for project detail, components, milestones, members, and issue relations.",
+        "Repository exposes typed write methods for project create/update, component create/update, milestone create/update, and issue time reporting.",
+        "Missing or archived project-scoped entities return typed failures instead of raw transport errors."
+      ],
+      "filesToModify": [
+        "mobile/src/repositories/tracker.ts",
+        "mobile/src/repositories/index.ts"
+      ],
+      "filesToCreate": [],
+      "writeScope": [
+        "mobile/src/repositories/tracker.ts",
+        "mobile/src/repositories/index.ts"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-002",
+      "title": "Extend tracker hooks for parity data and mutations",
+      "description": "Wire the expanded repository contract into TanStack Query for project metadata, relations, templates, and mutation invalidation.",
+      "priority": "P0",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-001"],
+      "acceptanceCriteria": [
+        "Hooks expose project detail, component, milestone, template, and relation queries without screens calling repositories directly.",
+        "Project, component, milestone, and issue-field mutations invalidate the exact project and issue keys they affect.",
+        "Disabled queries remain inert when projectId or issueId is absent."
+      ],
+      "filesToModify": [
+        "mobile/src/hooks/useProjects.ts",
+        "mobile/src/hooks/useIssues.ts",
+        "mobile/src/hooks/useIssue.ts"
+      ],
+      "filesToCreate": [],
+      "writeScope": [
+        "mobile/src/hooks/useProjects.ts",
+        "mobile/src/hooks/useIssues.ts",
+        "mobile/src/hooks/useIssue.ts"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-003",
+      "title": "Expand tracker store for full issue/project draft state",
+      "description": "Extend the tracker Zustand store to carry component, milestone, due date, estimation, parent issue, template, and attachment draft fields.",
+      "priority": "P1",
+      "type": "feature",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Draft state includes component, milestone, due date, estimation, parent issue, template selection, and attachment ids.",
+        "Clearing the draft resets all parity fields.",
+        "Persisted state does not leak stale project-specific selections across workspace changes."
+      ],
+      "filesToModify": [
+        "mobile/src/store/tracker.ts"
+      ],
+      "filesToCreate": [],
+      "writeScope": [
+        "mobile/src/store/tracker.ts"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-004",
+      "title": "Add project create/edit flow",
+      "description": "Introduce a mobile project form and route so tracker parity includes project creation and editing with mobile-relevant defaults.",
+      "priority": "P1",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-001", "TASK-002"],
+      "acceptanceCriteria": [
+        "Tracker index exposes create/edit project entry points and the edit route resolves with typed params.",
+        "Project form supports name, identifier, privacy, default assignee, and default issue status.",
+        "Invalid or duplicate identifiers surface a recoverable validation state instead of closing the form."
+      ],
+      "filesToModify": [
+        "mobile/src/app/(app)/tracker/index.tsx"
+      ],
+      "filesToCreate": [
+        "mobile/src/app/(app)/tracker/project/edit.tsx",
+        "mobile/src/components/features/ProjectForm.tsx"
+      ],
+      "writeScope": [
+        "mobile/src/app/(app)/tracker/index.tsx",
+        "mobile/src/app/(app)/tracker/project/edit.tsx",
+        "mobile/src/components/features/ProjectForm.tsx"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-005",
+      "title": "Add component and milestone management surfaces",
+      "description": "Bring project-scoped tracker metadata management to mobile so issue forms and filters can use real project entities.",
+      "priority": "P1",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-001", "TASK-002", "TASK-004"],
+      "acceptanceCriteria": [
+        "Users can view and create/edit project components and milestones from mobile tracker routes.",
+        "Lists render human-readable labels and metadata with proper empty states.",
+        "Archived or deleted entities are excluded from selection lists after mutation invalidation."
+      ],
+      "filesToModify": [],
+      "filesToCreate": [
+        "mobile/src/app/(app)/tracker/project/components.tsx",
+        "mobile/src/app/(app)/tracker/project/milestones.tsx",
+        "mobile/src/components/features/TrackerEntityRow.tsx"
+      ],
+      "writeScope": [
+        "mobile/src/app/(app)/tracker/project/components.tsx",
+        "mobile/src/app/(app)/tracker/project/milestones.tsx",
+        "mobile/src/components/features/TrackerEntityRow.tsx"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-006",
+      "title": "Bring issue detail to field parity",
+      "description": "Upgrade issue detail into the parity screen for component, milestone, parent/sub-issue, relation, due date, estimation, time spent, and attachments.",
+      "priority": "P0",
+      "type": "feature",
+      "effort": "L",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-002", "TASK-003", "TASK-005"],
+      "acceptanceCriteria": [
+        "Issue detail renders editable component, milestone, due date, estimation, parent issue, relations, and sub-issue summaries using real lookup data.",
+        "Time-report creation and refresh update reported-time UI without forcing a full app reload.",
+        "Missing related docs or deleted parents show safe fallback rows instead of raw refs or crashes."
+      ],
+      "filesToModify": [
+        "mobile/src/app/(app)/tracker/issue/[id].tsx",
+        "mobile/src/components/features/IssueDetail.tsx",
+        "mobile/src/components/features/IssueComments.tsx"
+      ],
+      "filesToCreate": [],
+      "writeScope": [
+        "mobile/src/app/(app)/tracker/issue/[id].tsx",
+        "mobile/src/components/features/IssueDetail.tsx",
+        "mobile/src/components/features/IssueComments.tsx"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-007",
+      "title": "Bring create/edit issue flow to parity",
+      "description": "Upgrade issue creation into a shared create/edit form that supports the parity field set and proper project defaults.",
+      "priority": "P0",
+      "type": "feature",
+      "effort": "L",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-002", "TASK-003", "TASK-005"],
+      "acceptanceCriteria": [
+        "Shared form supports status, priority, assignee, component, milestone, due date, estimation, parent issue, description markup, and attachments.",
+        "Edit mode preloads existing issue state and preserves parity fields when saving partial changes.",
+        "Submission is blocked when required project defaults or parity metadata are still loading."
+      ],
+      "filesToModify": [
+        "mobile/src/app/(app)/tracker/create.tsx",
+        "mobile/src/components/features/IssueForm.tsx"
+      ],
+      "filesToCreate": [
+        "mobile/src/app/(app)/tracker/edit/[id].tsx"
+      ],
+      "writeScope": [
+        "mobile/src/app/(app)/tracker/create.tsx",
+        "mobile/src/app/(app)/tracker/edit/[id].tsx",
+        "mobile/src/components/features/IssueForm.tsx"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-008",
+      "title": "Add issue templates flow",
+      "description": "Expose tracker issue templates on mobile so users can start from the same reusable tracker patterns available on the web.",
+      "priority": "P2",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-001", "TASK-002", "TASK-007"],
+      "acceptanceCriteria": [
+        "Mobile tracker exposes a template list with project-scoped template summaries and empty/error states.",
+        "Selecting a template hydrates the create form draft without discarding manual overrides.",
+        "Templates that reference missing metadata surface a blocking explanation instead of creating malformed issues."
+      ],
+      "filesToModify": [
+        "mobile/src/app/(app)/tracker/create.tsx"
+      ],
+      "filesToCreate": [
+        "mobile/src/app/(app)/tracker/templates.tsx",
+        "mobile/src/components/features/IssueTemplateCard.tsx"
+      ],
+      "writeScope": [
+        "mobile/src/app/(app)/tracker/templates.tsx",
+        "mobile/src/app/(app)/tracker/create.tsx",
+        "mobile/src/components/features/IssueTemplateCard.tsx"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-009",
+      "title": "Add my-issues and advanced filter parity",
+      "description": "Close the remaining day-to-day parity gap by adding a personal issue entry point and richer filters for list/search surfaces.",
+      "priority": "P2",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": ["TASK-002", "TASK-005", "TASK-006"],
+      "acceptanceCriteria": [
+        "Mobile exposes a dedicated My Issues surface scoped to the authenticated user.",
+        "Filters include component, milestone, assignee, due date, and relation-aware combinations without raw-id rendering.",
+        "Clearing or restoring saved filters resets both list and search results consistently."
+      ],
+      "filesToModify": [
+        "mobile/src/components/features/IssueFilters.tsx",
+        "mobile/src/app/(app)/tracker/search.tsx"
+      ],
+      "filesToCreate": [
+        "mobile/src/app/(app)/tracker/my-issues.tsx"
+      ],
+      "writeScope": [
+        "mobile/src/app/(app)/tracker/my-issues.tsx",
+        "mobile/src/components/features/IssueFilters.tsx",
+        "mobile/src/app/(app)/tracker/search.tsx"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
+    }
+  ],
+  "failureModes": [
+    {
+      "failure": "Project defaults missing during create/edit",
+      "detection": "Form has no valid status or default assignee context",
+      "recovery": "Block submit and show explicit metadata-loading state"
+    },
+    {
+      "failure": "Deleted milestone/component referenced by an issue",
+      "detection": "Detail screen receives missing related doc",
+      "recovery": "Render safe fallback row and offer reassignment"
+    },
+    {
+      "failure": "Template references stale project metadata",
+      "detection": "Template apply cannot resolve fields",
+      "recovery": "Stop hydration and show template repair message"
+    },
+    {
+      "failure": "Time-report mutation succeeds but detail stays stale",
+      "detection": "Reported time does not update after save",
+      "recovery": "Invalidate issue detail and project issue list keys together"
+    },
+    {
+      "failure": "Draft leaks across workspace switch",
+      "detection": "Issue form opens with wrong project metadata",
+      "recovery": "Clear persisted tracker draft when workspace identity changes"
+    }
+  ],
+  "shipCut": {
+    "minimumCoherentCutAfter": "TASK-007",
+    "delivers": [
+      "project create/edit",
+      "component and milestone management",
+      "full issue create/edit/detail parity for core fields"
+    ],
+    "safeToDefer": [
+      "issue templates",
+      "my-issues entry point",
+      "advanced filters beyond the current list/search core"
+    ]
+  },
+  "testCoverageMap": [
+    "TASK-001: repository contract + typed failure handling",
+    "TASK-002: query invalidation and disabled-query behavior",
+    "TASK-003: persisted draft/reset behavior across workspace changes",
+    "TASK-004: project form success + duplicate identifier failure path",
+    "TASK-005: component/milestone CRUD success + archived-entity exclusion",
+    "TASK-006: issue detail edit flow + missing-related-doc fallback",
+    "TASK-007: create/edit form submission gating + preloaded edit state",
+    "TASK-008: template hydration + stale-template failure path",
+    "TASK-009: my-issues scoping + filter clear/restore consistency"
+  ],
+  "executionSummary": {
+    "taskCount": 9,
+    "parallelizableFoundations": ["TASK-001", "TASK-003"],
+    "criticalPath": ["TASK-001", "TASK-002", "TASK-005", "TASK-006", "TASK-007"],
+    "secondaryPath": ["TASK-001", "TASK-002", "TASK-004", "TASK-005"],
+    "optionalPaths": [
+      ["TASK-007", "TASK-008"],
+      ["TASK-006", "TASK-009"]
+    ]
+  },
+  "dependencyMap": {
+    "TASK-001": [],
+    "TASK-002": ["TASK-001"],
+    "TASK-003": [],
+    "TASK-004": ["TASK-001", "TASK-002"],
+    "TASK-005": ["TASK-001", "TASK-002", "TASK-004"],
+    "TASK-006": ["TASK-002", "TASK-003", "TASK-005"],
+    "TASK-007": ["TASK-002", "TASK-003", "TASK-005"],
+    "TASK-008": ["TASK-001", "TASK-002", "TASK-007"],
+    "TASK-009": ["TASK-002", "TASK-005", "TASK-006"]
+  }
+}
