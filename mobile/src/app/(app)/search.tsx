@@ -89,8 +89,10 @@ export default function GlobalSearchScreen(): React.ReactNode {
           router.push(`/(app)/chat/channel/${item.id}` as Href)
           break
         case 'messages':
-          // Navigate to parent channel for messages
-          router.push(`/(app)/chat/channel/${item.id}` as Href)
+          // Navigate to the parent channel, not the message itself
+          if (item.parentId != null) {
+            router.push(`/(app)/chat/channel/${item.parentId}` as Href)
+          }
           break
         case 'contacts':
           // Contacts don't have a standalone detail screen; stay on search

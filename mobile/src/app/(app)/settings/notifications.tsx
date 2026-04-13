@@ -52,9 +52,14 @@ const CATEGORIES: CategoryOption[] = [
 export default function NotificationSettingsScreen(): React.ReactNode {
   const [permissionGranted, setPermissionGranted] = useState(false)
   const [checking, setChecking] = useState(true)
+  const isRegistered = usePushStore((s) => s.isRegistered)
+  const pushToken = usePushStore((s) => s.expoPushToken)
 
   const preferences = usePushStore((s) => s.preferences)
   const togglePreference = usePushStore((s) => s.togglePreference)
+
+  // Push is not yet configured if no token was acquired
+  const pushAvailable = pushToken != null && isRegistered
 
   // Check current OS permission status on mount
   useEffect(() => {
@@ -102,6 +107,15 @@ export default function NotificationSettingsScreen(): React.ReactNode {
   return (
     <SafeAreaView className="flex-1 bg-surface-primary" edges={['bottom']}>
       <View className="px-4 py-4">
+        {/* Not configured banner */}
+        {!pushAvailable ? (
+          <View className="bg-surface-tertiary rounded-lg p-4 mb-4 border border-border-primary">
+            <Text className="text-sm font-sans-medium text-content-secondary">
+              Push notifications are not yet configured for this build. Token registration requires a valid EAS project ID and server-side Expo push integration.
+            </Text>
+          </View>
+        ) : null}
+
         {/* Master toggle */}
         <View className="bg-surface-secondary rounded-lg p-4 mb-4">
           <View className="flex-row items-center justify-between">

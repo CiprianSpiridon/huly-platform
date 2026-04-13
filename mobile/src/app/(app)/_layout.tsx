@@ -126,6 +126,10 @@ function AuthenticatedTabShell(): React.ReactNode {
             ),
           }}
         />
+        {/* Hide non-tab routes from the tab bar */}
+        <Tabs.Screen name="index" options={{ href: null }} />
+        <Tabs.Screen name="onboarding" options={{ href: null }} />
+        <Tabs.Screen name="search" options={{ href: null }} />
       </Tabs>
     </View>
   )

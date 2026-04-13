@@ -39,6 +39,8 @@ export interface GlobalSearchItem {
   subtitle?: string
   category: GlobalSearchCategory
   classRef: string
+  /** For messages: the parent channel/space ID for navigation */
+  parentId?: string
 }
 
 export interface GlobalSearchResults {
@@ -83,6 +85,8 @@ export function useGlobalSearch(
           subtitle: doc.shortTitle ?? doc.description,
           category: 'issues',
           classRef,
+          // For messages, store the parent space (channel) for navigation
+          parentId: (doc.doc as Record<string, unknown>)?.attachedTo as string | undefined,
         }
 
         if (classRef.includes('tracker')) {
