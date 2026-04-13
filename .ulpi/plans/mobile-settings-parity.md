@@ -7,7 +7,7 @@ The mobile settings already has profile view (read-only), workspace info, worksp
 rollback, member list with search/sections, theme toggle (dark/light/system), notification
 preferences (3 categories), about screen, cache clear, and full logout cleanup. This plan adds
 profile editing, workspace creation, member management (invite/remove/roles), password change,
-2FA setup, language selector, and account deletion.
+2FA setup, language selector backed by the i18n foundation, and account deletion.
 
 ## Scope Challenge
 
@@ -26,6 +26,7 @@ profile editing, workspace creation, member management (invite/remove/roles), pa
 - `@hcengineering/account-client` supports profile update, workspace creation, member
   management, password change, and 2FA setup/disable
 - Settings repository and hooks exist for profile and workspace queries
+- `mobile-infra-parity` `TASK-001` (i18n foundation) must land before `TASK-007`
 
 ## Non-Goals
 
@@ -38,9 +39,11 @@ profile editing, workspace creation, member management (invite/remove/roles), pa
 
 - Settings state remains in `mobile/src/store/settings.ts` Zustand store
 - Account operations use `mobile/src/client/account.ts` wrapping AccountClient
+- Profile name updates use AccountClient; avatar updates use the existing workspace/person mutation path
 - New settings routes must stay under `mobile/src/app/(app)/settings/**`
 - Existing theme toggle, notification preferences, and logout must not regress
 - Member role changes must validate against AccountRole enum from `@hcengineering/core`
+- Member role changes use AccountClient; member removal uses workspace membership mutation via the members repository / Huly client
 
 ## Existing Code Leverage
 
@@ -69,11 +72,11 @@ Upgrade the read-only profile header to support editing name and uploading an av
 - **Effort:** M
 - **Agent:** expo-react-native-engineer
 - **Priority:** P0
-- **writeScope:** `mobile/src/app/(app)/settings/index.tsx`, `mobile/src/repositories/settings.ts`, `mobile/src/client/account.ts`
+- **writeScope:** `mobile/src/app/(app)/settings/index.tsx`, `mobile/src/components/features/ProfileHeader.tsx`, `mobile/src/repositories/settings.ts`, `mobile/src/client/account.ts`
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Profile section shows edit icons on name and avatar; tapping name opens an inline editor, tapping avatar opens the image picker.
-  2. Changes are saved via AccountClient and the profile display updates immediately without requiring a screen reload.
+  2. Name changes are saved via AccountClient; avatar changes use the existing workspace/person mutation path, and the profile display updates immediately without requiring a screen reload.
   3. Upload failures or invalid names show recoverable errors without clearing the existing profile data.
 
 ### TASK-002: Add workspace creation flow
@@ -119,7 +122,7 @@ Allow workspace owners to remove members and change roles from the member detail
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Tapping a member row opens a detail sheet with role selector (Guest, User, Maintainer, Owner) and a "Remove" action.
-  2. Role changes and removals call AccountClient with the appropriate method and refresh the member list on success.
+  2. Role changes call `AccountClient.updateWorkspaceRole()`; removals call a workspace membership mutation via the members repository, and both refresh the member list on success.
   3. Cannot demote the last owner or remove self; both show explicit error messages instead of silent failures.
 
 ### TASK-005: Add change password screen
@@ -154,7 +157,7 @@ Allow users to enable, verify, and disable TOTP 2FA from settings.
 
 ### TASK-007: Add language selector
 
-Allow users to select their preferred language from settings.
+Allow users to select their preferred language from settings after the i18n foundation is in place.
 
 - **Type:** feature
 - **Effort:** S
@@ -163,9 +166,9 @@ Allow users to select their preferred language from settings.
 - **writeScope:** `mobile/src/app/(app)/settings/index.tsx`, `mobile/src/store/settings.ts`
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
-  1. Settings shows a "Language" row with the current language; tapping opens a picker with available languages.
-  2. Language selection persists to the settings store and AsyncStorage; restores on app restart.
-  3. Selecting a language that has no translations shows a fallback (English) and a note that translation is incomplete.
+  1. Settings shows a "Language" row with the current language from the i18n configuration introduced by `mobile-infra-parity` `TASK-001`; tapping opens a picker with available locales.
+  2. Language selection persists to the settings store and AsyncStorage, updates the active i18n locale immediately, and restores on app restart.
+  3. Selecting a language with incomplete translations falls back to English for missing keys and surfaces a non-blocking "translation incomplete" note.
 
 ### TASK-008: Add account deletion flow
 

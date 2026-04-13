@@ -6,7 +6,7 @@
     "defaultReview": "claude",
     "agent": "expo-react-native-engineer"
   },
-  "overview": "Close the remaining settings gaps: profile editing, workspace creation, member management (invite/remove/roles), password change, 2FA setup, language selector, and account deletion.",
+  "overview": "Close the remaining settings gaps: profile editing, workspace creation, member management (invite/remove/roles), password change, 2FA setup, language selector backed by the i18n foundation, and account deletion.",
   "scopeChallenge": {
     "assumedMode": "HOLD",
     "assumedDefaultReview": "claude",
@@ -18,7 +18,8 @@
   "prerequisites": [
     "Existing scaffold/auth/api client/settings phases are already implemented in mobile/",
     "AccountClient supports profile update, workspace creation, member management, password change, and 2FA",
-    "Settings repository and hooks exist for profile and workspace queries"
+    "Settings repository and hooks exist for profile and workspace queries",
+    "mobile-infra-parity TASK-001 (i18n foundation) must land before TASK-007"
   ],
   "nonGoals": [
     "Admin-only workspace settings (password aging, compliance rules)",
@@ -29,9 +30,11 @@
   "contracts": [
     "Settings state remains in mobile/src/store/settings.ts",
     "Account operations use mobile/src/client/account.ts wrapping AccountClient",
+    "Profile name updates use AccountClient; avatar updates use the existing workspace/person mutation path",
     "New settings routes stay under mobile/src/app/(app)/settings/**",
     "Existing theme toggle, notification preferences, and logout must not regress",
-    "Member role changes validate against AccountRole enum from @hcengineering/core"
+    "Member role changes validate against AccountRole enum from @hcengineering/core",
+    "Member role changes use AccountClient; member removal uses workspace membership mutation via the members repository / Huly client"
   ],
   "existingCodeLeverage": [
     "mobile/src/app/(app)/settings/index.tsx",
@@ -59,12 +62,12 @@
       "dependsOn": [],
       "acceptanceCriteria": [
         "Profile section shows edit icons on name and avatar; tapping name opens inline editor, tapping avatar opens image picker.",
-        "Changes are saved via AccountClient and the profile display updates immediately without requiring a screen reload.",
+        "Name changes are saved via AccountClient; avatar changes use the existing workspace/person mutation path, and the profile display updates immediately without requiring a screen reload.",
         "Upload failures or invalid names show recoverable errors without clearing the existing profile data."
       ],
-      "filesToModify": ["mobile/src/app/(app)/settings/index.tsx", "mobile/src/repositories/settings.ts", "mobile/src/client/account.ts"],
+      "filesToModify": ["mobile/src/app/(app)/settings/index.tsx", "mobile/src/components/features/ProfileHeader.tsx", "mobile/src/repositories/settings.ts", "mobile/src/client/account.ts"],
       "filesToCreate": [],
-      "writeScope": ["mobile/src/app/(app)/settings/index.tsx", "mobile/src/repositories/settings.ts", "mobile/src/client/account.ts"],
+      "writeScope": ["mobile/src/app/(app)/settings/index.tsx", "mobile/src/components/features/ProfileHeader.tsx", "mobile/src/repositories/settings.ts", "mobile/src/client/account.ts"],
       "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     },
@@ -119,7 +122,7 @@
       "dependsOn": ["TASK-003"],
       "acceptanceCriteria": [
         "Tapping a member row opens a detail sheet with role selector and Remove action.",
-        "Role changes and removals call AccountClient and refresh the member list on success.",
+        "Role changes call AccountClient.updateWorkspaceRole(); removals call a workspace membership mutation via the members repository, and both refresh the member list on success.",
         "Cannot demote the last owner or remove self; both show explicit error messages."
       ],
       "filesToModify": ["mobile/src/app/(app)/settings/members.tsx", "mobile/src/components/features/MemberRow.tsx", "mobile/src/repositories/members.ts"],
@@ -171,16 +174,16 @@
     {
       "id": "TASK-007",
       "title": "Add language selector",
-      "description": "Allow users to select their preferred language from settings.",
+      "description": "Allow users to select their preferred language from settings after the i18n foundation is in place.",
       "priority": "P2",
       "type": "feature",
       "effort": "S",
       "agent": "expo-react-native-engineer",
       "dependsOn": ["TASK-006"],
       "acceptanceCriteria": [
-        "Settings shows a Language row with the current language; tapping opens a picker with available languages.",
-        "Language selection persists to the settings store and AsyncStorage; restores on app restart.",
-        "Selecting a language with no translations shows fallback (English) and a note that translation is incomplete."
+        "Settings shows a Language row with the current language from the i18n configuration introduced by mobile-infra-parity TASK-001; tapping opens a picker with available locales.",
+        "Language selection persists to the settings store and AsyncStorage, updates the active i18n locale immediately, and restores on app restart.",
+        "Selecting a language with incomplete translations falls back to English for missing keys and surfaces a non-blocking translation incomplete note."
       ],
       "filesToModify": ["mobile/src/app/(app)/settings/index.tsx", "mobile/src/store/settings.ts"],
       "filesToCreate": [],

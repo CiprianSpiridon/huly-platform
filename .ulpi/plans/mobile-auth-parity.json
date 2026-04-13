@@ -18,7 +18,8 @@
   "prerequisites": [
     "Existing scaffold/auth/api client phases are already implemented in mobile/",
     "AccountClient supports login, validateOtp, verify2fa, getUserWorkspaces, and social provider OAuth",
-    "expo-secure-store is already configured for token persistence"
+    "expo-secure-store is already configured for token persistence",
+    "If TASK-004 is executed, biometric support must be added to mobile/package.json"
   ],
   "nonGoals": [
     "Adding social providers beyond Google",
@@ -118,9 +119,9 @@
         "On app launch with valid stored token, biometric prompt appears; success proceeds to workspace, failure falls back to password.",
         "Devices without biometric hardware skip the prompt entirely and fall back to standard login without error."
       ],
-      "filesToModify": ["mobile/src/app/(auth)/login.tsx", "mobile/src/store/auth.ts", "mobile/src/hooks/use-auth.ts"],
+      "filesToModify": ["mobile/package.json", "mobile/src/app/(auth)/login.tsx", "mobile/src/store/auth.ts", "mobile/src/hooks/use-auth.ts"],
       "filesToCreate": [],
-      "writeScope": ["mobile/src/app/(auth)/login.tsx", "mobile/src/store/auth.ts", "mobile/src/hooks/use-auth.ts"],
+      "writeScope": ["mobile/package.json", "mobile/src/app/(auth)/login.tsx", "mobile/src/store/auth.ts", "mobile/src/hooks/use-auth.ts"],
       "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     }

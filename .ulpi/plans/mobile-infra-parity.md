@@ -2,7 +2,7 @@
 
 ## Overview
 
-Close the cross-cutting infrastructure gaps between the web platform and the Expo mobile app.
+Close the prioritized cross-cutting infrastructure gaps between the web platform and the Expo mobile app.
 The mobile app already has: WebSocket with auto-reconnect, Tx-based query invalidation, error
 boundary, FlatList/FlashList virtualization, cursor-based pagination, expo-image caching,
 MarkupRenderer for rich text (headings, bold, italic, lists, links, code blocks, mentions),
@@ -28,19 +28,20 @@ offline mutation queue, universal links, and haptic feedback.
 - MarkupRenderer component handles basic rich text already
 - ErrorBoundary wraps the app at root layout level
 - WebSocket sidecar operational for real-time invalidation
+- Hosted `apple-app-site-association` and `assetlinks.json` files for `huly.io` must exist before `TASK-008`
 
 ## Non-Goals
 
 - Mermaid diagram rendering (P3, deferred)
 - Analytics / telemetry (requires privacy review)
 - Full offline-first architecture (only mutation queue, not offline reads)
-- Server-side changes for universal link verification
 
 ## Contracts
 
 - i18n framework must be non-invasive: wrap existing strings progressively, not a big-bang rewrite
+- Each task that introduces a new native/runtime dependency must own its `mobile/package.json` and config changes
 - Sentry must not transmit PII (tokens, emails, workspace data) in crash reports
-- Offline mutation queue must replay in order and handle conflict resolution gracefully
+- Offline mutation queue in this plan covers mutations routed through the shared Huly mutation helpers
 - Universal links must coexist with the existing `huly://` custom scheme
 - Haptic feedback must respect system accessibility "reduce motion" settings
 
@@ -66,7 +67,7 @@ screens (login, settings, tab labels) as a proof of progressive adoption.
 - **Effort:** M
 - **Agent:** expo-react-native-engineer
 - **Priority:** P0
-- **writeScope:** `mobile/src/lib/i18n.ts`, `mobile/src/app/_layout.tsx`, `mobile/assets/locales/en.json`
+- **writeScope:** `mobile/package.json`, `mobile/src/lib/i18n.ts`, `mobile/src/app/_layout.tsx`, `mobile/src/app/(app)/_layout.tsx`, `mobile/src/app/(auth)/login.tsx`, `mobile/src/app/(app)/settings/index.tsx`, `mobile/assets/locales/en.json`
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. react-i18next is configured with English as default language and lazy-loaded locale files from `assets/locales/`.
@@ -81,7 +82,8 @@ Integrate `@sentry/react-native` for crash reporting and unhandled exception tra
 - **Effort:** M
 - **Agent:** expo-react-native-engineer
 - **Priority:** P0
-- **writeScope:** `mobile/src/lib/sentry.ts`, `mobile/src/app/_layout.tsx`, `mobile/app.json`
+- **Depends on:** `TASK-001`
+- **writeScope:** `mobile/package.json`, `mobile/src/lib/sentry.ts`, `mobile/src/app/_layout.tsx`, `mobile/src/components/features/ErrorBoundary.tsx`, `mobile/app.json`
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Sentry initializes at app startup with DSN from environment config; disabled in dev mode.
@@ -128,7 +130,7 @@ mutation errors.
 - **Effort:** S
 - **Agent:** expo-react-native-engineer
 - **Priority:** P1
-- **writeScope:** `mobile/src/components/ui/ErrorToast.tsx`, `mobile/src/store/toast.ts`, `mobile/src/app/_layout.tsx`
+- **writeScope:** `mobile/src/components/ui/ErrorToast.tsx`, `mobile/src/store/toast.ts`, `mobile/src/client/queryClient.ts`, `mobile/src/app/_layout.tsx`
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. A global toast component mounts at root layout level and shows error messages dispatched from anywhere via a Zustand store.
@@ -143,7 +145,8 @@ Allow users to copy message text and code block content to clipboard.
 - **Effort:** S
 - **Agent:** expo-react-native-engineer
 - **Priority:** P1
-- **writeScope:** `mobile/src/components/features/MarkupRenderer.tsx`, `mobile/src/components/features/MessageBubble.tsx`
+- **Depends on:** `TASK-005`
+- **writeScope:** `mobile/package.json`, `mobile/src/components/features/MarkupRenderer.tsx`, `mobile/src/components/features/MessageBubble.tsx`
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Long-press on a code block shows a "Copy" action that copies the code content to clipboard via `expo-clipboard`.
@@ -152,22 +155,22 @@ Allow users to copy message text and code block content to clipboard.
 
 ### TASK-007: Add offline mutation queue
 
-Queue mutations when offline and replay them when connectivity returns.
+Queue shared Huly mutations when offline and replay them when connectivity returns.
 
 - **Type:** feature
 - **Effort:** L
 - **Agent:** expo-react-native-engineer
 - **Priority:** P2
-- **writeScope:** `mobile/src/lib/offline-queue.ts`, `mobile/src/store/offline.ts`, `mobile/src/app/_layout.tsx`
+- **writeScope:** `mobile/src/lib/offline-queue.ts`, `mobile/src/store/offline.ts`, `mobile/src/hooks/useHulyMutation.ts`, `mobile/src/client/queryClient.ts`, `mobile/src/app/_layout.tsx`
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
-  1. When the app detects no network, mutations are queued in a Zustand store persisted to AsyncStorage.
-  2. When connectivity returns, queued mutations replay in order; conflicts (stale data) show user-actionable resolution.
+  1. When the app detects no network, mutations routed through the shared `useHulyCreate()` / `useHulyUpdate()` / `useHulyRemove()` helpers are queued in a Zustand store persisted to AsyncStorage.
+  2. When connectivity returns, queued shared mutations replay in order; conflicts (stale data) show user-actionable resolution.
   3. Queue state is visible via a banner ("X pending changes") and clears completely on successful replay.
 
-### TASK-008: Add universal links (iOS/Android)
+### TASK-008: Add app-side universal link plumbing (iOS/Android)
 
-Configure associated domains so `https://huly.io/...` links open directly in the mobile app.
+Configure associated domains so `https://huly.io/...` links can open directly in the mobile app once the hosted association files are in place.
 
 - **Type:** feature
 - **Effort:** M
@@ -176,22 +179,22 @@ Configure associated domains so `https://huly.io/...` links open directly in the
 - **writeScope:** `mobile/app.json`, `mobile/src/app/_layout.tsx`
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
-  1. app.json configures `associatedDomains` (iOS) and `intentFilters` (Android) for the huly.io domain.
-  2. Deep links from universal links route through the same `resolveNotificationRoute()` path as push notifications.
+  1. `app.json` configures `associatedDomains` (iOS) and `intentFilters` (Android) for the `huly.io` domain.
+  2. With hosted association files present, deep links from universal links route through the same app-side destination logic as existing notification/deep-link navigation.
   3. Links to unknown routes open the app to the default tab instead of crashing or showing a blank screen.
 
 ### TASK-009: Add haptic feedback
 
-Add tactile feedback for key interactions (button press, swipe complete, bulk action).
+Add tactile feedback for key inbox interactions.
 
 - **Type:** feature
 - **Effort:** S
 - **Agent:** expo-react-native-engineer
 - **Priority:** P2
-- **writeScope:** `mobile/src/lib/haptics.ts`, `mobile/src/components/features/NotificationRow.tsx`
+- **writeScope:** `mobile/package.json`, `mobile/src/lib/haptics.ts`, `mobile/src/components/features/NotificationRow.tsx`, `mobile/src/components/features/BulkActionBar.tsx`
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
-  1. `expo-haptics` is called on swipe-to-archive completion, bulk action confirmation, and pull-to-refresh.
+  1. `expo-haptics` is called on swipe-to-archive completion and inbox bulk action confirmation.
   2. Haptics respect the system "Reduce Motion" accessibility setting; no vibration when the setting is enabled.
   3. Devices without haptic hardware (Android emulators, old devices) silently skip without errors.
 
@@ -239,18 +242,20 @@ Items below that cut and safe to defer:
 
 | File | Write Order (by dependency) |
 | --- | --- |
+| `mobile/package.json` | TASK-001 → TASK-002 → TASK-006 → TASK-009 |
 | `MarkupRenderer.tsx` | TASK-003 → TASK-004 → TASK-006 |
-| `_layout.tsx` (root) | TASK-001, TASK-002 (parallel P0) → TASK-005 → TASK-007 → TASK-008 |
+| `_layout.tsx` (root) | TASK-001 → TASK-002 → TASK-005 → TASK-007 → TASK-008 |
+| `client/queryClient.ts` | TASK-005 → TASK-007 |
 
 ## Execution Summary
 
 - Tasks: 9
-- P0 foundations (parallel): `TASK-001`, `TASK-002`
-- Critical path: `TASK-003 -> TASK-004 -> TASK-006`
-- Secondary paths:
-  - `TASK-001 -> TASK-005 -> TASK-007`
-  - `TASK-002 -> TASK-005`
-- Independent: `TASK-008`, `TASK-009`
+- P0 foundation path: `TASK-001 -> TASK-002`
+- Critical paths:
+  - `TASK-001 -> TASK-002 -> TASK-005 -> TASK-006`
+  - `TASK-003 -> TASK-004 -> TASK-006`
+- Secondary path: `TASK-005 -> TASK-007 -> TASK-008`
+- Deferred independent lane after foundations: `TASK-009`
 
 ## Task Dependencies
 
@@ -258,9 +263,11 @@ Derived from per-task `Depends on` fields. File-overlap ordering edges marked wi
 
 ```text
 TASK-001 -> TASK-005  (file: _layout.tsx)
+TASK-001 -> TASK-002  (file: package.json, _layout.tsx)
 TASK-002 -> TASK-005  (file: _layout.tsx)
 TASK-003 -> TASK-004  (file: MarkupRenderer.tsx)
 TASK-004 -> TASK-006  (file: MarkupRenderer.tsx)
+TASK-005 -> TASK-006  (toast dependency)
 TASK-005 -> TASK-007  (file: _layout.tsx)
 TASK-007 -> TASK-008  (file: _layout.tsx)
 ```

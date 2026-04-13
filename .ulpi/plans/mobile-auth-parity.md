@@ -26,6 +26,7 @@ flow, and biometric authentication.
   `getUserWorkspaces()`, and social provider OAuth flows
 - expo-secure-store is already configured for token persistence
 - expo-auth-session or expo-web-browser needed for OAuth redirect flow
+- If `TASK-004` is executed, biometric support must be added to `mobile/package.json`
 
 ## Non-Goals
 
@@ -114,7 +115,7 @@ Add optional biometric unlock after initial login so returning users skip passwo
 - **Effort:** M
 - **Agent:** expo-react-native-engineer
 - **Priority:** P2
-- **writeScope:** `mobile/src/app/(auth)/login.tsx`, `mobile/src/store/auth.ts`, `mobile/src/hooks/use-auth.ts`
+- **writeScope:** `mobile/package.json`, `mobile/src/app/(auth)/login.tsx`, `mobile/src/store/auth.ts`, `mobile/src/hooks/use-auth.ts`
 - **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. After successful login, users are prompted to enable biometric unlock (opt-in, stored in expo-secure-store).
