@@ -133,6 +133,14 @@ export default function SettingsScreen(): React.ReactNode {
     router.push('/(app)/settings/notifications' as Href)
   }, [])
 
+  const handleMembers = useCallback(() => {
+    router.push('/(app)/settings/members' as Href)
+  }, [])
+
+  const handleAbout = useCallback(() => {
+    router.push('/(app)/settings/about' as Href)
+  }, [])
+
   return (
     <SafeAreaView className="flex-1 bg-surface-primary" edges={['top']}>
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 32 }}>
@@ -170,6 +178,12 @@ export default function SettingsScreen(): React.ReactNode {
           </>
         ) : null}
         <SettingsRow
+          label="Members"
+          onPress={handleMembers}
+          showChevron
+          accessibilityLabel="View workspace members"
+        />
+        <SettingsRow
           label="Switch Workspace"
           onPress={handleSwitchWorkspace}
           showChevron
@@ -202,6 +216,15 @@ export default function SettingsScreen(): React.ReactNode {
           onPress={handleLogout}
           destructive
           accessibilityLabel="Sign out of Huly"
+        />
+
+        {/* About section */}
+        <SectionHeader title="About" />
+        <SettingsRow
+          label="About Huly"
+          onPress={handleAbout}
+          showChevron
+          accessibilityLabel="About Huly"
         />
 
         {/* App info footer */}

@@ -19,12 +19,15 @@ import Constants from 'expo-constants'
 export type ThemePreference = 'dark' | 'light' | 'system'
 
 const THEME_STORAGE_KEY = 'settings_theme'
+const ONBOARDING_KEY = 'has_completed_onboarding'
 
 interface SettingsState {
   theme: ThemePreference
   appVersion: string
+  hasCompletedOnboarding: boolean
 
   setTheme: (theme: ThemePreference) => Promise<void>
+  completeOnboarding: () => Promise<void>
   restoreSettings: () => Promise<void>
 }
 
@@ -47,11 +50,17 @@ function getAppVersion(): string {
 export const useSettingsStore = create<SettingsState>((set) => ({
   theme: 'dark',
   appVersion: getAppVersion(),
+  hasCompletedOnboarding: false,
 
   setTheme: async (theme: ThemePreference) => {
     applyTheme(theme)
     await AsyncStorage.setItem(THEME_STORAGE_KEY, theme)
     set({ theme })
+  },
+
+  completeOnboarding: async () => {
+    await AsyncStorage.setItem(ONBOARDING_KEY, 'true')
+    set({ hasCompletedOnboarding: true })
   },
 
   restoreSettings: async () => {
@@ -62,10 +71,15 @@ export const useSettingsStore = create<SettingsState>((set) => ({
           ? stored
           : 'dark'
 
+      const onboardingDone = await AsyncStorage.getItem(ONBOARDING_KEY)
+
       applyTheme(theme)
-      set({ theme })
+      set({
+        theme,
+        hasCompletedOnboarding: onboardingDone === 'true',
+      })
     } catch {
-      // AsyncStorage read failure -- keep default 'dark'
+      // AsyncStorage read failure -- keep defaults
       applyTheme('dark')
     }
   },

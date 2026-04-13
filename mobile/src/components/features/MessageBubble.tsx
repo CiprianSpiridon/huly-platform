@@ -175,7 +175,7 @@ function MessageBubbleInner({
         {/* Thread indicator */}
         {message.replyCount > 0 && onThreadPress != null && (
           <Pressable
-            className="flex-row items-center mt-1.5 active:opacity-80"
+            className="flex-row items-center mt-1.5 min-h-[44px] active:opacity-80"
             onPress={handleThreadPress}
             accessibilityRole="button"
             accessibilityLabel={`${message.replyCount} ${message.replyCount === 1 ? 'reply' : 'replies'}, open thread`}

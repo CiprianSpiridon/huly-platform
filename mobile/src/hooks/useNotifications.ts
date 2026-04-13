@@ -117,24 +117,26 @@ export function useMarkAsRead(): UseMutationResult<void, Error, string[]> {
         }
       )
 
-      // Optimistically decrement unread count — only for items that were actually unread
-      const allData = queryClient.getQueryData(notificationKeys.all) as unknown
-      let unreadCount = 0
-      if (allData != null && typeof allData === 'object' && 'pages' in (allData as Record<string, unknown>)) {
-        const pages = (allData as { pages: Array<{ items: Array<{ _id: string; isViewed?: boolean }> }> }).pages
-        const idSet = new Set(ids)
-        for (const page of pages) {
+      // Compute unread delta from pre-mutation snapshots (not post-mutation cache)
+      // The `previous` map has the real data under ['notifications','list',...] keys
+      const idSet = new Set(ids)
+      let unreadDelta = 0
+      previous.forEach((data) => {
+        if (data == null || typeof data !== 'object') return
+        const infiniteData = data as { pages?: Array<{ items?: Array<{ _id: string; isViewed?: boolean }> }> }
+        if (infiniteData.pages == null) return
+        for (const page of infiniteData.pages) {
+          if (page.items == null) continue
           for (const item of page.items) {
             if (idSet.has(item._id) && item.isViewed !== true) {
-              unreadCount++
+              unreadDelta++
             }
           }
         }
-      } else {
-        unreadCount = ids.length // fallback
-      }
+      })
+      if (unreadDelta === 0) unreadDelta = ids.length // fallback if no pre-mutation data found
       const currentCount = useInboxStore.getState().unreadTotal
-      useInboxStore.getState().setUnreadTotal(Math.max(0, currentCount - unreadCount))
+      useInboxStore.getState().setUnreadTotal(Math.max(0, currentCount - unreadDelta))
 
       return { previous }
     },
@@ -183,20 +185,22 @@ export function useArchiveNotifications(): UseMutationResult<void, Error, string
         }
       )
 
-      // Decrement unread count for archived items that were unread
-      const allData = queryClient.getQueryData(notificationKeys.all) as unknown
+      // Compute unread delta from pre-mutation snapshots
+      const idSet = new Set(ids)
       let unreadArchived = 0
-      if (allData != null && typeof allData === 'object' && 'pages' in (allData as Record<string, unknown>)) {
-        const pages = (allData as { pages: Array<{ items: Array<{ _id: string; isViewed?: boolean }> }> }).pages
-        const idSet = new Set(ids)
-        for (const page of pages) {
+      previous.forEach((data) => {
+        if (data == null || typeof data !== 'object') return
+        const infiniteData = data as { pages?: Array<{ items?: Array<{ _id: string; isViewed?: boolean }> }> }
+        if (infiniteData.pages == null) return
+        for (const page of infiniteData.pages) {
+          if (page.items == null) continue
           for (const item of page.items) {
             if (idSet.has(item._id) && item.isViewed !== true) {
               unreadArchived++
             }
           }
         }
-      }
+      })
       if (unreadArchived > 0) {
         const current = useInboxStore.getState().unreadTotal
         useInboxStore.getState().setUnreadTotal(Math.max(0, current - unreadArchived))

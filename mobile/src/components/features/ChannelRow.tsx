@@ -63,7 +63,7 @@ function ChannelRowInner({
 
   return (
     <Pressable
-      className="flex-row items-center px-4 py-3 active:bg-surface-tertiary"
+      className="flex-row items-center px-4 py-3 min-h-[44px] active:bg-surface-tertiary"
       onPress={handlePress}
       accessibilityRole="button"
       accessibilityLabel={`${channel.name}${isUnread ? `, ${unreadCount} unread messages` : ''}`}

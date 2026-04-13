@@ -17,6 +17,7 @@ import { useConnectionStore } from '@/store/connection'
 import { useSettingsStore } from '@/store/settings'
 import { useNotificationListeners } from '@/hooks/useNotificationListeners'
 import { InAppNotificationBanner } from '@/components/features/InAppNotificationBanner'
+import { ErrorBoundary } from '@/components/features/ErrorBoundary'
 
 // Prevent the splash screen from auto-hiding before assets are loaded.
 SplashScreen.preventAutoHideAsync()
@@ -78,16 +79,18 @@ export default function RootLayout(): React.ReactNode {
   }
 
   return (
-    <GestureHandlerRootView className="flex-1">
-      <QueryClientProvider client={queryClient}>
-        <SafeAreaProvider>
-          <BottomSheetModalProvider>
-            <RootLayoutContent />
-            <StatusBar style="light" />
-          </BottomSheetModalProvider>
-        </SafeAreaProvider>
-      </QueryClientProvider>
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView className="flex-1">
+        <QueryClientProvider client={queryClient}>
+          <SafeAreaProvider>
+            <BottomSheetModalProvider>
+              <RootLayoutContent />
+              <StatusBar style="light" />
+            </BottomSheetModalProvider>
+          </SafeAreaProvider>
+        </QueryClientProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   )
 }
 

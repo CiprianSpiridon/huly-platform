@@ -191,6 +191,17 @@ export function useLogout(): () => Promise<void> {
   const queryClient = useQueryClient()
 
   return useCallback(async () => {
+    // Deregister push token BEFORE disconnecting (needs client to call API)
+    try {
+      const token = usePushStore.getState().expoPushToken
+      if (token != null) {
+        const { deregisterPushToken } = await import('@/repositories/push')
+        await deregisterPushToken(token)
+      }
+    } catch {
+      // Non-fatal — stale subscription will expire server-side
+    }
+
     queryClient.clear()
     disconnect()
     clearAccountClient()

@@ -40,11 +40,11 @@ function IssueRowInner({
 
   return (
     <Pressable
-      className="bg-surface-secondary rounded-lg p-3 mb-2 active:opacity-80"
+      className="bg-surface-secondary rounded-lg p-3 mb-2 min-h-[44px] active:opacity-80"
       onPress={handlePress}
       accessibilityRole="button"
-      accessibilityLabel={`Issue ${identifier}: ${title}`}
-      accessibilityHint="Opens issue details"
+      accessibilityLabel={`Issue ${identifier}: ${title}, priority ${priority === 0 ? 'none' : priority}, status ${statusName}`}
+      accessibilityHint="Double tap to open issue details"
       testID={testID}
     >
       <View className="flex-row items-center gap-2 mb-1">

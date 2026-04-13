@@ -41,6 +41,8 @@ export type {
   NotificationItem,
   PaginatedNotifications,
 } from './notification'
+export { getMembers, getMember } from './members'
+export type { MemberItem } from './members'
 export { registerPushToken, deregisterPushToken } from './push'
 export {
   uploadFile,

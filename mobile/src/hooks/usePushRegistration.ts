@@ -72,6 +72,13 @@ export function usePushRegistration(): void {
 
         const pushToken = await registerForPushNotifications()
 
+        // If push is not configured (placeholder EAS projectId or simulator),
+        // registerForPushNotifications returns null — skip silently
+        if (pushToken == null) {
+          if (!cancelled) setIsRegistered(false)
+          return
+        }
+
         if (cancelled) return
 
         if (pushToken != null) {

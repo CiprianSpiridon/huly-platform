@@ -151,6 +151,7 @@ function NotificationRowInner({
             delayLongPress={400}
             accessibilityRole="button"
             accessibilityLabel={`${notification.isViewed ? '' : 'Unread '}notification: ${notification.title || 'Notification'}. ${timeAgo}`}
+            accessibilityHint="Double tap to open. Swipe left to archive."
             accessibilityState={{ selected: isSelected }}
           >
             <View className="flex-row items-start gap-3">

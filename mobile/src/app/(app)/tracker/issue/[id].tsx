@@ -1,10 +1,10 @@
 import { useCallback, useRef, useState } from 'react'
-import { View, Text, ScrollView, RefreshControl, ActivityIndicator, Pressable, Alert } from 'react-native'
+import { View, Text, ScrollView, RefreshControl, ActivityIndicator, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, router, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
-import type { Ref, Space } from '@hcengineering/core'
+import type { Doc, Ref, Space } from '@hcengineering/core'
 import type { Issue, IssueStatus } from '@hcengineering/tracker'
 
 import { useIssue } from '@/hooks/useIssue'
@@ -13,6 +13,7 @@ import { IssueDetailView } from '@/components/features/IssueDetail'
 import { IssueComments } from '@/components/features/IssueComments'
 import { StatusPicker } from '@/components/features/StatusPicker'
 import { PriorityPicker } from '@/components/features/PriorityPicker'
+import { AssigneePicker } from '@/components/features/AssigneePicker'
 import { AttachmentButton } from '@/components/features/AttachmentButton'
 import { AttachmentViewer } from '@/components/features/AttachmentViewer'
 import { UploadProgress } from '@/components/features/UploadProgress'
@@ -33,6 +34,7 @@ export default function IssueDetailScreen(): React.ReactNode {
   // Bottom sheet refs
   const statusPickerRef = useRef<BottomSheetModal>(null)
   const priorityPickerRef = useRef<BottomSheetModal>(null)
+  const assigneePickerRef = useRef<BottomSheetModal>(null)
 
   // Attachment viewer state
   const [viewedAttachment, setViewedAttachment] = useState<{
@@ -56,11 +58,20 @@ export default function IssueDetailScreen(): React.ReactNode {
   }, [])
 
   const handleAssigneePress = useCallback(() => {
-    Alert.alert(
-      'Coming soon',
-      'Assignee picker requires fetching workspace members and will be available in a future update.'
-    )
+    assigneePickerRef.current?.present()
   }, [])
+
+  const handleAssigneeSelect = useCallback(
+    (memberId: Ref<Doc> | null) => {
+      if (issue == null) return
+      updateIssue.mutate({
+        issueId: issue._id as Ref<Issue>,
+        projectId: issue.space as Ref<Space>,
+        update: { assignee: memberId },
+      })
+    },
+    [issue, updateIssue]
+  )
 
   const handleAttachmentPress = useCallback(
     (blobId: string, filename: string, mimeType: string) => {
@@ -206,6 +217,11 @@ export default function IssueDetailScreen(): React.ReactNode {
         ref={priorityPickerRef}
         currentPriority={issue.priority}
         onSelect={handlePrioritySelect}
+      />
+      <AssigneePicker
+        ref={assigneePickerRef}
+        currentAssigneeId={issue.assignee as string | null}
+        onSelect={handleAssigneeSelect}
       />
     </SafeAreaView>
   )

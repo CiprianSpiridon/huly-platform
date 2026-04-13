@@ -259,8 +259,17 @@ export function useToggleReaction(): UseMutationResult<void, Error, ToggleReacti
     },
 
     onSettled: (_data, _error, variables) => {
+      // Invalidate both the channel messages and any thread containing this message
       void queryClient.invalidateQueries({
         queryKey: ['chat', 'messages', variables.spaceId],
+      })
+      void queryClient.invalidateQueries({
+        queryKey: ['chat', 'thread', variables.messageId],
+      })
+      // Also invalidate any thread where this message might be a reply
+      void queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0] === 'chat' && query.queryKey[1] === 'thread',
       })
     },
   })

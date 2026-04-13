@@ -176,7 +176,7 @@ export default function IssueListScreen(): React.ReactNode {
           />
         )}
         keyExtractor={(item) => item._id}
-
+        drawDistance={300}
         contentContainerStyle={{ paddingHorizontal: 16 }}
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.5}

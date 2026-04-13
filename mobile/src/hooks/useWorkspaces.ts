@@ -55,7 +55,18 @@ export function useSwitchWorkspace(): {
         // 1. Call selectWorkspace to get WorkspaceLoginInfo
         const wsInfo = await switchWorkspace(workspaceUrl)
 
-        // 2. Disconnect existing API client
+        // 2. Deregister push token BEFORE disconnecting (needs client alive)
+        try {
+          const pushToken = (await import('@/store/push')).usePushStore.getState().expoPushToken
+          if (pushToken != null) {
+            const { deregisterPushToken } = await import('@/repositories/push')
+            await deregisterPushToken(pushToken)
+          }
+        } catch {
+          // Non-fatal
+        }
+
+        // 3. Disconnect existing API client
         disconnect()
 
         // 3. Update workspace Zustand store (all 4 keys)

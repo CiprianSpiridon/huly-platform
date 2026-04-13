@@ -160,7 +160,7 @@ export default function ChannelDetailScreen(): React.ReactNode {
         onAttachmentPress={handleAttachmentPress}
       />
     ),
-    [handleLongPress, handleReactionToggle, handleThreadPress, handleAttachmentPress]
+    [currentUserId, handleLongPress, handleReactionToggle, handleThreadPress, handleAttachmentPress]
   )
 
   const messages = messagesData?.items ?? []
@@ -228,6 +228,9 @@ export default function ChannelDetailScreen(): React.ReactNode {
             inverted
             onEndReached={handleEndReached}
             onEndReachedThreshold={0.5}
+            maxToRenderPerBatch={15}
+            windowSize={11}
+            removeClippedSubviews
             ListFooterComponent={
               isFetchingNextPage ? (
                 <View className="py-4 items-center">

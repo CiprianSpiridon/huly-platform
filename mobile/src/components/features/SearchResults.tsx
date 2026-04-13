@@ -25,7 +25,7 @@ function SearchResults({ results, onResultPress, testID }: SearchResultsProps): 
         <SearchResultRow item={item} onPress={onResultPress} />
       )}
       keyExtractor={(item) => item.id}
-
+      drawDistance={250}
       contentContainerStyle={{ paddingHorizontal: 16 }}
       testID={testID}
     />

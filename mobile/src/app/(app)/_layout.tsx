@@ -10,6 +10,7 @@ import { useChatUnreadSync } from '@/hooks/useChatUnread'
 import { useUnreadCount } from '@/hooks/useUnreadCount'
 import { usePushRegistration } from '@/hooks/usePushRegistration'
 import { ConnectionStatusBar } from '@/components/features/ConnectionStatusBar'
+import { ErrorBoundary } from '@/components/features/ErrorBoundary'
 
 /**
  * Authenticated app layout with bottom tab navigator.
@@ -31,7 +32,11 @@ export default function AppLayout(): React.ReactNode {
   }
 
   // Render the tab shell as a child — hooks are always called inside it
-  return <AuthenticatedTabShell />
+  return (
+    <ErrorBoundary>
+      <AuthenticatedTabShell />
+    </ErrorBoundary>
+  )
 }
 
 /**
