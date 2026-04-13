@@ -2,13 +2,13 @@
   "plan": {
     "name": "mobile-tracker-parity",
     "title": "Mobile Tracker Feature Parity",
-    "mode": "HOLD",
+    "mode": "EXPANSION",
     "defaultReview": "claude",
     "agent": "expo-react-native-engineer"
   },
   "overview": "Close all tracker gaps between the web workbench tracker and the Expo mobile app: project CRUD, metadata management, richer issue field parity, sub-issue parity, issue delete, labels/tags, comment edit/delete/reactions/mentions, rich comment composition, activity timeline, saved filters, kanban enhancements, bulk operations, templates, and my-issues surfaces.",
   "scopeChallenge": {
-    "assumedMode": "HOLD",
+    "assumedMode": "EXPANSION",
     "assumedDefaultReview": "claude",
     "scopeCuts": [
       "Focus on tracker parity inside mobile tracker routes, hooks, repositories, and adjacent components",
@@ -100,7 +100,8 @@
       "writeScope": [
         "mobile/src/hooks/useProjects.ts",
         "mobile/src/hooks/useIssues.ts",
-        "mobile/src/hooks/useIssue.ts"
+        "mobile/src/hooks/useIssue.ts",
+        "mobile/src/app/(app)/tracker/_layout.tsx"
       ],
       "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
       "review": "claude"
@@ -263,7 +264,7 @@
       "id": "TASK-008",
       "title": "Bring issue detail to field parity",
       "description": "Upgrade issue detail from a mostly-read surface into the parity screen for component, milestone, parent/sub-issue, relation, due date, estimation, time spent, and attachments.",
-      "priority": "P0",
+      "priority": "P1",
       "type": "feature",
       "effort": "L",
       "agent": "expo-react-native-engineer",
@@ -296,7 +297,7 @@
       "id": "TASK-009",
       "title": "Bring create/edit issue flow to parity",
       "description": "Upgrade issue creation into a shared create/edit form that supports the parity field set and proper project defaults.",
-      "priority": "P0",
+      "priority": "P1",
       "type": "feature",
       "effort": "L",
       "agent": "expo-react-native-engineer",
@@ -403,8 +404,7 @@
       "effort": "S",
       "agent": "expo-react-native-engineer",
       "dependsOn": [
-        "TASK-001",
-        "TASK-002"
+        "TASK-008"
       ],
       "acceptanceCriteria": [
         "Issue detail header exposes a delete action (via menu or icon) that opens a confirmation dialog with the issue identifier.",
@@ -434,10 +434,8 @@
       "effort": "M",
       "agent": "expo-react-native-engineer",
       "dependsOn": [
-        "TASK-001",
-        "TASK-002",
-        "TASK-008",
-        "TASK-009"
+        "TASK-009",
+        "TASK-012"
       ],
       "acceptanceCriteria": [
         "Issue detail renders assigned labels as colored chips and allows adding/removing via a label picker.",
@@ -509,12 +507,14 @@
         "mobile/src/components/features/IssueComments.tsx"
       ],
       "filesToCreate": [
-        "mobile/src/components/features/CommentReactions.tsx",
         "mobile/src/components/features/MentionPicker.tsx"
+      ],
+      "reuses": [
+        "mobile/src/components/features/ReactionPicker.tsx",
+        "mobile/src/components/features/ReactionPills.tsx"
       ],
       "writeScope": [
         "mobile/src/components/features/IssueComments.tsx",
-        "mobile/src/components/features/CommentReactions.tsx",
         "mobile/src/components/features/MentionPicker.tsx"
       ],
       "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
@@ -561,8 +561,9 @@
       "effort": "L",
       "agent": "expo-react-native-engineer",
       "dependsOn": [
-        "TASK-002",
-        "TASK-006"
+        "TASK-003",
+        "TASK-006",
+        "TASK-019"
       ],
       "acceptanceCriteria": [
         "Kanban view offers a grouping picker (status, assignee, priority, component, milestone) persisted in tracker store.",
@@ -587,14 +588,15 @@
     {
       "id": "TASK-018",
       "title": "Bulk issue operations",
-      "description": "Add multi-select mode to the issue list with bulk status, priority, and assignee changes.",
+      "description": "Add multi-select mode to the issue list with bulk status, priority, and assignee changes. Extends the existing BulkActionBar.tsx (used by inbox) with tracker-specific actions.",
       "priority": "P2",
       "type": "feature",
       "effort": "M",
       "agent": "expo-react-native-engineer",
       "dependsOn": [
-        "TASK-002",
-        "TASK-008"
+        "TASK-008",
+        "TASK-017",
+        "TASK-019"
       ],
       "acceptanceCriteria": [
         "Long-press on an issue row enters selection mode with checkboxes; a bottom action bar shows selected count and available actions.",
@@ -603,15 +605,141 @@
       ],
       "filesToModify": [
         "mobile/src/app/(app)/tracker/project/[id].tsx",
+        "mobile/src/components/features/BulkActionBar.tsx",
+        "mobile/src/repositories/tracker.ts"
+      ],
+      "filesToCreate": [],
+      "writeScope": [
+        "mobile/src/app/(app)/tracker/project/[id].tsx",
+        "mobile/src/components/features/BulkActionBar.tsx",
+        "mobile/src/repositories/tracker.ts"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-019",
+      "title": "Add project delete flow",
+      "description": "Close the project CRUD gap by adding project deletion with confirmation and list/detail invalidation.",
+      "priority": "P1",
+      "type": "feature",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [
+        "TASK-001",
+        "TASK-002",
+        "TASK-005"
+      ],
+      "acceptanceCriteria": [
+        "Project detail exposes a delete action gated behind an explicit confirmation that names the targeted project.",
+        "Successful deletion invalidates tracker index and project-detail queries, then returns the user to the project list without stale project rows.",
+        "Attempting to delete an archived, missing, or already-removed project shows a recoverable error state instead of leaving the user on a broken route."
+      ],
+      "filesToModify": [
+        "mobile/src/app/(app)/tracker/project/[id].tsx",
         "mobile/src/repositories/tracker.ts"
       ],
       "filesToCreate": [
-        "mobile/src/components/features/BulkIssueBar.tsx"
+        "mobile/src/components/features/ProjectDangerZone.tsx"
       ],
       "writeScope": [
         "mobile/src/app/(app)/tracker/project/[id].tsx",
-        "mobile/src/components/features/BulkIssueBar.tsx",
+        "mobile/src/components/features/ProjectDangerZone.tsx",
         "mobile/src/repositories/tracker.ts"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-020",
+      "title": "Add sub-issue tree and create flow",
+      "description": "Close the remaining sub-issue parity gap by rendering a real sub-issue tree and letting users create sub-issues from a parent issue context.",
+      "priority": "P1",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [
+        "TASK-009",
+        "TASK-012"
+      ],
+      "acceptanceCriteria": [
+        "Issue detail renders a nested sub-issue tree with status, identifier, and title instead of only a count summary.",
+        "Creating a sub-issue from a parent issue pre-fills the parent relation and returns to the parent detail with the new child visible after save.",
+        "Missing or deleted child issues render a safe fallback row and do not break parent issue rendering."
+      ],
+      "filesToModify": [
+        "mobile/src/app/(app)/tracker/issue/[id].tsx",
+        "mobile/src/components/features/IssueForm.tsx"
+      ],
+      "filesToCreate": [
+        "mobile/src/components/features/SubIssueTree.tsx"
+      ],
+      "writeScope": [
+        "mobile/src/app/(app)/tracker/issue/[id].tsx",
+        "mobile/src/components/features/SubIssueTree.tsx",
+        "mobile/src/components/features/IssueForm.tsx"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-021",
+      "title": "Add attachment delete parity",
+      "description": "Finish the tracker attachment workflow by allowing users to remove issue attachments and see the detail view update immediately.",
+      "priority": "P1",
+      "type": "feature",
+      "effort": "S",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [
+        "TASK-013",
+        "TASK-020"
+      ],
+      "acceptanceCriteria": [
+        "Issue detail renders a delete/remove action for attachments the current user is allowed to remove.",
+        "Successful attachment removal updates the visible attachment list without requiring a full issue reload.",
+        "Failed or unauthorized deletes leave the attachment visible and show a recoverable error instead of silently desynchronizing the UI."
+      ],
+      "filesToModify": [
+        "mobile/src/app/(app)/tracker/issue/[id].tsx",
+        "mobile/src/components/features/IssueDetail.tsx",
+        "mobile/src/repositories/attachment.ts"
+      ],
+      "filesToCreate": [],
+      "writeScope": [
+        "mobile/src/app/(app)/tracker/issue/[id].tsx",
+        "mobile/src/components/features/IssueDetail.tsx",
+        "mobile/src/repositories/attachment.ts"
+      ],
+      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "review": "claude"
+    },
+    {
+      "id": "TASK-022",
+      "title": "Add rich comment composer parity",
+      "description": "Close the remaining comment-composer gap by upgrading tracker comments from plain text to the same rich composition baseline used for issue descriptions.",
+      "priority": "P2",
+      "type": "feature",
+      "effort": "M",
+      "agent": "expo-react-native-engineer",
+      "dependsOn": [
+        "TASK-014"
+      ],
+      "acceptanceCriteria": [
+        "Comment creation and editing use a richtext composer with formatting controls instead of a plain text field.",
+        "Existing markdown/rich comment content renders consistently after edit round-trips without dropping formatting.",
+        "When richtext capabilities are unavailable, the composer shows an explicit degraded state instead of silently falling back to malformed plain text submission."
+      ],
+      "filesToModify": [
+        "mobile/src/components/features/IssueComments.tsx",
+        "mobile/src/hooks/useComments.ts"
+      ],
+      "filesToCreate": [
+        "mobile/src/components/features/RichCommentComposer.tsx"
+      ],
+      "writeScope": [
+        "mobile/src/components/features/IssueComments.tsx",
+        "mobile/src/components/features/RichCommentComposer.tsx",
+        "mobile/src/hooks/useComments.ts"
       ],
       "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
       "review": "claude"
@@ -649,6 +777,16 @@
       "recovery": "Show per-issue error count and offer retry for failed items"
     },
     {
+      "failure": "Project delete leaves stale project routes",
+      "detection": "Deleted project is still reachable from back stack",
+      "recovery": "Invalidate tracker list/detail keys and redirect to project index after successful delete"
+    },
+    {
+      "failure": "Attachment delete desynchronizes issue detail",
+      "detection": "Removed file still appears until manual refresh",
+      "recovery": "Optimistically remove only after id match and invalidate issue detail on settle"
+    },
+    {
       "failure": "Comment delete removes wrong comment",
       "detection": "Race between optimistic remove and server response",
       "recovery": "Confirm by id match before cache eviction"
@@ -660,12 +798,14 @@
     }
   ],
   "shipCut": {
-    "minimumCoherentCutAfter": "TASK-012",
+    "minimumCoherentCutAfter": "TASK-021",
     "delivers": [
-      "project create/edit",
+      "full project CRUD",
       "component and milestone management",
       "full issue create/edit/detail parity for core fields",
       "issue delete",
+      "sub-issue tree + create flow",
+      "attachment delete",
       "comment edit/delete with activity timeline"
     ],
     "safeToDefer": [
@@ -676,6 +816,7 @@
       "saved filters",
       "kanban enhancements",
       "bulk operations",
+      "comment richtext composer parity",
       "advanced filter UI beyond the current list/search core"
     ]
   },
@@ -697,10 +838,14 @@
     "TASK-015: reaction add/remove + mention insertion + mention tap navigation",
     "TASK-016: saved filter persistence + cross-workspace clear + rename/delete preset",
     "TASK-017: kanban grouping switch + drag-drop mutation + empty column + overflow",
-    "TASK-018: bulk selection enter/exit + batch mutation chunking + partial failure handling"
+    "TASK-018: bulk selection enter/exit + batch mutation chunking + partial failure handling",
+    "TASK-019: project delete confirmation + list/detail invalidation + already-removed fallback",
+    "TASK-020: sub-issue tree rendering + create-from-parent flow + deleted-child fallback",
+    "TASK-021: attachment delete authorization + list refresh consistency + failed-delete recovery",
+    "TASK-022: rich comment compose/edit round-trip + degraded-state fallback"
   ],
   "executionSummary": {
-    "taskCount": 18,
+    "taskCount": 22,
     "parallelizableFoundations": [
       "TASK-001",
       "TASK-003"
@@ -725,10 +870,18 @@
       "TASK-002",
       "TASK-012"
     ],
+    "projectCrudPath": [
+      "TASK-001",
+      "TASK-002",
+      "TASK-004",
+      "TASK-005",
+      "TASK-019"
+    ],
     "commentsActivityPath": [
       "TASK-008",
       "TASK-014",
-      "TASK-015"
+      "TASK-015",
+      "TASK-022"
     ],
     "labelsPath": [
       "TASK-008",
@@ -739,6 +892,11 @@
       "TASK-002",
       "TASK-017"
     ],
+    "subIssueAttachmentPath": [
+      "TASK-008",
+      "TASK-009",
+      "TASK-020"
+    ],
     "optionalPaths": [
       [
         "TASK-009",
@@ -748,6 +906,10 @@
         "TASK-008",
         "TASK-011",
         "TASK-016"
+      ],
+      [
+        "TASK-008",
+        "TASK-021"
       ],
       [
         "TASK-002",
@@ -799,21 +961,16 @@
       "TASK-009"
     ],
     "TASK-011": [
-      "TASK-001",
-      "TASK-002",
       "TASK-003",
       "TASK-006",
       "TASK-008"
     ],
     "TASK-012": [
-      "TASK-001",
-      "TASK-002"
+      "TASK-008"
     ],
     "TASK-013": [
-      "TASK-001",
-      "TASK-002",
-      "TASK-008",
-      "TASK-009"
+      "TASK-009",
+      "TASK-012"
     ],
     "TASK-014": [
       "TASK-008"
@@ -823,15 +980,33 @@
     ],
     "TASK-016": [
       "TASK-003",
-      "TASK-011"
+      "TASK-011",
+      "TASK-017"
     ],
     "TASK-017": [
-      "TASK-002",
-      "TASK-006"
+      "TASK-003",
+      "TASK-006",
+      "TASK-019"
     ],
     "TASK-018": [
-      "TASK-002",
-      "TASK-008"
+      "TASK-008",
+      "TASK-017",
+      "TASK-019"
+    ],
+    "TASK-019": [
+      "TASK-005",
+      "TASK-012"
+    ],
+    "TASK-020": [
+      "TASK-009",
+      "TASK-012"
+    ],
+    "TASK-021": [
+      "TASK-013",
+      "TASK-020"
+    ],
+    "TASK-022": [
+      "TASK-014"
     ]
   }
 }

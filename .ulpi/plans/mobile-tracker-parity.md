@@ -11,7 +11,7 @@ into workspace-admin tracker configuration.
 
 ## Scope Challenge
 
-- Assumed planning mode: `HOLD`
+- Assumed planning mode: `EXPANSION`
 - Assumed default review: `claude`
 - Scope cut applied: focus on tracker parity inside `mobile/src/app/(app)/tracker/**` and adjacent
   tracker hooks/components only
@@ -43,6 +43,50 @@ into workspace-admin tracker configuration.
 - New create/edit surfaces must not regress the existing create route
 - If project metadata required for a form is not loaded, the form must block submission with an
   explicit state instead of silently sending partial payloads
+
+## Architecture Diagram
+
+```
+Layer 4 — Routes (expo-router screens)
+┌─────────────────────────────────────────────────────────────────────┐
+│ _layout.tsx [TASK-002]                                              │
+│ ┌──────────┐ ┌─────────────┐ ┌──────────────┐ ┌─────────────────┐  │
+│ │ index    │ │ project/    │ │ issue/       │ │ create, search, │  │
+│ │ [T004]   │ │ [id] [T005] │ │ [id] [T008]  │ │ edit/[id] [T009]│  │
+│ │          │ │ new  [T004] │ │              │ │ templates [T010]│  │
+│ │          │ │ edit [T005] │ │              │ │ my-issues [T011]│  │
+│ │          │ │ comp [T006] │ │              │ │                 │  │
+│ │          │ │ mile [T006] │ │              │ │                 │  │
+│ └──────────┘ └─────────────┘ └──────────────┘ └─────────────────┘  │
+└─────────────────────────────────────────────────────────────────────┘
+
+Layer 3 — Components (features + ui)
+┌─────────────────────────────────────────────────────────────────────┐
+│ IssueDetail [T008,T012,T013,T021]  IssueForm [T009,T013,T020]      │
+│ IssueComments [T008,T014,T015,T022] SubIssueTree [T020]            │
+│ ProjectForm [T004,T005]             KanbanBoard [T017]              │
+│ ComponentPicker [T007]              MilestonePicker [T007]          │
+│ IssueRelationPicker [T007]          LabelPicker [T013]              │
+│ IssueFilters [T011,T016]            BulkActionBar [T018]            │
+│ ReactionPicker (reused) [T015]      ReactionPills (reused) [T015]   │
+│ MentionPicker [T015]                SavedFilterPicker [T016]        │
+│ ProjectDangerZone [T019]            RichCommentComposer [T022]      │
+└─────────────────────────────────────────────────────────────────────┘
+
+Layer 2 — Hooks + Store (TanStack Query + Zustand)
+┌─────────────────────────────────────────────────────────────────────┐
+│ useProjects [T002]   useIssues [T002]   useIssue [T002]            │
+│ useComments [T014,T022]                                             │
+│ store/tracker [T003,T016,T017]                                      │
+└─────────────────────────────────────────────────────────────────────┘
+
+Layer 1 — Repositories (data access)
+┌─────────────────────────────────────────────────────────────────────┐
+│ repositories/tracker [T001,T012,T018,T019]                          │
+│ repositories/activity [T014]                                        │
+│ repositories/attachment [T021]                                       │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
 ## Existing Code Leverage
 
@@ -100,12 +144,13 @@ my-issues, and advanced filters all stay centralized.
 - **Agent:** expo-react-native-engineer
 - **Priority:** P0
 - **Depends on:** `TASK-001`
-- **writeScope:** `mobile/src/hooks/useProjects.ts`, `mobile/src/hooks/useIssues.ts`, `mobile/src/hooks/useIssue.ts`
+- **writeScope:** `mobile/src/hooks/useProjects.ts`, `mobile/src/hooks/useIssues.ts`, `mobile/src/hooks/useIssue.ts`, `mobile/src/app/(app)/tracker/_layout.tsx`
 - **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Hooks expose project detail, component, milestone, template, relation, and my-issues queries without forcing screens to call repositories directly.
   2. Project, component, milestone, and issue-field mutations invalidate the exact project and issue keys they affect.
   3. Disabled queries stay inert when `projectId` or `issueId` is absent, and advanced filter params participate in stable query keys.
+  4. Tracker Stack layout (`_layout.tsx`) registers all parity route screens (project/new, project/[id]/edit, project/[id]/components, project/[id]/milestones, edit/[id], templates, my-issues) with correct header options.
 
 ### TASK-003: Expand tracker store for full draft and filter parity
 
@@ -198,7 +243,7 @@ parent/sub-issue, relation, due date, estimation, time spent, and attachments.
 - **Type:** feature
 - **Effort:** L
 - **Agent:** expo-react-native-engineer
-- **Priority:** P0
+- **Priority:** P1
 - **Depends on:** `TASK-002`, `TASK-003`, `TASK-006`, `TASK-007`
 - **writeScope:** `mobile/src/app/(app)/tracker/issue/[id].tsx`, `mobile/src/components/features/IssueDetail.tsx`, `mobile/src/components/features/IssueComments.tsx`
 - **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
@@ -215,7 +260,7 @@ project defaults.
 - **Type:** feature
 - **Effort:** L
 - **Agent:** expo-react-native-engineer
-- **Priority:** P0
+- **Priority:** P1
 - **Depends on:** `TASK-002`, `TASK-003`, `TASK-006`, `TASK-007`
 - **writeScope:** `mobile/src/app/(app)/tracker/create.tsx`, `mobile/src/app/(app)/tracker/edit/[id].tsx`, `mobile/src/components/features/IssueForm.tsx`
 - **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
@@ -266,7 +311,7 @@ Add a delete action to issue detail with confirmation dialog and proper cache in
 - **Effort:** S
 - **Agent:** expo-react-native-engineer
 - **Priority:** P1
-- **Depends on:** `TASK-001`, `TASK-002`
+- **Depends on:** `TASK-008`
 - **writeScope:** `mobile/src/app/(app)/tracker/issue/[id].tsx`, `mobile/src/components/features/IssueDetail.tsx`, `mobile/src/repositories/tracker.ts`
 - **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
@@ -282,7 +327,7 @@ Bring label/tag assignment to issue detail and issue create/edit forms matching 
 - **Effort:** M
 - **Agent:** expo-react-native-engineer
 - **Priority:** P2
-- **Depends on:** `TASK-001`, `TASK-002`, `TASK-008`, `TASK-009`
+- **Depends on:** `TASK-009`, `TASK-012`
 - **writeScope:** `mobile/src/components/features/LabelPicker.tsx`, `mobile/src/components/features/IssueDetail.tsx`, `mobile/src/components/features/IssueForm.tsx`
 - **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
@@ -316,10 +361,11 @@ Add emoji reactions on comments and @mention rendering/insertion in the comment 
 - **Agent:** expo-react-native-engineer
 - **Priority:** P2
 - **Depends on:** `TASK-014`
-- **writeScope:** `mobile/src/components/features/IssueComments.tsx`, `mobile/src/components/features/CommentReactions.tsx`, `mobile/src/components/features/MentionPicker.tsx`
+- **writeScope:** `mobile/src/components/features/IssueComments.tsx`, `mobile/src/components/features/MentionPicker.tsx`
 - **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **Reuses:** `mobile/src/components/features/ReactionPicker.tsx`, `mobile/src/components/features/ReactionPills.tsx` (existing chat components, generic enough for tracker comments)
 - **Acceptance Criteria:**
-  1. Comments display reaction pills (emoji + count) and long-press opens a reaction picker to add/remove reactions.
+  1. Comments display reaction pills (via existing `ReactionPills.tsx`) and long-press opens the existing `ReactionPicker.tsx` to add/remove reactions.
   2. Comment composer supports @mention insertion via a searchable member picker triggered by typing "@".
   3. Rendered mentions in existing comments are tappable and navigate to the referenced user/document.
 
@@ -348,7 +394,7 @@ drag-drop card movement between columns.
 - **Effort:** L
 - **Agent:** expo-react-native-engineer
 - **Priority:** P2
-- **Depends on:** `TASK-002`, `TASK-006`
+- **Depends on:** `TASK-003`, `TASK-006`, `TASK-019`
 - **writeScope:** `mobile/src/app/(app)/tracker/project/[id].tsx`, `mobile/src/components/features/KanbanBoard.tsx`, `mobile/src/store/tracker.ts`
 - **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
@@ -359,13 +405,15 @@ drag-drop card movement between columns.
 ### TASK-018: Bulk issue operations
 
 Add multi-select mode to the issue list with bulk status, priority, and assignee changes.
+Extends the existing `BulkActionBar.tsx` (used by inbox) with tracker-specific actions rather
+than creating a parallel component.
 
 - **Type:** feature
 - **Effort:** M
 - **Agent:** expo-react-native-engineer
 - **Priority:** P2
-- **Depends on:** `TASK-002`, `TASK-008`
-- **writeScope:** `mobile/src/app/(app)/tracker/project/[id].tsx`, `mobile/src/components/features/BulkIssueBar.tsx`, `mobile/src/repositories/tracker.ts`
+- **Depends on:** `TASK-002`, `TASK-008`, `TASK-017`, `TASK-019`
+- **writeScope:** `mobile/src/app/(app)/tracker/project/[id].tsx`, `mobile/src/components/features/BulkActionBar.tsx`, `mobile/src/repositories/tracker.ts`
 - **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Long-press on an issue row enters selection mode with checkboxes; a bottom action bar shows selected count and available actions.
@@ -397,7 +445,7 @@ sub-issues from a parent issue context.
 - **Effort:** M
 - **Agent:** expo-react-native-engineer
 - **Priority:** P1
-- **Depends on:** `TASK-002`, `TASK-007`, `TASK-008`, `TASK-009`
+- **Depends on:** `TASK-009`, `TASK-012`
 - **writeScope:** `mobile/src/app/(app)/tracker/issue/[id].tsx`, `mobile/src/components/features/SubIssueTree.tsx`, `mobile/src/components/features/IssueForm.tsx`
 - **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
@@ -414,7 +462,7 @@ detail view update immediately.
 - **Effort:** S
 - **Agent:** expo-react-native-engineer
 - **Priority:** P1
-- **Depends on:** `TASK-008`
+- **Depends on:** `TASK-013`, `TASK-020`
 - **writeScope:** `mobile/src/app/(app)/tracker/issue/[id].tsx`, `mobile/src/components/features/IssueDetail.tsx`, `mobile/src/repositories/attachment.ts`
 - **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
@@ -533,56 +581,57 @@ Items below that cut and safe to defer:
 
 ## Task Dependencies
 
+Derived from per-task `Depends on` fields. File-overlap ordering edges marked with `(file)`.
+
 ```text
 TASK-001 -> TASK-002
-TASK-001 -> TASK-004
-TASK-001 -> TASK-005
-TASK-001 -> TASK-006
-TASK-001 -> TASK-007
-TASK-001 -> TASK-010
-TASK-001 -> TASK-011
-TASK-001 -> TASK-012
-TASK-001 -> TASK-019
 
 TASK-002 -> TASK-004
-TASK-002 -> TASK-005
-TASK-002 -> TASK-006
-TASK-002 -> TASK-007
 TASK-002 -> TASK-008
 TASK-002 -> TASK-009
-TASK-002 -> TASK-010
-TASK-002 -> TASK-011
-TASK-002 -> TASK-012
-TASK-002 -> TASK-017
-TASK-002 -> TASK-018
-TASK-002 -> TASK-019
-TASK-002 -> TASK-020
 
 TASK-003 -> TASK-008
 TASK-003 -> TASK-009
 TASK-003 -> TASK-011
 TASK-003 -> TASK-016
+TASK-003 -> TASK-017
 
 TASK-004 -> TASK-005
-TASK-005 -> TASK-019
 TASK-005 -> TASK-006
+TASK-005 -> TASK-019
+
 TASK-006 -> TASK-007
-TASK-006 -> TASK-008
-TASK-006 -> TASK-009
 TASK-006 -> TASK-011
 TASK-006 -> TASK-017
+
 TASK-007 -> TASK-008
 TASK-007 -> TASK-009
+
 TASK-008 -> TASK-011
-TASK-008 -> TASK-013
+TASK-008 -> TASK-012  (file: issue/[id].tsx, IssueDetail.tsx)
 TASK-008 -> TASK-014
 TASK-008 -> TASK-018
-TASK-008 -> TASK-020
-TASK-008 -> TASK-021
+
 TASK-009 -> TASK-010
 TASK-009 -> TASK-013
 TASK-009 -> TASK-020
+
 TASK-011 -> TASK-016
+
+TASK-012 -> TASK-013  (file: IssueDetail.tsx)
+TASK-012 -> TASK-019  (file: repositories/tracker.ts)
+TASK-012 -> TASK-020  (file: issue/[id].tsx)
+
+TASK-013 -> TASK-021  (file: IssueDetail.tsx)
+
 TASK-014 -> TASK-015
 TASK-014 -> TASK-022
+
+TASK-019 -> TASK-017  (file: project/[id].tsx)
+TASK-019 -> TASK-018  (file: repositories/tracker.ts)
+
+TASK-017 -> TASK-016  (file: store/tracker.ts)
+TASK-017 -> TASK-018  (file: project/[id].tsx)
+
+TASK-020 -> TASK-021  (file: issue/[id].tsx)
 ```
