@@ -128,7 +128,7 @@ contract used by parity screens.
 - **Agent:** expo-react-native-engineer
 - **Priority:** P0
 - **writeScope:** `mobile/src/repositories/tracker.ts`, `mobile/src/repositories/index.ts`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Repository exposes typed read methods for project detail, components, milestones, members, issue relations, template summaries, labels, and my-issues queries.
   2. Repository exposes typed write methods for project create/update, component create/update, milestone create/update, issue time reporting, issue delete, and label assignment.
@@ -145,7 +145,7 @@ my-issues, and advanced filters all stay centralized.
 - **Priority:** P0
 - **Depends on:** `TASK-001`
 - **writeScope:** `mobile/src/hooks/useProjects.ts`, `mobile/src/hooks/useIssues.ts`, `mobile/src/hooks/useIssue.ts`, `mobile/src/app/(app)/tracker/_layout.tsx`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Hooks expose project detail, component, milestone, template, relation, and my-issues queries without forcing screens to call repositories directly.
   2. Project, component, milestone, and issue-field mutations invalidate the exact project and issue keys they affect.
@@ -162,7 +162,7 @@ field set without ad hoc screen state.
 - **Agent:** expo-react-native-engineer
 - **Priority:** P1
 - **writeScope:** `mobile/src/store/tracker.ts`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Draft state includes component, milestone, due date, estimation, parent issue, template selection, and attachment ids.
   2. Filter state includes component, milestone, assignee, due-date, and relation-aware options, and clearing the draft resets all parity fields.
@@ -179,7 +179,7 @@ defaults that issue creation depends on.
 - **Priority:** P1
 - **Depends on:** `TASK-001`, `TASK-002`
 - **writeScope:** `mobile/src/app/(app)/tracker/index.tsx`, `mobile/src/app/(app)/tracker/project/new.tsx`, `mobile/src/components/features/ProjectForm.tsx`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Tracker index exposes a create-project entry point and the new route resolves with typed navigation.
   2. Project form supports name, identifier, privacy, default assignee, and default issue status.
@@ -196,7 +196,7 @@ Add project-scoped edit routing so an existing project can be modified through a
 - **Priority:** P1
 - **Depends on:** `TASK-001`, `TASK-002`, `TASK-004`
 - **writeScope:** `mobile/src/app/(app)/tracker/project/[id].tsx`, `mobile/src/app/(app)/tracker/project/[id]/edit.tsx`, `mobile/src/components/features/ProjectForm.tsx`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Project detail exposes an edit entry point that routes to `project/[id]/edit`.
   2. Edit form loads the existing project defaults and saves only valid changes for the targeted project.
@@ -212,7 +212,7 @@ Bring project-scoped tracker metadata management to mobile with project-addressa
 - **Priority:** P1
 - **Depends on:** `TASK-001`, `TASK-002`, `TASK-005`
 - **writeScope:** `mobile/src/app/(app)/tracker/project/[id].tsx`, `mobile/src/app/(app)/tracker/project/[id]/components.tsx`, `mobile/src/app/(app)/tracker/project/[id]/milestones.tsx`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Users can navigate from a specific project into component and milestone management routes scoped to that project id.
   2. Lists render human-readable labels, lead/status metadata, and empty states for projects with no entries.
@@ -229,7 +229,7 @@ integration tasks do not overload existing files.
 - **Priority:** P1
 - **Depends on:** `TASK-001`, `TASK-002`, `TASK-006`
 - **writeScope:** `mobile/src/components/features/ComponentPicker.tsx`, `mobile/src/components/features/MilestonePicker.tsx`, `mobile/src/components/features/IssueRelationPicker.tsx`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Component, milestone, and relation pickers render project-scoped choices from the parity hooks.
   2. Pickers support empty and not-found states without rendering raw ids.
@@ -246,7 +246,7 @@ parent/sub-issue, relation, due date, estimation, time spent, and attachments.
 - **Priority:** P1
 - **Depends on:** `TASK-002`, `TASK-003`, `TASK-006`, `TASK-007`
 - **writeScope:** `mobile/src/app/(app)/tracker/issue/[id].tsx`, `mobile/src/components/features/IssueDetail.tsx`, `mobile/src/components/features/IssueComments.tsx`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Issue detail renders editable component, milestone, due date, estimation, parent issue, relations, and sub-issue summaries using real lookup data.
   2. Time-report creation and refresh update reported-time UI without forcing a full app reload.
@@ -263,7 +263,7 @@ project defaults.
 - **Priority:** P1
 - **Depends on:** `TASK-002`, `TASK-003`, `TASK-006`, `TASK-007`
 - **writeScope:** `mobile/src/app/(app)/tracker/create.tsx`, `mobile/src/app/(app)/tracker/edit/[id].tsx`, `mobile/src/components/features/IssueForm.tsx`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Shared form supports status, priority, assignee, component, milestone, due date, estimation, parent issue, description markup, and attachments.
   2. Edit mode preloads existing issue state and preserves parity fields when saving partial changes.
@@ -280,7 +280,7 @@ available on the web.
 - **Priority:** P2
 - **Depends on:** `TASK-001`, `TASK-002`, `TASK-009`
 - **writeScope:** `mobile/src/app/(app)/tracker/templates.tsx`, `mobile/src/app/(app)/tracker/create.tsx`, `mobile/src/components/features/IssueTemplateCard.tsx`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Mobile tracker exposes a template list with project-scoped template summaries and empty/error states.
   2. Selecting a template hydrates the create form draft without discarding manually-entered overrides.
@@ -297,7 +297,7 @@ UI that consumes the expanded repository/store/hook contracts.
 - **Priority:** P2
 - **Depends on:** `TASK-001`, `TASK-002`, `TASK-003`, `TASK-006`, `TASK-008`
 - **writeScope:** `mobile/src/app/(app)/tracker/my-issues.tsx`, `mobile/src/components/features/IssueFilters.tsx`, `mobile/src/app/(app)/tracker/search.tsx`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Mobile exposes a dedicated “My Issues” surface scoped to the authenticated user with the same repository/filter contract as project issues.
   2. Filter UI supports component, milestone, assignee, due date, and relation-aware combinations without raw-id rendering.
@@ -313,7 +313,7 @@ Add a delete action to issue detail with confirmation dialog and proper cache in
 - **Priority:** P1
 - **Depends on:** `TASK-008`
 - **writeScope:** `mobile/src/app/(app)/tracker/issue/[id].tsx`, `mobile/src/components/features/IssueDetail.tsx`, `mobile/src/repositories/tracker.ts`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Issue detail header exposes a delete action (via menu or icon) that opens a confirmation dialog with the issue identifier.
   2. Successful deletion invalidates the project issue list, navigates back, and removes the issue from query cache.
@@ -329,7 +329,7 @@ Bring label/tag assignment to issue detail and issue create/edit forms matching 
 - **Priority:** P2
 - **Depends on:** `TASK-009`, `TASK-012`
 - **writeScope:** `mobile/src/components/features/LabelPicker.tsx`, `mobile/src/components/features/IssueDetail.tsx`, `mobile/src/components/features/IssueForm.tsx`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Issue detail renders assigned labels as colored chips and allows adding/removing via a label picker.
   2. Issue create/edit form includes a label selector that shows project-scoped labels with color indicators.
@@ -346,7 +346,7 @@ messages (status changes, field updates) in a unified timeline.
 - **Priority:** P1
 - **Depends on:** `TASK-008`
 - **writeScope:** `mobile/src/components/features/IssueComments.tsx`, `mobile/src/repositories/activity.ts`, `mobile/src/hooks/useComments.ts`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. User comments show edit and delete actions (via long-press or swipe) for comments authored by the current user.
   2. Activity timeline renders system messages (DocUpdateMessage, ActivityInfoMessage) with human-readable field-change descriptions alongside user comments.
@@ -362,7 +362,7 @@ Add emoji reactions on comments and @mention rendering/insertion in the comment 
 - **Priority:** P2
 - **Depends on:** `TASK-014`
 - **writeScope:** `mobile/src/components/features/IssueComments.tsx`, `mobile/src/components/features/MentionPicker.tsx`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Reuses:** `mobile/src/components/features/ReactionPicker.tsx`, `mobile/src/components/features/ReactionPills.tsx` (existing chat components, generic enough for tracker comments)
 - **Acceptance Criteria:**
   1. Comments display reaction pills (via existing `ReactionPills.tsx`) and long-press opens the existing `ReactionPicker.tsx` to add/remove reactions.
@@ -379,7 +379,7 @@ Allow users to save, name, and recall filter presets for issue lists.
 - **Priority:** P2
 - **Depends on:** `TASK-003`, `TASK-011`
 - **writeScope:** `mobile/src/store/tracker.ts`, `mobile/src/components/features/IssueFilters.tsx`, `mobile/src/components/features/SavedFilterPicker.tsx`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Users can save the current filter combination as a named preset persisted to AsyncStorage.
   2. Saved filters appear in a picker accessible from the filter bar with options to apply, rename, or delete.
@@ -396,7 +396,7 @@ drag-drop card movement between columns.
 - **Priority:** P2
 - **Depends on:** `TASK-003`, `TASK-006`, `TASK-019`
 - **writeScope:** `mobile/src/app/(app)/tracker/project/[id].tsx`, `mobile/src/components/features/KanbanBoard.tsx`, `mobile/src/store/tracker.ts`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Kanban view offers a grouping picker (status, assignee, priority, component, milestone) persisted in tracker store.
   2. Drag-drop between columns updates the grouped field (e.g., dragging to a different status column changes the issue status) with optimistic UI.
@@ -414,7 +414,7 @@ than creating a parallel component.
 - **Priority:** P2
 - **Depends on:** `TASK-002`, `TASK-008`, `TASK-017`, `TASK-019`
 - **writeScope:** `mobile/src/app/(app)/tracker/project/[id].tsx`, `mobile/src/components/features/BulkActionBar.tsx`, `mobile/src/repositories/tracker.ts`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Long-press on an issue row enters selection mode with checkboxes; a bottom action bar shows selected count and available actions.
   2. Bulk actions support changing status, priority, and assignee for all selected issues in a single batch (Promise.all in chunks of 50).
@@ -430,7 +430,7 @@ Close the project CRUD gap by adding project deletion with confirmation and list
 - **Priority:** P1
 - **Depends on:** `TASK-001`, `TASK-002`, `TASK-005`
 - **writeScope:** `mobile/src/app/(app)/tracker/project/[id].tsx`, `mobile/src/components/features/ProjectDangerZone.tsx`, `mobile/src/repositories/tracker.ts`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Project detail exposes a delete action gated behind an explicit confirmation that names the targeted project.
   2. Successful deletion invalidates tracker index and project-detail queries, then returns the user to the project list without stale project rows.
@@ -447,7 +447,7 @@ sub-issues from a parent issue context.
 - **Priority:** P1
 - **Depends on:** `TASK-009`, `TASK-012`
 - **writeScope:** `mobile/src/app/(app)/tracker/issue/[id].tsx`, `mobile/src/components/features/SubIssueTree.tsx`, `mobile/src/components/features/IssueForm.tsx`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Issue detail renders a nested sub-issue tree with status, identifier, and title instead of only a count summary.
   2. Creating a sub-issue from a parent issue pre-fills the parent relation and returns to the parent detail with the new child visible after save.
@@ -464,7 +464,7 @@ detail view update immediately.
 - **Priority:** P1
 - **Depends on:** `TASK-013`, `TASK-020`
 - **writeScope:** `mobile/src/app/(app)/tracker/issue/[id].tsx`, `mobile/src/components/features/IssueDetail.tsx`, `mobile/src/repositories/attachment.ts`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Issue detail renders a delete/remove action for attachments the current user is allowed to remove.
   2. Successful attachment removal updates the visible attachment list without requiring a full issue reload.
@@ -481,7 +481,7 @@ rich composition baseline used for issue descriptions.
 - **Priority:** P2
 - **Depends on:** `TASK-014`
 - **writeScope:** `mobile/src/components/features/IssueComments.tsx`, `mobile/src/components/features/RichCommentComposer.tsx`, `mobile/src/hooks/useComments.ts`
-- **validateCommand:** `cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit`
+- **validateCommand:** `cd mobile && npx tsc --noEmit`
 - **Acceptance Criteria:**
   1. Comment creation and editing use a richtext composer with formatting controls instead of a plain text field.
   2. Existing markdown/rich comment content renders consistently after edit round-trips without dropping formatting.

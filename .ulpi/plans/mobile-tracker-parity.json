@@ -72,7 +72,7 @@
         "mobile/src/repositories/tracker.ts",
         "mobile/src/repositories/index.ts"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     },
     {
@@ -103,7 +103,7 @@
         "mobile/src/hooks/useIssue.ts",
         "mobile/src/app/(app)/tracker/_layout.tsx"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     },
     {
@@ -127,7 +127,7 @@
       "writeScope": [
         "mobile/src/store/tracker.ts"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     },
     {
@@ -159,7 +159,7 @@
         "mobile/src/app/(app)/tracker/project/new.tsx",
         "mobile/src/components/features/ProjectForm.tsx"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     },
     {
@@ -192,7 +192,7 @@
         "mobile/src/app/(app)/tracker/project/[id]/edit.tsx",
         "mobile/src/components/features/ProjectForm.tsx"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     },
     {
@@ -225,7 +225,7 @@
         "mobile/src/app/(app)/tracker/project/[id]/components.tsx",
         "mobile/src/app/(app)/tracker/project/[id]/milestones.tsx"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     },
     {
@@ -257,7 +257,7 @@
         "mobile/src/components/features/MilestonePicker.tsx",
         "mobile/src/components/features/IssueRelationPicker.tsx"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     },
     {
@@ -290,7 +290,7 @@
         "mobile/src/components/features/IssueDetail.tsx",
         "mobile/src/components/features/IssueComments.tsx"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     },
     {
@@ -324,7 +324,7 @@
         "mobile/src/app/(app)/tracker/edit/[id].tsx",
         "mobile/src/components/features/IssueForm.tsx"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     },
     {
@@ -357,7 +357,7 @@
         "mobile/src/app/(app)/tracker/create.tsx",
         "mobile/src/components/features/IssueTemplateCard.tsx"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     },
     {
@@ -392,7 +392,7 @@
         "mobile/src/components/features/IssueFilters.tsx",
         "mobile/src/app/(app)/tracker/search.tsx"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     },
     {
@@ -422,7 +422,7 @@
         "mobile/src/components/features/IssueDetail.tsx",
         "mobile/src/repositories/tracker.ts"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     },
     {
@@ -454,7 +454,7 @@
         "mobile/src/components/features/IssueDetail.tsx",
         "mobile/src/components/features/IssueForm.tsx"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     },
     {
@@ -484,7 +484,7 @@
         "mobile/src/repositories/activity.ts",
         "mobile/src/hooks/useComments.ts"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     },
     {
@@ -517,7 +517,7 @@
         "mobile/src/components/features/IssueComments.tsx",
         "mobile/src/components/features/MentionPicker.tsx"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     },
     {
@@ -549,7 +549,7 @@
         "mobile/src/components/features/IssueFilters.tsx",
         "mobile/src/components/features/SavedFilterPicker.tsx"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     },
     {
@@ -582,7 +582,7 @@
         "mobile/src/components/features/KanbanBoard.tsx",
         "mobile/src/store/tracker.ts"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     },
     {
@@ -614,7 +614,7 @@
         "mobile/src/components/features/BulkActionBar.tsx",
         "mobile/src/repositories/tracker.ts"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     },
     {
@@ -647,7 +647,7 @@
         "mobile/src/components/features/ProjectDangerZone.tsx",
         "mobile/src/repositories/tracker.ts"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     },
     {
@@ -679,7 +679,7 @@
         "mobile/src/components/features/SubIssueTree.tsx",
         "mobile/src/components/features/IssueForm.tsx"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     },
     {
@@ -710,7 +710,7 @@
         "mobile/src/components/features/IssueDetail.tsx",
         "mobile/src/repositories/attachment.ts"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     },
     {
@@ -741,7 +741,7 @@
         "mobile/src/components/features/RichCommentComposer.tsx",
         "mobile/src/hooks/useComments.ts"
       ],
-      "validateCommand": "cd /Users/ciprian/work_cip/huly-platform/mobile && npx tsc --noEmit",
+      "validateCommand": "cd mobile && npx tsc --noEmit",
       "review": "claude"
     }
   ],
