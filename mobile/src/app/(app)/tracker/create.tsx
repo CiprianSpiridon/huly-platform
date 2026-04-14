@@ -1,8 +1,8 @@
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import { Alert, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, Stack } from 'expo-router'
-import type { Ref, Space } from '@hcengineering/core'
+import type { Ref, Space, Doc } from '@hcengineering/core'
 import type { IssueStatus } from '@hcengineering/tracker'
 
 import { useTrackerStore } from '@/store/tracker'
@@ -57,6 +57,11 @@ export default function CreateIssueScreen(): React.ReactNode {
         status: resolvedStatus as Ref<IssueStatus>,
         assignee: draft.assigneeId,
         projectId: projectId as Ref<Space>,
+        component: draft.componentId,
+        milestone: draft.milestoneId,
+        estimation: draft.estimation ?? undefined,
+        dueDate: draft.dueDate,
+        parentIssue: draft.parentIssueId as Ref<Doc> | null | undefined,
       },
       {
         onSuccess: () => {
@@ -109,6 +114,7 @@ export default function CreateIssueScreen(): React.ReactNode {
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           isSubmitting={createIssue.isPending}
+          submitLabel="Create"
         />
       </KeyboardAvoidingView>
     </SafeAreaView>

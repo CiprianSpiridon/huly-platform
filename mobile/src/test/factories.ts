@@ -166,6 +166,7 @@ export function buildMessage(overrides: Partial<MessageItem> = {}): MessageItem 
     reactions: [],
     replyCount: 0,
     threadLastReply: 0,
+    pinned: false,
     attachments: [],
     ...overrides,
   }

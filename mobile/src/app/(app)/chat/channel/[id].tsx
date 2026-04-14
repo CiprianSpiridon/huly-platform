@@ -4,17 +4,19 @@
  * Inverted FlatList for messages with MessageBubble components.
  * Uses FlatList with inverted prop since FlashList v2 dropped inverted support.
  * MessageInput at bottom with keyboard-avoiding behavior.
- * Long-press on messages opens the reaction picker.
- * Marks channel as read on mount. Loads older messages on scroll to top.
+ * Long-press on messages opens the reaction picker or action menu
+ * (edit/delete for own messages). Marks channel as read on mount.
+ * Loads older messages on scroll to top.
  */
 
 import { useCallback, useRef, useEffect, useState } from 'react'
-import { View, Text, KeyboardAvoidingView, Platform, FlatList, Alert } from 'react-native'
+import { View, Text, KeyboardAvoidingView, Platform, FlatList, Alert, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, router, Stack, type Href } from 'expo-router'
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
+import { Ionicons } from '@expo/vector-icons'
 
-import { useMessages, useSendMessage, useToggleReaction } from '@/hooks/useMessages'
+import { useMessages, useSendMessage, useToggleReaction, useEditMessage, useDeleteMessage, usePinMessage } from '@/hooks/useMessages'
 import { useChatStore } from '@/store/chat'
 import { useConnectionStore } from '@/store/connection'
 import { MessageBubble } from '@/components/features/MessageBubble'
@@ -44,11 +46,16 @@ export default function ChannelDetailScreen(): React.ReactNode {
 
   const sendMessage = useSendMessage()
   const toggleReaction = useToggleReaction()
+  const editMessageMutation = useEditMessage()
+  const deleteMessageMutation = useDeleteMessage()
+  const pinMessageMutation = usePinMessage()
 
   const clearUnread = useChatStore((s) => s.clearUnread)
   const setActiveChannel = useChatStore((s) => s.setActiveChannel)
   const getDraft = useChatStore((s) => s.getDraft)
   const saveDraft = useChatStore((s) => s.saveDraft)
+  const editingMessageId = useChatStore((s) => s.editingMessageId)
+  const setEditingMessage = useChatStore((s) => s.setEditingMessage)
 
   const reactionPickerRef = useRef<BottomSheetModal>(null)
   const [selectedMessage, setSelectedMessage] = useState<MessageItem | null>(null)
@@ -67,12 +74,14 @@ export default function ChannelDetailScreen(): React.ReactNode {
     setActiveChannel(id)
     return () => {
       setActiveChannel(null)
+      setEditingMessage(null)
     }
-  }, [id, clearUnread, setActiveChannel])
+  }, [id, clearUnread, setActiveChannel, setEditingMessage])
 
   // Handle send -- includes any pending attachment blob IDs
   const handleSend = useCallback(
     (content: string) => {
+      if (!id) return
       const attachmentIds = pendingAttachmentIds.length > 0 ? [...pendingAttachmentIds] : undefined
       sendMessage.mutate(
         { spaceId: id, content, attachmentIds },
@@ -101,7 +110,7 @@ export default function ChannelDetailScreen(): React.ReactNode {
   // Handle draft changes
   const handleDraftChange = useCallback(
     (text: string) => {
-      saveDraft(id, text)
+      if (id) saveDraft(id, text)
     },
     [id, saveDraft]
   )
@@ -122,6 +131,7 @@ export default function ChannelDetailScreen(): React.ReactNode {
       const hasReacted = selectedMessage.reactions.some(
         (r) => r.emoji === emoji && r.userIds.includes(currentUserId)
       )
+      if (!id) return
       toggleReaction.mutate({
         messageId: selectedMessage._id,
         spaceId: id,
@@ -135,10 +145,58 @@ export default function ChannelDetailScreen(): React.ReactNode {
   // Handle inline reaction toggle from pills
   const handleReactionToggle = useCallback(
     (messageId: string, emoji: string, hasReacted: boolean) => {
-      toggleReaction.mutate({ messageId, spaceId: id, emoji, hasReacted })
+      if (id) toggleReaction.mutate({ messageId, spaceId: id, emoji, hasReacted })
     },
     [id, toggleReaction]
   )
+
+  // Handle edit message
+  const handleEdit = useCallback(
+    (messageId: string, content: string) => {
+      if (!id) return
+      if (editingMessageId === messageId) {
+        // This is the save action from InlineEditor
+        editMessageMutation.mutate(
+          { messageId, spaceId: id, content },
+          {
+            onSuccess: () => setEditingMessage(null),
+            onError: () => Alert.alert('Edit failed', 'Could not edit the message.'),
+          }
+        )
+      } else {
+        // This is the initial edit action -- enter edit mode
+        setEditingMessage(messageId)
+      }
+    },
+    [editingMessageId, editMessageMutation, id, setEditingMessage]
+  )
+
+  // Handle delete message
+  const handleDelete = useCallback(
+    (messageId: string) => {
+      if (!id) return
+      deleteMessageMutation.mutate(
+        { messageId, spaceId: id },
+        {
+          onError: () => Alert.alert('Delete failed', 'Could not delete the message.'),
+        }
+      )
+    },
+    [deleteMessageMutation, id]
+  )
+
+  // Handle pin message
+  const handlePin = useCallback(
+    (messageId: string, isPinned: boolean) => {
+      if (id) pinMessageMutation.mutate({ messageId, spaceId: id, isPinned })
+    },
+    [pinMessageMutation, id]
+  )
+
+  // Handle cancel edit
+  const handleCancelEdit = useCallback(() => {
+    setEditingMessage(null)
+  }, [setEditingMessage])
 
   // Handle attachment press
   const handleAttachmentPress = useCallback(
@@ -160,6 +218,11 @@ export default function ChannelDetailScreen(): React.ReactNode {
     []
   )
 
+  // Navigate to channel settings
+  const handleSettingsPress = useCallback(() => {
+    router.push(`/(app)/chat/channel/${id}/settings` as Href)
+  }, [id])
+
   // Load more messages when reaching the top
   const handleEndReached = useCallback(() => {
     if (hasNextPage === true && !isFetchingNextPage) {
@@ -176,9 +239,14 @@ export default function ChannelDetailScreen(): React.ReactNode {
         onReactionToggle={handleReactionToggle}
         onThreadPress={handleThreadPress}
         onAttachmentPress={handleAttachmentPress}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onPin={handlePin}
+        isEditing={editingMessageId === item._id}
+        onCancelEdit={handleCancelEdit}
       />
     ),
-    [currentUserId, handleLongPress, handleReactionToggle, handleThreadPress, handleAttachmentPress]
+    [currentUserId, handleLongPress, handleReactionToggle, handleThreadPress, handleAttachmentPress, handleEdit, handleDelete, handlePin, editingMessageId, handleCancelEdit]
   )
 
   useEffect(() => {
@@ -228,7 +296,21 @@ export default function ChannelDetailScreen(): React.ReactNode {
 
   return (
     <SafeAreaView className="flex-1 bg-surface-primary" edges={['bottom']}>
-      <Stack.Screen options={{ title: 'Channel' }} />
+      <Stack.Screen
+        options={{
+          title: 'Channel',
+          headerRight: () => (
+            <Pressable
+              onPress={handleSettingsPress}
+              className="p-2 min-w-[44px] min-h-[44px] items-center justify-center"
+              accessibilityRole="button"
+              accessibilityLabel="Channel settings"
+            >
+              <Ionicons name="settings-outline" size={22} color="#FFFFFF" />
+            </Pressable>
+          ),
+        }}
+      />
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

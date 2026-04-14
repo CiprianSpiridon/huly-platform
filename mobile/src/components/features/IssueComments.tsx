@@ -1,8 +1,9 @@
 /**
- * Issue comments section.
+ * Issue comments section with activity timeline.
  *
- * Fetches real activity messages for an issue, displays them in a list,
- * and provides a text input for composing new comments.
+ * Shows user comments (with edit/delete via long-press) and system
+ * activity messages (status changes, field updates) interspersed
+ * in chronological order.
  */
 
 import { useCallback, useState } from 'react'
@@ -16,9 +17,14 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 
-import { useComments, useCreateComment } from '@/hooks/useComments'
+import {
+  useActivityTimeline,
+  useCreateComment,
+  useUpdateComment,
+  useDeleteComment,
+} from '@/hooks/useComments'
 import { MarkupRenderer } from '@/components/features/MarkupRenderer'
-import type { CommentItem } from '@/repositories/activity'
+import type { ActivityItem } from '@/repositories/activity'
 
 // ---------------------------------------------------------------------------
 // Props
@@ -27,6 +33,8 @@ import type { CommentItem } from '@/repositories/activity'
 interface IssueCommentsProps {
   issueId: string
   projectId: string
+  /** The current user's PersonId for matching own comments. */
+  currentUserId?: string
   testID?: string
 }
 
@@ -39,7 +47,6 @@ interface IssueCommentsProps {
  */
 function formatTimestamp(ts: number): string {
   if (ts === 0) return ''
-  const date = new Date(ts)
   const now = Date.now()
   const diffMs = now - ts
   const diffMins = Math.floor(diffMs / 60_000)
@@ -50,21 +57,17 @@ function formatTimestamp(ts: number): string {
   if (diffMins < 60) return `${diffMins}m ago`
   if (diffHours < 24) return `${diffHours}h ago`
   if (diffDays < 7) return `${diffDays}d ago`
-  return date.toLocaleDateString()
+  return new Date(ts).toLocaleDateString()
 }
 
 /**
  * Extract a display name from a modifiedBy PersonId string.
- * PersonId may be something like "social:name:John Doe" -- we extract the
- * last segment. If it looks like an email or opaque ID, return a truncation.
  */
 function formatAuthor(personId: string): string {
   if (!personId) return 'Unknown'
-  // Try to extract name after last colon
   const parts = personId.split(':')
   const last = parts[parts.length - 1]
   if (last && last.length > 0) {
-    // If it looks like an email, return the local part
     if (last.includes('@')) {
       return last.split('@')[0] ?? last
     }
@@ -74,27 +77,170 @@ function formatAuthor(personId: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Comment item
+// Comment row with edit/delete
 // ---------------------------------------------------------------------------
 
-function CommentRow({ comment }: { comment: CommentItem }): React.ReactNode {
-  const authorName = formatAuthor(comment.modifiedBy)
-  const timestamp = formatTimestamp(comment.createdOn || comment.modifiedOn)
+interface CommentRowProps {
+  item: ActivityItem
+  isOwnComment: boolean
+  issueId: string
+  projectId: string
+}
+
+function CommentRow({ item, isOwnComment, issueId, projectId }: CommentRowProps): React.ReactNode {
+  const authorName = formatAuthor(item.modifiedBy)
+  const timestamp = formatTimestamp(item.createdOn || item.modifiedOn)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editText, setEditText] = useState(item.message)
+  const updateComment = useUpdateComment()
+  const deleteCommentMutation = useDeleteComment()
+
+  const handleLongPress = useCallback(() => {
+    if (!isOwnComment) return
+    Alert.alert(
+      'Comment Actions',
+      undefined,
+      [
+        {
+          text: 'Edit',
+          onPress: () => {
+            setEditText(item.message)
+            setIsEditing(true)
+          },
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Delete Comment',
+              'Are you sure you want to delete this comment?',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Delete',
+                  style: 'destructive',
+                  onPress: () => {
+                    deleteCommentMutation.mutate(
+                      { commentId: item._id, issueId, projectId },
+                      {
+                        onError: (err) => {
+                          Alert.alert('Delete failed', err.message)
+                        },
+                      }
+                    )
+                  },
+                },
+              ]
+            )
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    )
+  }, [isOwnComment, item, issueId, projectId, deleteCommentMutation])
+
+  const handleSaveEdit = useCallback(() => {
+    const trimmed = editText.trim()
+    if (trimmed.length === 0 || trimmed === item.message) {
+      setIsEditing(false)
+      return
+    }
+    updateComment.mutate(
+      { commentId: item._id, issueId, projectId, message: trimmed },
+      {
+        onSuccess: () => setIsEditing(false),
+        onError: (err) => Alert.alert('Update failed', err.message),
+      }
+    )
+  }, [editText, item, issueId, projectId, updateComment])
+
+  if (isEditing) {
+    return (
+      <View className="bg-surface-secondary rounded-md p-3 mb-2 border border-accent-primary">
+        <TextInput
+          className="font-sans text-sm text-content-primary mb-2"
+          value={editText}
+          onChangeText={setEditText}
+          multiline
+          autoFocus
+          accessibilityLabel="Edit comment"
+        />
+        <View className="flex-row justify-end gap-2">
+          <Pressable
+            className="px-3 py-1.5 min-h-[32px] items-center justify-center"
+            onPress={() => setIsEditing(false)}
+            accessibilityRole="button"
+            accessibilityLabel="Cancel editing"
+          >
+            <Text className="font-sans-medium text-xs text-content-tertiary">Cancel</Text>
+          </Pressable>
+          <Pressable
+            className="bg-accent-primary rounded-md px-3 py-1.5 min-h-[32px] items-center justify-center"
+            onPress={handleSaveEdit}
+            disabled={updateComment.isPending}
+            accessibilityRole="button"
+            accessibilityLabel="Save comment"
+          >
+            {updateComment.isPending ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text className="font-sans-medium text-xs text-on-accent">Save</Text>
+            )}
+          </Pressable>
+        </View>
+      </View>
+    )
+  }
 
   return (
-    <View className="bg-surface-secondary rounded-md p-3 mb-2">
+    <Pressable
+      className="bg-surface-secondary rounded-md p-3 mb-2"
+      onLongPress={handleLongPress}
+      delayLongPress={400}
+      accessibilityRole="text"
+      accessibilityLabel={`Comment by ${authorName}: ${item.message}`}
+      accessibilityHint={isOwnComment ? 'Long press for edit and delete options' : undefined}
+    >
       <View className="flex-row items-center justify-between mb-1">
-        <Text className="font-sans-medium text-xs text-content-secondary">
-          {authorName}
-        </Text>
+        <View className="flex-row items-center gap-1">
+          <Text className="font-sans-medium text-xs text-content-secondary">
+            {authorName}
+          </Text>
+          {item.isEdited ? (
+            <Text className="font-sans text-xs text-content-tertiary">(edited)</Text>
+          ) : null}
+        </View>
         <Text className="font-sans text-xs text-content-tertiary">
           {timestamp}
         </Text>
       </View>
       <MarkupRenderer
-        content={comment.message}
+        content={item.message}
         accessibilityLabel={`Comment by ${authorName}`}
       />
+    </Pressable>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// System activity row
+// ---------------------------------------------------------------------------
+
+function SystemActivityRow({ item }: { item: ActivityItem }): React.ReactNode {
+  const authorName = formatAuthor(item.modifiedBy)
+  const timestamp = formatTimestamp(item.createdOn || item.modifiedOn)
+
+  return (
+    <View className="flex-row items-center gap-2 py-1.5 mb-1 px-1">
+      <Ionicons name="git-commit-outline" size={14} color="#77818B" />
+      <Text className="font-sans text-xs text-content-tertiary flex-1" numberOfLines={2}>
+        <Text className="font-sans-medium">{authorName}</Text>
+        {' '}{item.message}
+      </Text>
+      <Text className="font-sans text-xs text-content-tertiary">
+        {timestamp}
+      </Text>
     </View>
   )
 }
@@ -103,8 +249,8 @@ function CommentRow({ comment }: { comment: CommentItem }): React.ReactNode {
 // Main component
 // ---------------------------------------------------------------------------
 
-function IssueComments({ issueId, projectId, testID }: IssueCommentsProps): React.ReactNode {
-  const { data: comments, isLoading, error } = useComments(issueId)
+function IssueComments({ issueId, projectId, currentUserId, testID }: IssueCommentsProps): React.ReactNode {
+  const { data: timeline, isLoading, error } = useActivityTimeline(issueId)
   const createComment = useCreateComment()
   const [newComment, setNewComment] = useState('')
 
@@ -131,7 +277,7 @@ function IssueComments({ issueId, projectId, testID }: IssueCommentsProps): Reac
         className="font-sans-semibold text-sm text-content-secondary mb-3"
         accessibilityRole="header"
       >
-        Comments
+        Activity
       </Text>
 
       {/* Loading state */}
@@ -144,22 +290,34 @@ function IssueComments({ issueId, projectId, testID }: IssueCommentsProps): Reac
         <View className="items-center py-6">
           <Ionicons name="alert-circle-outline" size={24} color="#EF4444" />
           <Text className="font-sans text-sm text-status-error mt-2">
-            Failed to load comments
+            Failed to load activity
           </Text>
         </View>
-      ) : comments != null && comments.length > 0 ? (
-        /* Comments list */
+      ) : timeline != null && timeline.length > 0 ? (
+        /* Activity timeline */
         <View>
-          {comments.map((comment) => (
-            <CommentRow key={comment._id} comment={comment} />
-          ))}
+          {timeline.map((item) => {
+            if (item.type === 'system') {
+              return <SystemActivityRow key={item._id} item={item} />
+            }
+            const isOwn = currentUserId != null && item.modifiedBy.includes(currentUserId)
+            return (
+              <CommentRow
+                key={item._id}
+                item={item}
+                isOwnComment={isOwn}
+                issueId={issueId}
+                projectId={projectId}
+              />
+            )
+          })}
         </View>
       ) : (
         /* Empty state */
         <View className="items-center py-6">
           <Ionicons name="chatbubble-ellipses-outline" size={32} color="#77818B" />
           <Text className="font-sans text-sm text-content-tertiary mt-2">
-            No comments yet
+            No activity yet
           </Text>
         </View>
       )}

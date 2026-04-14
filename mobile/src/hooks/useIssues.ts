@@ -2,7 +2,10 @@
  * TanStack Query hooks for Huly tracker issues.
  *
  * useIssues: infinite query for paginated issue lists.
- * useCreateIssue / useUpdateIssue: mutation hooks with cache invalidation.
+ * useCreateIssue / useUpdateIssue / useDeleteIssue: mutation hooks with cache invalidation.
+ * useUpdateIssueField: inline field editing mutation.
+ * useCreateSubIssue: create sub-issue mutation.
+ * useCreateTimeReport: log time mutation.
  * useSearchIssues: debounced fulltext search.
  */
 
@@ -21,6 +24,11 @@ import type { Issue, IssueStatus } from '@hcengineering/tracker'
 import {
   getIssues,
   searchIssues,
+  deleteIssue,
+  updateIssueField,
+  createSubIssue,
+  createTimeReport,
+  getSubIssues,
   type IssueCursor,
   type IssueFilters,
   type IssueSort,
@@ -29,7 +37,6 @@ import {
 } from '@/repositories/tracker'
 import { getClient } from '@/client'
 import { useWebSocketStore } from '@/store/websocket'
-import { useHulyCreate, useHulyUpdate, type HulyCreateParams, type HulyUpdateParams } from './useHulyMutation'
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -39,6 +46,7 @@ const ISSUES_STALE_TIME = 30_000             // 30 seconds (polling fallback)
 const ISSUES_STALE_TIME_WS = 5 * 60_000     // 5 minutes (WS connected)
 const ISSUES_GC_TIME = 5 * 60_000           // 5 minutes
 const SEARCH_STALE_TIME = 10_000             // 10 seconds
+const SUB_ISSUES_STALE_TIME = 60_000         // 1 minute
 
 /**
  * Tracker class ref for Issue -- avoids value import from @hcengineering/tracker.
@@ -88,6 +96,24 @@ export function useIssues(
 }
 
 // ---------------------------------------------------------------------------
+// useSubIssues
+// ---------------------------------------------------------------------------
+
+export function useSubIssues(
+  parentIssueId: string | undefined
+): UseQueryResult<Issue[], Error> {
+  const wsConnected = useWebSocketStore((s) => s.status === 'connected')
+
+  return useQuery<Issue[], Error>({
+    queryKey: ['tracker', 'subIssues', parentIssueId],
+    queryFn: () => getSubIssues(parentIssueId as Ref<Issue>),
+    staleTime: wsConnected ? ISSUES_STALE_TIME_WS : SUB_ISSUES_STALE_TIME,
+    gcTime: ISSUES_GC_TIME,
+    enabled: parentIssueId !== undefined && getClient() !== null,
+  })
+}
+
+// ---------------------------------------------------------------------------
 // useSearchIssues
 // ---------------------------------------------------------------------------
 
@@ -118,6 +144,8 @@ export interface CreateIssueDraft {
   milestone?: Ref<Doc> | null
   estimation?: number
   dueDate?: number | null
+  parentIssue?: Ref<Doc> | null
+  labels?: string[]
 }
 
 export function useCreateIssue(): UseMutationResult<Ref<Doc>, Error, CreateIssueDraft> {
@@ -147,6 +175,7 @@ export function useCreateIssue(): UseMutationResult<Ref<Doc>, Error, CreateIssue
       if (draft.milestone != null) attrs.milestone = draft.milestone
       if (draft.estimation != null) attrs.estimation = draft.estimation
       if (draft.dueDate != null) attrs.dueDate = draft.dueDate
+      if (draft.parentIssue != null) attrs.attachedTo = draft.parentIssue
 
       const tx = factory.createTxCreateDoc(
         ISSUE_CLASS as unknown as Ref<import('@hcengineering/core').Class<Issue>>,
@@ -165,6 +194,15 @@ export function useCreateIssue(): UseMutationResult<Ref<Doc>, Error, CreateIssue
       void queryClient.invalidateQueries({
         queryKey: ['tracker', 'projects'],
       })
+      // If it has a parent, invalidate sub-issues
+      if (variables.parentIssue != null) {
+        void queryClient.invalidateQueries({
+          queryKey: ['tracker', 'subIssues', variables.parentIssue],
+        })
+        void queryClient.invalidateQueries({
+          queryKey: ['tracker', 'issue', variables.parentIssue],
+        })
+      }
     },
   })
 }
@@ -207,6 +245,139 @@ export function useUpdateIssue(): UseMutationResult<void, Error, UpdateIssuePara
       })
       void queryClient.invalidateQueries({
         queryKey: ['tracker', 'issues', variables.projectId],
+      })
+    },
+  })
+}
+
+// ---------------------------------------------------------------------------
+// useUpdateIssueField (convenience for single field updates)
+// ---------------------------------------------------------------------------
+
+export interface UpdateIssueFieldParams {
+  issueId: Ref<Issue>
+  projectId: Ref<Space>
+  field: string
+  value: unknown
+}
+
+export function useUpdateIssueField(): UseMutationResult<void, Error, UpdateIssueFieldParams> {
+  const queryClient = useQueryClient()
+
+  return useMutation<void, Error, UpdateIssueFieldParams>({
+    mutationFn: async (params) => {
+      await updateIssueField(params.issueId, params.projectId, params.field, params.value)
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: ['tracker', 'issue', variables.issueId],
+      })
+      void queryClient.invalidateQueries({
+        queryKey: ['tracker', 'issues', variables.projectId],
+      })
+    },
+  })
+}
+
+// ---------------------------------------------------------------------------
+// useDeleteIssue
+// ---------------------------------------------------------------------------
+
+export interface DeleteIssueParams {
+  issueId: Ref<Issue>
+  projectId: Ref<Space>
+}
+
+export function useDeleteIssue(): UseMutationResult<void, Error, DeleteIssueParams> {
+  const queryClient = useQueryClient()
+
+  return useMutation<void, Error, DeleteIssueParams>({
+    mutationFn: async (params) => {
+      await deleteIssue(params.issueId, params.projectId)
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: ['tracker', 'issues', variables.projectId],
+      })
+      void queryClient.invalidateQueries({
+        queryKey: ['tracker', 'projects'],
+      })
+      // Remove the issue from the detail cache
+      queryClient.removeQueries({
+        queryKey: ['tracker', 'issue', variables.issueId],
+      })
+    },
+  })
+}
+
+// ---------------------------------------------------------------------------
+// useCreateSubIssue
+// ---------------------------------------------------------------------------
+
+export interface CreateSubIssueParams {
+  parentIssueId: Ref<Issue>
+  projectId: Ref<Space>
+  title: string
+  description?: string
+  priority?: number
+  status: Ref<IssueStatus>
+  assignee?: Ref<Doc> | null
+}
+
+export function useCreateSubIssue(): UseMutationResult<Ref<Doc>, Error, CreateSubIssueParams> {
+  const queryClient = useQueryClient()
+
+  return useMutation<Ref<Doc>, Error, CreateSubIssueParams>({
+    mutationFn: async (params) => {
+      const data: Record<string, unknown> = {
+        title: params.title,
+        priority: params.priority ?? 0,
+        status: params.status,
+      }
+      if (params.description) data.description = params.description
+      if (params.assignee) data.assignee = params.assignee
+      return await createSubIssue(params.parentIssueId, params.projectId, data)
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: ['tracker', 'subIssues', variables.parentIssueId],
+      })
+      void queryClient.invalidateQueries({
+        queryKey: ['tracker', 'issue', variables.parentIssueId],
+      })
+      void queryClient.invalidateQueries({
+        queryKey: ['tracker', 'issues', variables.projectId],
+      })
+    },
+  })
+}
+
+// ---------------------------------------------------------------------------
+// useCreateTimeReport
+// ---------------------------------------------------------------------------
+
+export interface CreateTimeReportParams {
+  issueId: Ref<Issue>
+  projectId: Ref<Space>
+  value: number
+  description?: string
+}
+
+export function useCreateTimeReport(): UseMutationResult<Ref<Doc>, Error, CreateTimeReportParams> {
+  const queryClient = useQueryClient()
+
+  return useMutation<Ref<Doc>, Error, CreateTimeReportParams>({
+    mutationFn: async (params) => {
+      return await createTimeReport(
+        params.issueId,
+        params.projectId,
+        params.value,
+        params.description
+      )
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: ['tracker', 'issue', variables.issueId],
       })
     },
   })

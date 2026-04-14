@@ -160,6 +160,7 @@ export const sampleMessage: MessageItem = {
   reactions: sampleReactions,
   replyCount: 2,
   threadLastReply: 1700000060000,
+  pinned: false,
   attachments: [],
 }
 
@@ -176,6 +177,7 @@ export const sampleMessages: MessageItem[] = [
     reactions: [],
     replyCount: 0,
     threadLastReply: 0,
+    pinned: false,
     attachments: [],
   },
   {
@@ -189,6 +191,7 @@ export const sampleMessages: MessageItem[] = [
     reactions: [],
     replyCount: 0,
     threadLastReply: 0,
+    pinned: false,
     attachments: [
       {
         blobId: 'blob-1',

@@ -13,7 +13,7 @@ import { ProjectCard } from '@/components/features/ProjectCard'
  * Project list screen.
  *
  * Displays all tracker projects with pull-to-refresh, loading skeleton,
- * and empty state.
+ * empty state, and FAB for creating new projects.
  */
 export default function ProjectListScreen(): React.ReactNode {
   const { data: projects, isLoading, error, refetch, fetchStatus } = useProjects()
@@ -31,6 +31,10 @@ export default function ProjectListScreen(): React.ReactNode {
 
   const handleSearchPress = useCallback(() => {
     router.push('/(app)/tracker/search' as Href)
+  }, [])
+
+  const handleCreateProjectPress = useCallback(() => {
+    router.push('/(app)/tracker/project/new' as Href)
   }, [])
 
   // Loading state
@@ -86,6 +90,14 @@ export default function ProjectListScreen(): React.ReactNode {
           <Text className="font-sans text-sm text-content mt-1 text-center">
             No tracker projects found in this workspace.
           </Text>
+          <Pressable
+            className="bg-primary rounded-md px-6 py-3 mt-4 min-h-[44px] items-center justify-center"
+            onPress={handleCreateProjectPress}
+            accessibilityRole="button"
+            accessibilityLabel="Create new project"
+          >
+            <Text className="font-sans-medium text-sm text-on-accent">Create Project</Text>
+          </Pressable>
         </View>
       </SafeAreaView>
     )
@@ -131,6 +143,7 @@ export default function ProjectListScreen(): React.ReactNode {
         )}
         keyExtractor={(item) => item._id}
 
+        estimatedItemSize={80}
         contentContainerStyle={{ paddingHorizontal: 16 }}
         refreshControl={
           <RefreshControl
@@ -141,6 +154,16 @@ export default function ProjectListScreen(): React.ReactNode {
           />
         }
       />
+
+      {/* FAB for new project */}
+      <Pressable
+        className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-primary items-center justify-center shadow-lg"
+        onPress={handleCreateProjectPress}
+        accessibilityRole="button"
+        accessibilityLabel="Create new project"
+      >
+        <Ionicons name="add" size={28} color="#FFFFFF" />
+      </Pressable>
     </SafeAreaView>
   )
 }

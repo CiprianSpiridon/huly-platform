@@ -7,9 +7,10 @@
  */
 
 import { useCallback, useState, useMemo } from 'react'
-import { View, Text, SectionList, RefreshControl, type SectionListRenderItemInfo } from 'react-native'
+import { View, Text, SectionList, RefreshControl, Pressable, type SectionListRenderItemInfo } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { router, type Href } from 'expo-router'
+import { router, Stack, type Href } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 
 import { useChannels } from '@/hooks/useChannels'
 import { useChatStore } from '@/store/chat'
@@ -45,6 +46,14 @@ export default function ChannelListScreen(): React.ReactNode {
 
   const handleChannelPress = useCallback((channel: ChannelItem) => {
     router.push(`/(app)/chat/channel/${channel._id}` as Href)
+  }, [])
+
+  const handleNewChannel = useCallback(() => {
+    router.push('/(app)/chat/create' as Href)
+  }, [])
+
+  const handleNewDM = useCallback(() => {
+    router.push('/(app)/chat/new-dm' as Href)
   }, [])
 
   const sections: ChannelSection[] = useMemo(() => {
@@ -94,10 +103,32 @@ export default function ChannelListScreen(): React.ReactNode {
     []
   )
 
+  const headerRight = useCallback(() => (
+    <View className="flex-row items-center gap-1">
+      <Pressable
+        onPress={handleNewDM}
+        className="p-2 min-w-[44px] min-h-[44px] items-center justify-center"
+        accessibilityRole="button"
+        accessibilityLabel="New direct message"
+      >
+        <Ionicons name="chatbubble-outline" size={20} color="#FFFFFF" />
+      </Pressable>
+      <Pressable
+        onPress={handleNewChannel}
+        className="p-2 min-w-[44px] min-h-[44px] items-center justify-center"
+        accessibilityRole="button"
+        accessibilityLabel="New channel"
+      >
+        <Ionicons name="add-circle-outline" size={22} color="#FFFFFF" />
+      </Pressable>
+    </View>
+  ), [handleNewDM, handleNewChannel])
+
   // Loading state
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-surface-primary" edges={['top']}>
+        <Stack.Screen options={{ headerRight }} />
         <View className="flex-1 items-center justify-center">
           <Text className="font-sans text-sm text-content-tertiary">Loading channels...</Text>
         </View>
@@ -109,6 +140,7 @@ export default function ChannelListScreen(): React.ReactNode {
   if (error != null) {
     return (
       <SafeAreaView className="flex-1 bg-surface-primary" edges={['top']}>
+        <Stack.Screen options={{ headerRight }} />
         <View className="flex-1 items-center justify-center px-4">
           <Text className="font-sans-medium text-base text-content-primary mb-2">
             Failed to load channels
@@ -133,13 +165,22 @@ export default function ChannelListScreen(): React.ReactNode {
   if (sections.length === 0) {
     return (
       <SafeAreaView className="flex-1 bg-surface-primary" edges={['top']}>
+        <Stack.Screen options={{ headerRight }} />
         <View className="flex-1 items-center justify-center px-4">
           <Text className="font-sans-medium text-lg text-content-primary mb-2">
             No conversations yet
           </Text>
-          <Text className="font-sans text-sm text-content-tertiary text-center">
+          <Text className="font-sans text-sm text-content-tertiary text-center mb-4">
             Channels and direct messages will appear here
           </Text>
+          <Pressable
+            onPress={handleNewDM}
+            className="bg-accent-primary px-4 py-2.5 rounded-lg min-h-[44px] items-center justify-center"
+            accessibilityRole="button"
+            accessibilityLabel="Start a conversation"
+          >
+            <Text className="font-sans-semibold text-sm text-white">Start a conversation</Text>
+          </Pressable>
         </View>
       </SafeAreaView>
     )
@@ -151,6 +192,7 @@ export default function ChannelListScreen(): React.ReactNode {
   // Success state
   return (
     <SafeAreaView className="flex-1 bg-surface-primary" edges={['top']}>
+      <Stack.Screen options={{ headerRight }} />
       {isOffline && (
         <View className="bg-warning-subtle px-4 py-2">
           <Text className="text-warning-text text-sm font-sans-medium text-center">

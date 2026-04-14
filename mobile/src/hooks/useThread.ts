@@ -99,6 +99,7 @@ export function useSendThreadReply(): UseMutationResult<MessageItem, Error, Send
           replyCount: 0,
           threadLastReply: 0,
           attachedTo: variables.messageId,
+          pinned: false,
           attachments: [],
         }
 

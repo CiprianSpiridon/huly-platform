@@ -36,10 +36,18 @@ const TRACKER_CLASS = {
   Project: 'tracker:class:Project' as Ref<Class<Project>>,
   Issue: 'tracker:class:Issue' as Ref<Class<Issue>>,
   IssueStatus: 'tracker:class:IssueStatus' as Ref<Class<IssueStatus>>,
+  Component: 'tracker:class:Component' as Ref<Class<Doc>>,
+  Milestone: 'tracker:class:Milestone' as Ref<Class<Doc>>,
+  TimeSpendReport: 'tracker:class:TimeSpendReport' as Ref<Class<Doc>>,
+  IssueRelation: 'tracker:class:IssueRelation' as Ref<Class<Doc>>,
 } as const
 
 const CONTACT_CLASS = {
   Person: 'contact:class:Person' as Ref<Class<Doc>>,
+} as const
+
+const TAGS_CLASS = {
+  TagReference: 'tags:class:TagReference' as Ref<Class<Doc>>,
 } as const
 
 const DOMAIN = 'tracker'
@@ -59,11 +67,51 @@ export interface IssueFilters {
   priority?: number[]
   status?: Array<Ref<IssueStatus>>
   assignee?: Array<Ref<Doc>>
+  component?: Array<Ref<Doc>>
+  milestone?: Array<Ref<Doc>>
+  dueDate?: { from?: number; to?: number }
 }
 
 export interface IssueSort {
   key: 'modifiedOn' | 'priority' | 'status' | 'dueDate'
   order: 'ascending' | 'descending'
+}
+
+// ---------------------------------------------------------------------------
+// Lightweight types for components/milestones/labels/relations
+// ---------------------------------------------------------------------------
+
+export interface ComponentItem {
+  _id: string
+  name: string
+  description?: string
+  lead?: string
+}
+
+export interface MilestoneItem {
+  _id: string
+  name: string
+  description?: string
+  status?: string
+  targetDate?: number
+}
+
+export interface LabelItem {
+  _id: string
+  title: string
+  color?: number
+  tag: string
+}
+
+export interface IssueRelationItem {
+  _id: string
+  relationType: string
+  targetIssueId: string
+  targetIssue?: {
+    _id: string
+    title: string
+    identifier: string
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -85,6 +133,96 @@ export async function getProjects(): Promise<Project[]> {
     return [...result]
   } catch (error) {
     throw wrapRepositoryError(DOMAIN, 'getProjects', error)
+  }
+}
+
+export async function getProjectDetail(
+  projectId: Ref<Space>
+): Promise<WithLookup<Project> | undefined> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'getProjectDetail')
+  }
+
+  try {
+    return await client.findOne(
+      TRACKER_CLASS.Project,
+      { _id: projectId as unknown as Ref<Project> }
+    )
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'getProjectDetail', error)
+  }
+}
+
+export async function createProject(
+  data: Record<string, unknown>
+): Promise<Ref<Doc>> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'createProject')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+    const tx = factory.createTxCreateDoc(
+      TRACKER_CLASS.Project as unknown as Ref<Class<Doc>>,
+      '' as Ref<Space>,
+      data as unknown as Record<string, unknown>
+    )
+    await client.tx(tx)
+    return tx.objectId as Ref<Doc>
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'createProject', error)
+  }
+}
+
+export async function updateProject(
+  projectId: Ref<Space>,
+  update: Record<string, unknown>
+): Promise<void> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'updateProject')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+    const tx = factory.createTxUpdateDoc(
+      TRACKER_CLASS.Project as unknown as Ref<Class<Doc>>,
+      '' as Ref<Space>,
+      projectId as unknown as Ref<Doc>,
+      update
+    )
+    await client.tx(tx)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'updateProject', error)
+  }
+}
+
+export async function deleteProject(
+  projectId: Ref<Space>
+): Promise<void> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'deleteProject')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+    const tx = factory.createTxRemoveDoc(
+      TRACKER_CLASS.Project as unknown as Ref<Class<Doc>>,
+      '' as Ref<Space>,
+      projectId as unknown as Ref<Doc>
+    )
+    await client.tx(tx)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'deleteProject', error)
   }
 }
 
@@ -124,6 +262,20 @@ export async function getIssues(
     }
     if (filters?.assignee !== undefined && filters.assignee.length > 0) {
       ;(query as Record<string, unknown>).assignee = { $in: filters.assignee }
+    }
+    if (filters?.component !== undefined && filters.component.length > 0) {
+      ;(query as Record<string, unknown>).component = { $in: filters.component }
+    }
+    if (filters?.milestone !== undefined && filters.milestone.length > 0) {
+      ;(query as Record<string, unknown>).milestone = { $in: filters.milestone }
+    }
+    if (filters?.dueDate !== undefined) {
+      const dueDateQuery: Record<string, unknown> = {}
+      if (filters.dueDate.from !== undefined) dueDateQuery.$gte = filters.dueDate.from
+      if (filters.dueDate.to !== undefined) dueDateQuery.$lte = filters.dueDate.to
+      if (Object.keys(dueDateQuery).length > 0) {
+        ;(query as Record<string, unknown>).dueDate = dueDateQuery
+      }
     }
 
     const sortOrder = sort?.order === 'ascending' ? SortingOrder.Ascending : SortingOrder.Descending
@@ -189,6 +341,327 @@ export async function getIssue(
     )
   } catch (error) {
     throw wrapRepositoryError(DOMAIN, 'getIssue', error)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Sub-issues
+// ---------------------------------------------------------------------------
+
+export async function getSubIssues(
+  parentIssueId: Ref<Issue>
+): Promise<Issue[]> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'getSubIssues')
+  }
+
+  try {
+    const result = await client.findAll(
+      TRACKER_CLASS.Issue,
+      { attachedTo: parentIssueId } as unknown as DocumentQuery<Issue>,
+      {
+        sort: { modifiedOn: SortingOrder.Descending } as Record<string, SortingOrder>,
+        lookup: {
+          status: TRACKER_CLASS.IssueStatus,
+        } as unknown as FindOptions<Issue>['lookup'],
+      }
+    )
+    return [...result]
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'getSubIssues', error)
+  }
+}
+
+export async function createSubIssue(
+  parentIssueId: Ref<Issue>,
+  projectId: Ref<Space>,
+  data: Record<string, unknown>
+): Promise<Ref<Doc>> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'createSubIssue')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+    const attrs: Record<string, unknown> = {
+      ...data,
+      attachedTo: parentIssueId,
+    }
+    const tx = factory.createTxCreateDoc(
+      TRACKER_CLASS.Issue as unknown as Ref<Class<Doc>>,
+      projectId,
+      attrs as unknown as Record<string, unknown>
+    )
+    await client.tx(tx)
+    return tx.objectId as Ref<Doc>
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'createSubIssue', error)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Update/delete issue
+// ---------------------------------------------------------------------------
+
+export async function updateIssueField(
+  issueId: Ref<Issue>,
+  projectId: Ref<Space>,
+  field: string,
+  value: unknown
+): Promise<void> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'updateIssueField')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+    const tx = factory.createTxUpdateDoc(
+      TRACKER_CLASS.Issue as unknown as Ref<Class<Doc>>,
+      projectId,
+      issueId as unknown as Ref<Doc>,
+      { [field]: value }
+    )
+    await client.tx(tx)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'updateIssueField', error)
+  }
+}
+
+export async function deleteIssue(
+  issueId: Ref<Issue>,
+  projectId: Ref<Space>
+): Promise<void> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'deleteIssue')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+    const tx = factory.createTxRemoveDoc(
+      TRACKER_CLASS.Issue as unknown as Ref<Class<Doc>>,
+      projectId,
+      issueId as unknown as Ref<Doc>
+    )
+    await client.tx(tx)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'deleteIssue', error)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Components
+// ---------------------------------------------------------------------------
+
+export async function getComponents(
+  projectId: Ref<Space>
+): Promise<ComponentItem[]> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'getComponents')
+  }
+
+  try {
+    const result = await client.findAll<Doc>(
+      TRACKER_CLASS.Component,
+      { space: projectId } as Record<string, unknown>,
+      { sort: { name: SortingOrder.Ascending } as Record<string, SortingOrder> }
+    )
+    return [...result].map((doc) => {
+      const r = doc as unknown as Record<string, unknown>
+      return {
+        _id: String(r._id ?? ''),
+        name: String(r.name ?? ''),
+        description: r.description != null ? String(r.description) : undefined,
+        lead: r.lead != null ? String(r.lead) : undefined,
+      }
+    })
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'getComponents', error)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Milestones
+// ---------------------------------------------------------------------------
+
+export async function getMilestones(
+  projectId: Ref<Space>
+): Promise<MilestoneItem[]> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'getMilestones')
+  }
+
+  try {
+    const result = await client.findAll<Doc>(
+      TRACKER_CLASS.Milestone,
+      { space: projectId } as Record<string, unknown>,
+      { sort: { targetDate: SortingOrder.Ascending } as Record<string, SortingOrder> }
+    )
+    return [...result].map((doc) => {
+      const r = doc as unknown as Record<string, unknown>
+      return {
+        _id: String(r._id ?? ''),
+        name: String(r.name ?? r.label ?? ''),
+        description: r.description != null ? String(r.description) : undefined,
+        status: r.status != null ? String(r.status) : undefined,
+        targetDate: r.targetDate != null ? Number(r.targetDate) : undefined,
+      }
+    })
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'getMilestones', error)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Labels (tag references)
+// ---------------------------------------------------------------------------
+
+export async function getLabels(
+  issueId: string
+): Promise<LabelItem[]> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'getLabels')
+  }
+
+  try {
+    const result = await client.findAll<Doc>(
+      TAGS_CLASS.TagReference,
+      { attachedTo: issueId as Ref<Doc> } as Record<string, unknown>,
+      { limit: 100 }
+    )
+    return [...result].map((doc) => {
+      const r = doc as unknown as Record<string, unknown>
+      return {
+        _id: String(r._id ?? ''),
+        title: String(r.title ?? r.tag ?? ''),
+        color: r.color != null ? Number(r.color) : undefined,
+        tag: String(r.tag ?? ''),
+      }
+    })
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'getLabels', error)
+  }
+}
+
+export async function getProjectLabels(
+  projectId: Ref<Space>
+): Promise<LabelItem[]> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'getProjectLabels')
+  }
+
+  try {
+    const result = await client.findAll<Doc>(
+      TAGS_CLASS.TagReference,
+      { space: projectId } as Record<string, unknown>,
+      { limit: 200 }
+    )
+    // Deduplicate by tag title
+    const seen = new Map<string, LabelItem>()
+    for (const doc of [...result]) {
+      const r = doc as unknown as Record<string, unknown>
+      const title = String(r.title ?? r.tag ?? '')
+      if (!seen.has(title)) {
+        seen.set(title, {
+          _id: String(r._id ?? ''),
+          title,
+          color: r.color != null ? Number(r.color) : undefined,
+          tag: String(r.tag ?? ''),
+        })
+      }
+    }
+    return Array.from(seen.values())
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'getProjectLabels', error)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Issue relations
+// ---------------------------------------------------------------------------
+
+export async function getIssueRelations(
+  issueId: Ref<Issue>
+): Promise<IssueRelationItem[]> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'getIssueRelations')
+  }
+
+  try {
+    const result = await client.findAll<Doc>(
+      TRACKER_CLASS.Issue,
+      { _id: issueId } as Record<string, unknown>,
+      { limit: 1 }
+    )
+    const issue = [...result][0]
+    if (issue == null) return []
+
+    const relations = (issue as unknown as Record<string, unknown>).relations as Array<Record<string, unknown>> | undefined
+    if (relations == null || !Array.isArray(relations)) return []
+
+    return relations.map((rel) => ({
+      _id: String(rel._id ?? ''),
+      relationType: String(rel._class ?? rel.type ?? 'related'),
+      targetIssueId: String(rel._id ?? ''),
+      targetIssue: undefined,
+    }))
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'getIssueRelations', error)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Time reports
+// ---------------------------------------------------------------------------
+
+export async function createTimeReport(
+  issueId: Ref<Issue>,
+  projectId: Ref<Space>,
+  value: number,
+  description?: string
+): Promise<Ref<Doc>> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'createTimeReport')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+    const attrs: Record<string, unknown> = {
+      attachedTo: issueId,
+      attachedToClass: TRACKER_CLASS.Issue,
+      collection: 'reports',
+      value,
+      date: Date.now(),
+    }
+    if (description != null && description.length > 0) {
+      attrs.description = description
+    }
+    const tx = factory.createTxCreateDoc(
+      TRACKER_CLASS.TimeSpendReport as unknown as Ref<Class<Doc>>,
+      projectId,
+      attrs as unknown as Record<string, unknown>
+    )
+    await client.tx(tx)
+    return tx.objectId as Ref<Doc>
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'createTimeReport', error)
   }
 }
 

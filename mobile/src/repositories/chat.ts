@@ -82,6 +82,8 @@ export interface MessageItem {
   replyCount: number
   threadLastReply: number
   attachedTo?: string
+  /** Whether this message is pinned. */
+  pinned: boolean
   /** Attachments associated with this message (populated from $lookup or embedded). */
   attachments: MessageAttachment[]
 }
@@ -293,6 +295,7 @@ export async function sendMessage(
       reactions: [],
       replyCount: 0,
       threadLastReply: 0,
+      pinned: false,
       attachments: optimisticAttachments,
     }
   } catch (error) {
@@ -419,6 +422,7 @@ export async function sendThreadReply(
       replyCount: 0,
       threadLastReply: 0,
       attachedTo: messageId,
+      pinned: false,
       attachments: optimisticAttachments,
     }
   } catch (error) {
@@ -526,6 +530,649 @@ export async function removeReaction(
 }
 
 // ---------------------------------------------------------------------------
+// Channel detail
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch a single channel or DM by ID.
+ */
+export async function getChannelDetail(channelId: string): Promise<ChannelItem | undefined> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'getChannelDetail')
+  }
+
+  try {
+    // Try Channel first, then DirectMessage
+    let doc = await client.findOne<Doc>(
+      CHUNTER_CLASS.Channel,
+      { _id: channelId as Ref<Doc> } as Record<string, unknown>
+    )
+    if (doc == null) {
+      doc = await client.findOne<Doc>(
+        CHUNTER_CLASS.DirectMessage,
+        { _id: channelId as Ref<Doc> } as Record<string, unknown>
+      )
+    }
+    if (doc == null) return undefined
+    return docToChannelItem(doc)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'getChannelDetail', error)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Channel members
+// ---------------------------------------------------------------------------
+
+/** Minimal channel member info. */
+export interface ChannelMember {
+  memberId: string
+  role: string
+}
+
+/**
+ * Fetch members of a channel by reading its `members` array.
+ */
+export async function getChannelMembers(channelId: string): Promise<ChannelMember[]> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'getChannelMembers')
+  }
+
+  try {
+    let doc = await client.findOne<Doc>(
+      CHUNTER_CLASS.Channel,
+      { _id: channelId as Ref<Doc> } as Record<string, unknown>
+    )
+    if (doc == null) {
+      doc = await client.findOne<Doc>(
+        CHUNTER_CLASS.DirectMessage,
+        { _id: channelId as Ref<Doc> } as Record<string, unknown>
+      )
+    }
+    if (doc == null) return []
+
+    const record = doc as unknown as Record<string, unknown>
+    const members = Array.isArray(record.members) ? record.members : []
+    return members.map((m) => ({
+      memberId: String(m),
+      role: 'member',
+    }))
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'getChannelMembers', error)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Pinned messages
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch pinned messages in a channel.
+ */
+export async function getPinnedMessages(channelId: string): Promise<MessageItem[]> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'getPinnedMessages')
+  }
+
+  try {
+    const result = await client.findAll<Doc>(
+      CHUNTER_CLASS.ChatMessage,
+      {
+        space: channelId as Ref<Space>,
+        pinned: true,
+      } as Record<string, unknown>,
+      {
+        sort: { createdOn: SortingOrder.Descending } as Record<string, SortingOrder>,
+        limit: 100,
+      }
+    )
+
+    return [...result].map(docToMessageItem)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'getPinnedMessages', error)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Channel CRUD
+// ---------------------------------------------------------------------------
+
+/** Parameters for creating a new channel. */
+export interface CreateChannelParams {
+  name: string
+  description?: string
+  isPrivate?: boolean
+  memberIds?: string[]
+}
+
+/**
+ * Create a new channel.
+ */
+export async function createChannel(params: CreateChannelParams): Promise<ChannelItem> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'createChannel')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+
+    const attrs: Record<string, unknown> = {
+      name: params.name,
+      description: params.description ?? '',
+      private: params.isPrivate ?? false,
+      members: params.memberIds ?? [],
+    }
+
+    const tx = factory.createTxCreateDoc(
+      CHUNTER_CLASS.Channel as unknown as Ref<Class<Doc>>,
+      '' as Ref<Space>, // Channels are spaces themselves, space field is set by server
+      attrs as unknown as Record<string, unknown>
+    )
+
+    await client.tx(tx)
+
+    return {
+      _id: tx.objectId as string,
+      _class: CHUNTER_CLASS.Channel as string,
+      name: params.name,
+      description: params.description ?? '',
+      members: params.memberIds ?? [],
+      lastMessage: '',
+      lastMessageTimestamp: 0,
+      space: tx.objectId as string,
+      private: params.isPrivate ?? false,
+      createdOn: Date.now(),
+      modifiedOn: Date.now(),
+    }
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'createChannel', error)
+  }
+}
+
+/**
+ * Update a channel's metadata.
+ */
+export async function updateChannel(
+  channelId: string,
+  updates: { name?: string; description?: string }
+): Promise<void> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'updateChannel')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+
+    const ops: Record<string, unknown> = {}
+    if (updates.name != null) ops.name = updates.name
+    if (updates.description != null) ops.description = updates.description
+
+    const tx = factory.createTxUpdateDoc(
+      CHUNTER_CLASS.Channel as unknown as Ref<Class<Doc>>,
+      '' as Ref<Space>,
+      channelId as Ref<Doc>,
+      ops
+    )
+
+    await client.tx(tx)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'updateChannel', error)
+  }
+}
+
+/**
+ * Delete a channel.
+ */
+export async function deleteChannel(channelId: string): Promise<void> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'deleteChannel')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+
+    const tx = factory.createTxRemoveDoc(
+      CHUNTER_CLASS.Channel as unknown as Ref<Class<Doc>>,
+      '' as Ref<Space>,
+      channelId as Ref<Doc>
+    )
+
+    await client.tx(tx)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'deleteChannel', error)
+  }
+}
+
+/**
+ * Archive a channel (set archived: true).
+ */
+export async function archiveChannel(channelId: string): Promise<void> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'archiveChannel')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+
+    const tx = factory.createTxUpdateDoc(
+      CHUNTER_CLASS.Channel as unknown as Ref<Class<Doc>>,
+      '' as Ref<Space>,
+      channelId as Ref<Doc>,
+      { archived: true } as unknown as Record<string, unknown>
+    )
+
+    await client.tx(tx)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'archiveChannel', error)
+  }
+}
+
+/**
+ * Join a channel (add current user to members).
+ */
+export async function joinChannel(channelId: string): Promise<void> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'joinChannel')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+
+    const tx = factory.createTxUpdateDoc(
+      CHUNTER_CLASS.Channel as unknown as Ref<Class<Doc>>,
+      '' as Ref<Space>,
+      channelId as Ref<Doc>,
+      { $push: { members: account.primarySocialId } } as unknown as Record<string, unknown>
+    )
+
+    await client.tx(tx)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'joinChannel', error)
+  }
+}
+
+/**
+ * Leave a channel (remove current user from members).
+ */
+export async function leaveChannel(channelId: string): Promise<void> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'leaveChannel')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+
+    const tx = factory.createTxUpdateDoc(
+      CHUNTER_CLASS.Channel as unknown as Ref<Class<Doc>>,
+      '' as Ref<Space>,
+      channelId as Ref<Doc>,
+      { $pull: { members: account.primarySocialId } } as unknown as Record<string, unknown>
+    )
+
+    await client.tx(tx)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'leaveChannel', error)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Direct messages
+// ---------------------------------------------------------------------------
+
+/**
+ * Create a direct message conversation with one user.
+ */
+export async function createDirectMessage(memberId: string): Promise<ChannelItem> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'createDirectMessage')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+
+    const attrs: Record<string, unknown> = {
+      members: [account.primarySocialId, memberId],
+    }
+
+    const tx = factory.createTxCreateDoc(
+      CHUNTER_CLASS.DirectMessage as unknown as Ref<Class<Doc>>,
+      '' as Ref<Space>,
+      attrs as unknown as Record<string, unknown>
+    )
+
+    await client.tx(tx)
+
+    return {
+      _id: tx.objectId as string,
+      _class: CHUNTER_CLASS.DirectMessage as string,
+      name: '',
+      description: '',
+      members: [account.primarySocialId, memberId],
+      lastMessage: '',
+      lastMessageTimestamp: 0,
+      space: tx.objectId as string,
+      private: true,
+      createdOn: Date.now(),
+      modifiedOn: Date.now(),
+    }
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'createDirectMessage', error)
+  }
+}
+
+/**
+ * Create a group direct message conversation.
+ */
+export async function createGroupDM(memberIds: string[]): Promise<ChannelItem> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'createGroupDM')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+
+    const allMembers = [account.primarySocialId, ...memberIds]
+
+    const attrs: Record<string, unknown> = {
+      members: allMembers,
+    }
+
+    const tx = factory.createTxCreateDoc(
+      CHUNTER_CLASS.DirectMessage as unknown as Ref<Class<Doc>>,
+      '' as Ref<Space>,
+      attrs as unknown as Record<string, unknown>
+    )
+
+    await client.tx(tx)
+
+    return {
+      _id: tx.objectId as string,
+      _class: CHUNTER_CLASS.DirectMessage as string,
+      name: '',
+      description: '',
+      members: allMembers,
+      lastMessage: '',
+      lastMessageTimestamp: 0,
+      space: tx.objectId as string,
+      private: true,
+      createdOn: Date.now(),
+      modifiedOn: Date.now(),
+    }
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'createGroupDM', error)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Edit / Delete / Pin messages
+// ---------------------------------------------------------------------------
+
+/**
+ * Edit a message's content.
+ */
+export async function editMessage(messageId: string, content: string): Promise<void> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'editMessage')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+
+    // Find the message to get its space
+    const msgDoc = await client.findOne<Doc>(
+      CHUNTER_CLASS.ChatMessage,
+      { _id: messageId as Ref<Doc> } as Record<string, unknown>
+    )
+
+    const msgSpace = msgDoc != null
+      ? String((msgDoc as unknown as Record<string, unknown>).space ?? '')
+      : ''
+
+    const tx = factory.createTxUpdateDoc(
+      CHUNTER_CLASS.ChatMessage as unknown as Ref<Class<Doc>>,
+      msgSpace as Ref<Space>,
+      messageId as Ref<Doc>,
+      { message: content } as unknown as Record<string, unknown>
+    )
+
+    await client.tx(tx)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'editMessage', error)
+  }
+}
+
+/**
+ * Delete a message.
+ */
+export async function deleteMessage(messageId: string): Promise<void> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'deleteMessage')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+
+    // Find the message to get its space
+    const msgDoc = await client.findOne<Doc>(
+      CHUNTER_CLASS.ChatMessage,
+      { _id: messageId as Ref<Doc> } as Record<string, unknown>
+    )
+
+    const msgSpace = msgDoc != null
+      ? String((msgDoc as unknown as Record<string, unknown>).space ?? '')
+      : ''
+
+    const tx = factory.createTxRemoveDoc(
+      CHUNTER_CLASS.ChatMessage as unknown as Ref<Class<Doc>>,
+      msgSpace as Ref<Space>,
+      messageId as Ref<Doc>
+    )
+
+    await client.tx(tx)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'deleteMessage', error)
+  }
+}
+
+/**
+ * Pin a message in a channel.
+ */
+export async function pinMessage(messageId: string): Promise<void> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'pinMessage')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+
+    const msgDoc = await client.findOne<Doc>(
+      CHUNTER_CLASS.ChatMessage,
+      { _id: messageId as Ref<Doc> } as Record<string, unknown>
+    )
+
+    const msgSpace = msgDoc != null
+      ? String((msgDoc as unknown as Record<string, unknown>).space ?? '')
+      : ''
+
+    const tx = factory.createTxUpdateDoc(
+      CHUNTER_CLASS.ChatMessage as unknown as Ref<Class<Doc>>,
+      msgSpace as Ref<Space>,
+      messageId as Ref<Doc>,
+      { pinned: true } as unknown as Record<string, unknown>
+    )
+
+    await client.tx(tx)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'pinMessage', error)
+  }
+}
+
+/**
+ * Unpin a message in a channel.
+ */
+export async function unpinMessage(messageId: string): Promise<void> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'unpinMessage')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+
+    const msgDoc = await client.findOne<Doc>(
+      CHUNTER_CLASS.ChatMessage,
+      { _id: messageId as Ref<Doc> } as Record<string, unknown>
+    )
+
+    const msgSpace = msgDoc != null
+      ? String((msgDoc as unknown as Record<string, unknown>).space ?? '')
+      : ''
+
+    const tx = factory.createTxUpdateDoc(
+      CHUNTER_CLASS.ChatMessage as unknown as Ref<Class<Doc>>,
+      msgSpace as Ref<Space>,
+      messageId as Ref<Doc>,
+      { pinned: false } as unknown as Record<string, unknown>
+    )
+
+    await client.tx(tx)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'unpinMessage', error)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Search messages
+// ---------------------------------------------------------------------------
+
+/**
+ * Search messages within a channel by text content.
+ */
+export async function searchMessages(
+  channelId: string,
+  query: string
+): Promise<MessageItem[]> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'searchMessages')
+  }
+
+  try {
+    const result = await client.findAll<Doc>(
+      CHUNTER_CLASS.ChatMessage,
+      {
+        space: channelId as Ref<Space>,
+        message: { $like: `%${query}%` },
+      } as Record<string, unknown>,
+      {
+        sort: { createdOn: SortingOrder.Descending } as Record<string, SortingOrder>,
+        limit: 50,
+      }
+    )
+
+    return [...result].map(docToMessageItem)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'searchMessages', error)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Channel member management
+// ---------------------------------------------------------------------------
+
+/**
+ * Add a member to a channel.
+ */
+export async function addChannelMember(channelId: string, memberId: string): Promise<void> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'addChannelMember')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+
+    const tx = factory.createTxUpdateDoc(
+      CHUNTER_CLASS.Channel as unknown as Ref<Class<Doc>>,
+      '' as Ref<Space>,
+      channelId as Ref<Doc>,
+      { $push: { members: memberId } } as unknown as Record<string, unknown>
+    )
+
+    await client.tx(tx)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'addChannelMember', error)
+  }
+}
+
+/**
+ * Remove a member from a channel.
+ */
+export async function removeChannelMember(channelId: string, memberId: string): Promise<void> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'removeChannelMember')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+
+    const tx = factory.createTxUpdateDoc(
+      CHUNTER_CLASS.Channel as unknown as Ref<Class<Doc>>,
+      '' as Ref<Space>,
+      channelId as Ref<Doc>,
+      { $pull: { members: memberId } } as unknown as Record<string, unknown>
+    )
+
+    await client.tx(tx)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'removeChannelMember', error)
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -581,6 +1228,7 @@ function docToMessageItem(doc: Doc): MessageItem {
     replyCount: Number(record.replies ?? 0),
     threadLastReply: Number(record.lastReply ?? 0),
     attachedTo: record.attachedTo != null ? String(record.attachedTo) : undefined,
+    pinned: Boolean(record.isPinned ?? record.pinned ?? false),
     attachments,
   }
 }

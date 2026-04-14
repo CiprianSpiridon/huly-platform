@@ -66,11 +66,11 @@ function createRNWebSocket(url: string): ClientSocket {
   }
 
   ws.onopen = () => {
-    socket.onopen?.call(socket, new Event('open'))
+    socket.onopen?.call(socket, { type: 'open' } as Event)
   }
 
   ws.onerror = () => {
-    socket.onerror?.call(socket, new Event('error'))
+    socket.onerror?.call(socket, { type: 'error' } as Event)
   }
 
   return socket

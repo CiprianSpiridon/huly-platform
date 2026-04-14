@@ -22,6 +22,9 @@ export interface TrackerIssueFilters {
   priority: number[]
   status: Array<Ref<IssueStatus>>
   assignee: Array<Ref<Doc>>
+  component: Array<Ref<Doc>>
+  milestone: Array<Ref<Doc>>
+  dueDate: { from?: number; to?: number } | null
 }
 
 export interface TrackerIssueSort {
@@ -36,12 +39,21 @@ export interface IssueDraftState {
   statusId: Ref<IssueStatus> | null
   assigneeId: Ref<Doc> | null
   projectId: Ref<Space> | null
+  componentId: Ref<Doc> | null
+  milestoneId: Ref<Doc> | null
+  dueDate: number | null
+  estimation: number | null
+  parentIssueId: Ref<Doc> | null
+  labels: string[]
 }
 
 const EMPTY_FILTERS: TrackerIssueFilters = {
   priority: [],
   status: [],
   assignee: [],
+  component: [],
+  milestone: [],
+  dueDate: null,
 }
 
 const DEFAULT_SORT: TrackerIssueSort = {
@@ -56,6 +68,12 @@ const EMPTY_DRAFT: IssueDraftState = {
   statusId: null,
   assigneeId: null,
   projectId: null,
+  componentId: null,
+  milestoneId: null,
+  dueDate: null,
+  estimation: null,
+  parentIssueId: null,
+  labels: [],
 }
 
 // ---------------------------------------------------------------------------
@@ -88,6 +106,9 @@ interface TrackerState {
   issueDraft: IssueDraftState
   updateDraft: (patch: Partial<IssueDraftState>) => void
   clearDraft: () => void
+
+  // Workspace switch
+  clearOnWorkspaceSwitch: () => void
 }
 
 export const useTrackerStore = create<TrackerState>()(
@@ -106,7 +127,13 @@ export const useTrackerStore = create<TrackerState>()(
       clearFilters: () => set({ issueFilters: EMPTY_FILTERS }),
       clearProjectSpecificFilters: () =>
         set((state) => ({
-          issueFilters: { ...state.issueFilters, status: [], assignee: [] },
+          issueFilters: {
+            ...state.issueFilters,
+            status: [],
+            assignee: [],
+            component: [],
+            milestone: [],
+          },
         })),
 
       // Sort
@@ -124,6 +151,14 @@ export const useTrackerStore = create<TrackerState>()(
           issueDraft: { ...state.issueDraft, ...patch },
         })),
       clearDraft: () => set({ issueDraft: EMPTY_DRAFT }),
+
+      // Workspace switch: clear draft and project-specific state
+      clearOnWorkspaceSwitch: () =>
+        set({
+          issueDraft: EMPTY_DRAFT,
+          selectedProjectId: null,
+          issueFilters: EMPTY_FILTERS,
+        }),
     }),
     {
       name: 'tracker-preferences',

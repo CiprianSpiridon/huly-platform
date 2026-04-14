@@ -20,6 +20,10 @@ import { useWebSocketStore } from '@/store/websocket'
 import {
   getMessages,
   sendMessage,
+  editMessage,
+  deleteMessage,
+  pinMessage,
+  unpinMessage,
   addReaction,
   removeReaction,
   type CursorPaginatedResult,
@@ -115,6 +119,7 @@ export function useSendMessage(): UseMutationResult<MessageItem, Error, SendMess
         reactions: [],
         replyCount: 0,
         threadLastReply: 0,
+        pinned: false,
         attachments: [],
       }
 
@@ -177,6 +182,7 @@ interface ToggleReactionParams {
 
 interface ToggleReactionContext {
   previousData: unknown
+  previousThreadData: Array<[readonly unknown[], unknown]>
 }
 
 export function useToggleReaction(): UseMutationResult<void, Error, ToggleReactionParams, ToggleReactionContext> {
@@ -252,6 +258,9 @@ export function useToggleReaction(): UseMutationResult<void, Error, ToggleReacti
       )
 
       const threadQueries = queryClient.getQueriesData<{ parent: MessageItem; replies: MessageItem[] }>({ queryKey: ['chat', 'thread'] })
+      const previousThreadData: Array<[readonly unknown[], unknown]> = threadQueries.map(
+        ([key, data]) => [key, structuredClone(data)] as [readonly unknown[], unknown]
+      )
       for (const [key, data] of threadQueries) {
         if (!data) continue
         const allMessages = [data.parent, ...data.replies]
@@ -301,6 +310,142 @@ export function useToggleReaction(): UseMutationResult<void, Error, ToggleReacti
         }
       }
 
+      return { previousData, previousThreadData }
+    },
+
+    onError: (_error, variables, context) => {
+      if (context?.previousData != null) {
+        queryClient.setQueryData(
+          ['chat', 'messages', variables.spaceId],
+          context.previousData
+        )
+      }
+      if (context?.previousThreadData != null) {
+        for (const [key, data] of context.previousThreadData) {
+          queryClient.setQueryData(key, data)
+        }
+      }
+    },
+
+    onSettled: (_data, _error, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: ['chat', 'messages', variables.spaceId],
+      })
+      void queryClient.invalidateQueries({
+        queryKey: ['chat', 'thread', variables.messageId],
+      })
+      void queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0] === 'chat' && query.queryKey[1] === 'thread',
+      })
+    },
+  })
+}
+
+// ---------------------------------------------------------------------------
+// useEditMessage (optimistic)
+// ---------------------------------------------------------------------------
+
+interface EditMessageParams {
+  messageId: string
+  spaceId: string
+  content: string
+}
+
+interface EditMessageContext {
+  previousData: unknown
+}
+
+export function useEditMessage(): UseMutationResult<void, Error, EditMessageParams, EditMessageContext> {
+  const queryClient = useQueryClient()
+
+  return useMutation<void, Error, EditMessageParams, EditMessageContext>({
+    mutationFn: (params) => editMessage(params.messageId, params.content),
+
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({ queryKey: ['chat', 'messages', variables.spaceId] })
+      const previousData = queryClient.getQueryData(['chat', 'messages', variables.spaceId])
+
+      // Optimistically update the message content
+      queryClient.setQueryData<InfiniteData<CursorPaginatedResult<MessageItem>>>(
+        ['chat', 'messages', variables.spaceId],
+        (old) => {
+          if (old == null) return old
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.map((msg) => {
+                if (msg._id !== variables.messageId) return msg
+                return {
+                  ...msg,
+                  content: variables.content,
+                  modifiedOn: Date.now(),
+                }
+              }),
+            })),
+          }
+        }
+      )
+
+      return { previousData }
+    },
+
+    onError: (_error, variables, context) => {
+      if (context?.previousData != null) {
+        queryClient.setQueryData(
+          ['chat', 'messages', variables.spaceId],
+          context.previousData
+        )
+      }
+    },
+
+    onSettled: (_data, _error, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: ['chat', 'messages', variables.spaceId],
+      })
+    },
+  })
+}
+
+// ---------------------------------------------------------------------------
+// useDeleteMessage (optimistic)
+// ---------------------------------------------------------------------------
+
+interface DeleteMessageParams {
+  messageId: string
+  spaceId: string
+}
+
+interface DeleteMessageContext {
+  previousData: unknown
+}
+
+export function useDeleteMessage(): UseMutationResult<void, Error, DeleteMessageParams, DeleteMessageContext> {
+  const queryClient = useQueryClient()
+
+  return useMutation<void, Error, DeleteMessageParams, DeleteMessageContext>({
+    mutationFn: (params) => deleteMessage(params.messageId),
+
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({ queryKey: ['chat', 'messages', variables.spaceId] })
+      const previousData = queryClient.getQueryData(['chat', 'messages', variables.spaceId])
+
+      // Optimistically remove the message
+      queryClient.setQueryData<InfiniteData<CursorPaginatedResult<MessageItem>>>(
+        ['chat', 'messages', variables.spaceId],
+        (old) => {
+          if (old == null) return old
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.filter((msg) => msg._id !== variables.messageId),
+            })),
+          }
+        }
+      )
+
       return { previousData }
     },
 
@@ -318,11 +463,40 @@ export function useToggleReaction(): UseMutationResult<void, Error, ToggleReacti
         queryKey: ['chat', 'messages', variables.spaceId],
       })
       void queryClient.invalidateQueries({
-        queryKey: ['chat', 'thread', variables.messageId],
+        queryKey: ['chat', 'channels'],
+      })
+    },
+  })
+}
+
+// ---------------------------------------------------------------------------
+// usePinMessage
+// ---------------------------------------------------------------------------
+
+interface PinMessageParams {
+  messageId: string
+  spaceId: string
+  isPinned: boolean
+}
+
+export function usePinMessage(): UseMutationResult<void, Error, PinMessageParams> {
+  const queryClient = useQueryClient()
+
+  return useMutation<void, Error, PinMessageParams>({
+    mutationFn: async (params) => {
+      if (params.isPinned) {
+        await unpinMessage(params.messageId)
+      } else {
+        await pinMessage(params.messageId)
+      }
+    },
+
+    onSettled: (_data, _error, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: ['chat', 'messages', variables.spaceId],
       })
       void queryClient.invalidateQueries({
-        predicate: (query) =>
-          query.queryKey[0] === 'chat' && query.queryKey[1] === 'thread',
+        queryKey: ['chat', 'pinnedMessages', variables.spaceId],
       })
     },
   })

@@ -17,13 +17,17 @@ import { IssueFilterControls } from '@/components/features/IssueFilters'
  * Issue list screen for a specific project.
  *
  * Uses useIssues infinite query with FlashList. Supports filters, sort,
- * and kanban/list toggle.
+ * and kanban/list toggle. Includes edit project navigation.
  */
 export default function IssueListScreen(): React.ReactNode {
   const { id } = useLocalSearchParams<{ id: string }>()
   const filters = useTrackerStore((s) => s.issueFilters)
   const sort = useTrackerStore((s) => s.issueSort)
   const viewMode = useTrackerStore((s) => s.viewMode)
+
+  const handleEditProjectPress = useCallback(() => {
+    router.push(`/(app)/tracker/project/edit/${id}` as Href)
+  }, [id])
 
   const {
     data,
@@ -82,7 +86,21 @@ export default function IssueListScreen(): React.ReactNode {
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-        <Stack.Screen options={{ title: 'Issues' }} />
+        <Stack.Screen
+        options={{
+          title: 'Issues',
+          headerRight: () => (
+            <Pressable
+              onPress={handleEditProjectPress}
+              className="p-2 min-h-[36px] min-w-[36px] items-center justify-center"
+              accessibilityRole="button"
+              accessibilityLabel="Edit project"
+            >
+              <Ionicons name="settings-outline" size={20} color="#FFFFFF" />
+            </Pressable>
+          ),
+        }}
+      />
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#205DC2" />
           <Text className="font-sans text-sm text-content mt-3">
@@ -97,7 +115,21 @@ export default function IssueListScreen(): React.ReactNode {
   if (error) {
     return (
       <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-        <Stack.Screen options={{ title: 'Issues' }} />
+        <Stack.Screen
+        options={{
+          title: 'Issues',
+          headerRight: () => (
+            <Pressable
+              onPress={handleEditProjectPress}
+              className="p-2 min-h-[36px] min-w-[36px] items-center justify-center"
+              accessibilityRole="button"
+              accessibilityLabel="Edit project"
+            >
+              <Ionicons name="settings-outline" size={20} color="#FFFFFF" />
+            </Pressable>
+          ),
+        }}
+      />
         <View className="flex-1 items-center justify-center px-4">
           <Ionicons name="alert-circle-outline" size={48} color="#EE7A7A" />
           <Text className="font-sans-medium text-base text-caption mt-3">
@@ -126,7 +158,21 @@ export default function IssueListScreen(): React.ReactNode {
   if (items.length === 0) {
     return (
       <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-        <Stack.Screen options={{ title: 'Issues' }} />
+        <Stack.Screen
+        options={{
+          title: 'Issues',
+          headerRight: () => (
+            <Pressable
+              onPress={handleEditProjectPress}
+              className="p-2 min-h-[36px] min-w-[36px] items-center justify-center"
+              accessibilityRole="button"
+              accessibilityLabel="Edit project"
+            >
+              <Ionicons name="settings-outline" size={20} color="#FFFFFF" />
+            </Pressable>
+          ),
+        }}
+      />
         <IssueFilterControls />
         <View className="flex-1 items-center justify-center px-4">
           <Ionicons name="document-outline" size={48} color="#77818B" />
@@ -153,7 +199,21 @@ export default function IssueListScreen(): React.ReactNode {
   if (viewMode === 'kanban') {
     return (
       <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-        <Stack.Screen options={{ title: 'Issues' }} />
+        <Stack.Screen
+        options={{
+          title: 'Issues',
+          headerRight: () => (
+            <Pressable
+              onPress={handleEditProjectPress}
+              className="p-2 min-h-[36px] min-w-[36px] items-center justify-center"
+              accessibilityRole="button"
+              accessibilityLabel="Edit project"
+            >
+              <Ionicons name="settings-outline" size={20} color="#FFFFFF" />
+            </Pressable>
+          ),
+        }}
+      />
         <IssueFilterControls />
         <KanbanView items={items} onIssuePress={handleIssuePress} />
       </SafeAreaView>
@@ -163,7 +223,21 @@ export default function IssueListScreen(): React.ReactNode {
   // List view (default)
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-      <Stack.Screen options={{ title: 'Issues' }} />
+      <Stack.Screen
+        options={{
+          title: 'Issues',
+          headerRight: () => (
+            <Pressable
+              onPress={handleEditProjectPress}
+              className="p-2 min-h-[36px] min-w-[36px] items-center justify-center"
+              accessibilityRole="button"
+              accessibilityLabel="Edit project"
+            >
+              <Ionicons name="settings-outline" size={20} color="#FFFFFF" />
+            </Pressable>
+          ),
+        }}
+      />
       {isOffline ? (
         <View className="bg-priority-medium/15 px-4 py-2">
           <Text className="font-sans-medium text-xs text-priority-medium text-center">
@@ -186,6 +260,7 @@ export default function IssueListScreen(): React.ReactNode {
           />
         )}
         keyExtractor={(item) => item._id}
+        estimatedItemSize={64}
         drawDistance={300}
         contentContainerStyle={{ paddingHorizontal: 16 }}
         onEndReached={handleEndReached}

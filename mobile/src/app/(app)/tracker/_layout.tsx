@@ -17,11 +17,35 @@ export default function TrackerLayout(): React.ReactNode {
     >
       <Stack.Screen name="index" options={{ title: 'Projects' }} />
       <Stack.Screen name="project/[id]" options={{ title: 'Issues' }} />
+      <Stack.Screen
+        name="project/new"
+        options={{
+          title: 'New Project',
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
+      <Stack.Screen
+        name="project/edit/[id]"
+        options={{
+          title: 'Edit Project',
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
       <Stack.Screen name="issue/[id]" options={{ title: 'Issue' }} />
       <Stack.Screen
         name="create"
         options={{
           title: 'New Issue',
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
+      <Stack.Screen
+        name="edit/[id]"
+        options={{
+          title: 'Edit Issue',
           presentation: 'modal',
           animation: 'slide_from_bottom',
         }}

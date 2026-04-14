@@ -12,19 +12,82 @@ export type {
   HulyRemoveParams,
 } from './useHulyMutation'
 
-export { useProjects } from './useProjects'
-export { useIssues, useSearchIssues, useCreateIssue, useUpdateIssue } from './useIssues'
-export type { CreateIssueDraft, UpdateIssueParams } from './useIssues'
-export { useIssue } from './useIssue'
-export { useComments, useCreateComment } from './useComments'
-export type { CreateCommentParams } from './useComments'
+// Tracker: projects
+export {
+  useProjects,
+  useProjectDetail,
+  useComponents,
+  useMilestones,
+  useLabels,
+  useProjectLabels,
+  useCreateProject,
+  useUpdateProject,
+  useDeleteProject,
+} from './useProjects'
+export type {
+  CreateProjectDraft,
+  UpdateProjectParams,
+  DeleteProjectParams,
+} from './useProjects'
 
-export { useChannels } from './useChannels'
+// Tracker: issues
+export {
+  useIssues,
+  useSubIssues,
+  useSearchIssues,
+  useCreateIssue,
+  useUpdateIssue,
+  useUpdateIssueField,
+  useDeleteIssue,
+  useCreateSubIssue,
+  useCreateTimeReport,
+} from './useIssues'
+export type {
+  CreateIssueDraft,
+  UpdateIssueParams,
+  UpdateIssueFieldParams,
+  DeleteIssueParams,
+  CreateSubIssueParams,
+  CreateTimeReportParams,
+} from './useIssues'
+
+export { useIssue, useIssueRelations } from './useIssue'
+
+// Tracker: comments + activity
+export {
+  useComments,
+  useActivityTimeline,
+  useCreateComment,
+  useUpdateComment,
+  useDeleteComment,
+} from './useComments'
+export type {
+  CreateCommentParams,
+  UpdateCommentParams,
+  DeleteCommentParams,
+} from './useComments'
+
+// Chat
+export {
+  useChannels,
+  useChannelDetail,
+  useChannelMembers,
+  usePinnedMessages,
+  useCreateChannel,
+  useCreateDM,
+  useUpdateChannel,
+  useLeaveChannel,
+  useArchiveChannel,
+  useAddChannelMember,
+  useRemoveChannelMember,
+  useSearchMessages,
+} from './useChannels'
 export type { ChannelListData } from './useChannels'
-export { useMessages, useSendMessage, useToggleReaction } from './useMessages'
+export { useMessages, useSendMessage, useToggleReaction, useEditMessage, useDeleteMessage, usePinMessage } from './useMessages'
 export { useThread, useSendThreadReply } from './useThread'
 export type { ThreadData } from './useThread'
 
+// Notifications
 export {
   useNotifications,
   useMarkAsRead,
@@ -36,9 +99,13 @@ export {
 export { useUnreadCount } from './useUnreadCount'
 export { usePushRegistration } from './usePushRegistration'
 export { useNotificationListeners } from './useNotificationListeners'
+
+// Attachments
 export { useUploadAttachment, useAttachmentUrl, useUploadsByStatus } from './useAttachments'
 export { useImagePicker } from './useImagePicker'
 export type { PickedImage } from './useImagePicker'
+
+// Members + Search
 export { useMembers, useSearchMembers } from './useMembers'
 export { useGlobalSearch } from './useGlobalSearch'
 export type { GlobalSearchItem, GlobalSearchResults, GlobalSearchCategory } from './useGlobalSearch'
