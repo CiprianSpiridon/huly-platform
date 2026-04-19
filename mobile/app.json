@@ -16,6 +16,10 @@
     "ios": {
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.huly.mobile",
+      "associatedDomains": [
+        "applinks:huly.io",
+        "applinks:app.huly.io"
+      ],
       "infoPlist": {
         "NSCameraUsageDescription": "Huly needs camera access to take photos for attachments.",
         "NSPhotoLibraryUsageDescription": "Huly needs photo library access to attach images to issues and messages."
@@ -29,7 +33,18 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "package": "com.huly.mobile",
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            { "scheme": "https", "host": "huly.io" },
+            { "scheme": "https", "host": "app.huly.io" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "output": "static",
@@ -60,6 +75,14 @@
         {
           "photosPermission": "Huly needs photo library access to attach images to issues and messages.",
           "cameraPermission": "Huly needs camera access to take photos for attachments."
+        }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "organization": "huly",
+          "project": "huly-mobile"
         }
       ]
     ],
