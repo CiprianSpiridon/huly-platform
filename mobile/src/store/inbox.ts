@@ -15,6 +15,8 @@ import { create } from 'zustand'
 
 export type InboxFilter = 'all' | 'mentions' | 'reactions' | 'updates'
 
+export type InboxReadStatusFilter = 'all' | 'read' | 'unread'
+
 interface InboxState {
   /** Total unread count displayed on the tab badge. Synced by useUnreadCount hook. */
   unreadTotal: number
@@ -23,6 +25,10 @@ interface InboxState {
   /** Active filter chip in the notification list. */
   activeFilter: InboxFilter
   setFilter: (filter: InboxFilter) => void
+
+  /** Active read/unread filter composed with activeFilter. */
+  readStatusFilter: InboxReadStatusFilter
+  setReadStatusFilter: (status: InboxReadStatusFilter) => void
 
   /** Set of selected notification IDs for bulk actions. */
   selectedIds: Set<string>
@@ -45,6 +51,9 @@ export const useInboxStore = create<InboxState>((set) => ({
 
   activeFilter: 'all',
   setFilter: (filter) => set({ activeFilter: filter }),
+
+  readStatusFilter: 'all',
+  setReadStatusFilter: (status) => set({ readStatusFilter: status }),
 
   selectedIds: new Set<string>(),
   isSelectionMode: false,

@@ -20,8 +20,10 @@ import {
   markAllAsRead,
   archiveNotifications,
   archiveAll,
+  unarchiveNotifications,
   type NotificationFilterType,
   type NotificationItem,
+  type NotificationReadStatus,
   type PaginatedNotifications,
 } from '@/repositories/notification'
 import { getClient } from '@/client'
@@ -42,7 +44,10 @@ const NOTIFICATIONS_GC_TIME = 5 * 60_000         // 5 minutes
 
 export const notificationKeys = {
   all: ['notifications'] as const,
-  list: (filter?: NotificationFilterType) => ['notifications', 'list', filter ?? 'all'] as const,
+  list: (
+    filter?: NotificationFilterType,
+    readStatus?: NotificationReadStatus
+  ) => ['notifications', 'list', filter ?? 'all', readStatus ?? 'all'] as const,
   unreadCount: ['notifications', 'unreadCount'] as const,
 }
 
@@ -51,9 +56,11 @@ export const notificationKeys = {
 // ---------------------------------------------------------------------------
 
 export function useNotifications(
-  filter?: NotificationFilterType
+  filter?: NotificationFilterType,
+  readStatus?: NotificationReadStatus
 ): UseInfiniteQueryResult<PaginatedNotifications, Error> {
   const effectiveFilter = filter === 'all' ? undefined : filter
+  const effectiveReadStatus = readStatus === 'all' ? undefined : readStatus
   const wsConnected = useWebSocketStore((s) => s.status === 'connected')
 
   return useInfiniteQuery<
@@ -63,12 +70,20 @@ export function useNotifications(
     readonly unknown[],
     string | undefined
   >({
-    queryKey: notificationKeys.list(filter),
-    queryFn: ({ pageParam }) =>
-      getNotifications(
-        effectiveFilter !== undefined ? { type: effectiveFilter } : undefined,
+    queryKey: notificationKeys.list(filter, readStatus),
+    queryFn: ({ pageParam }) => {
+      const hasFilter = effectiveFilter !== undefined || effectiveReadStatus !== undefined
+      const filters = hasFilter
+        ? {
+            ...(effectiveFilter !== undefined ? { type: effectiveFilter } : {}),
+            ...(effectiveReadStatus !== undefined ? { readStatus: effectiveReadStatus } : {}),
+          }
+        : undefined
+      return getNotifications(
+        filters,
         pageParam !== undefined ? { cursor: pageParam } : undefined
-      ),
+      )
+    },
     initialPageParam: undefined,
     getNextPageParam: (lastPage) =>
       lastPage.hasMore ? lastPage.nextCursor : undefined,
@@ -256,6 +271,47 @@ export function useArchiveAll(): UseMutationResult<void, Error, void> {
 
   return useMutation<void, Error, void>({
     mutationFn: () => archiveAll(),
+
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: notificationKeys.all })
+      void queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount })
+    },
+  })
+}
+
+// ---------------------------------------------------------------------------
+// useUnarchiveNotifications
+// ---------------------------------------------------------------------------
+
+export function useUnarchiveNotifications(): UseMutationResult<void, Error, string[]> {
+  const queryClient = useQueryClient()
+
+  return useMutation<void, Error, string[], { previous: Map<string, unknown> }>({
+    mutationFn: (ids) => unarchiveNotifications(ids),
+
+    onMutate: async (ids) => {
+      await queryClient.cancelQueries({ queryKey: notificationKeys.all })
+
+      const previous = new Map<string, unknown>()
+      queryClient.getQueriesData({ queryKey: notificationKeys.all }).forEach(([key, data]) => {
+        previous.set(JSON.stringify(key), data)
+      })
+
+      // No local cache mutation on unarchive: the archived items are not in
+      // the inbox cache to begin with. We rely on invalidate in onSettled to
+      // re-fetch and surface the restored item in its original sort position.
+
+      return { previous }
+    },
+
+    onError: (_error, _ids, context) => {
+      if (context?.previous !== undefined) {
+        context.previous.forEach((data, keyStr) => {
+          const key = JSON.parse(keyStr) as string[]
+          queryClient.setQueryData(key, data)
+        })
+      }
+    },
 
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: notificationKeys.all })
