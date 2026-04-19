@@ -11,6 +11,7 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
 import { QueryClientProvider } from '@tanstack/react-query'
 
 import { queryClient } from '@/client/queryClient'
+import { initI18n } from '@/lib/i18n'
 import { useAuthStore } from '@/store/auth'
 import { useWorkspaceStore } from '@/store/workspace'
 import { useConnectionStore } from '@/store/connection'
@@ -21,6 +22,10 @@ import { ErrorBoundary } from '@/components/features/ErrorBoundary'
 
 // Prevent the splash screen from auto-hiding before assets are loaded.
 SplashScreen.preventAutoHideAsync()
+
+// Initialize i18n synchronously so useTranslation() works from first render.
+// English resources are bundled; additional locales load lazily via loadLocale().
+initI18n()
 
 export default function RootLayout(): React.ReactNode {
   const [isRestoring, setIsRestoring] = useState(true)

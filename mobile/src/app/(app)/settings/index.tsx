@@ -13,6 +13,7 @@ import { useCallback } from 'react'
 import { View, Text, ScrollView, Pressable, Alert, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, type Href } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 
 import { useProfile } from '@/hooks/useProfile'
 import { useWorkspaceInfo } from '@/hooks/useWorkspaces'
@@ -25,10 +26,10 @@ import { SettingsRow } from '@/components/features/SettingsRow'
 // Theme segmented control
 // ---------------------------------------------------------------------------
 
-const THEME_OPTIONS: Array<{ label: string; value: ThemePreference }> = [
-  { label: 'Dark', value: 'dark' },
-  { label: 'Light', value: 'light' },
-  { label: 'System', value: 'system' },
+const THEME_OPTIONS: Array<{ labelKey: string; value: ThemePreference }> = [
+  { labelKey: 'settings.appearance.dark', value: 'dark' },
+  { labelKey: 'settings.appearance.light', value: 'light' },
+  { labelKey: 'settings.appearance.system', value: 'system' },
 ]
 
 function ThemeSegmentedControl({
@@ -38,14 +39,16 @@ function ThemeSegmentedControl({
   selected: ThemePreference
   onSelect: (theme: ThemePreference) => void
 }): React.ReactNode {
+  const { t } = useTranslation()
   return (
     <View
       className="flex-row bg-surface-tertiary rounded-lg p-1 mx-4"
       accessibilityRole="radiogroup"
-      accessibilityLabel="Theme preference"
+      accessibilityLabel={t('settings.appearance.accessibility')}
     >
       {THEME_OPTIONS.map((option) => {
         const isActive = selected === option.value
+        const label = t(option.labelKey)
         return (
           <Pressable
             key={option.value}
@@ -55,14 +58,14 @@ function ThemeSegmentedControl({
             onPress={() => onSelect(option.value)}
             accessibilityRole="radio"
             accessibilityState={{ selected: isActive }}
-            accessibilityLabel={`${option.label} theme`}
+            accessibilityLabel={t('settings.appearance.themeAccessibility', { label })}
           >
             <Text
               className={`font-sans-medium text-sm ${
                 isActive ? 'text-content-primary' : 'text-content-tertiary'
               }`}
             >
-              {option.label}
+              {label}
             </Text>
           </Pressable>
         )
@@ -96,6 +99,7 @@ function Divider(): React.ReactNode {
 // ---------------------------------------------------------------------------
 
 export default function SettingsScreen(): React.ReactNode {
+  const { t } = useTranslation()
   const { data: profile, isLoading: profileLoading } = useProfile()
   const { data: workspace, isLoading: workspaceLoading } = useWorkspaceInfo()
   const logout = useLogout()
@@ -112,18 +116,18 @@ export default function SettingsScreen(): React.ReactNode {
 
   const handleLogout = useCallback(() => {
     Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out of Huly?',
+      t('settings.account.confirmTitle'),
+      t('settings.account.confirmMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Sign Out',
+          text: t('settings.account.confirmAction'),
           style: 'destructive',
           onPress: () => void logout(),
         },
       ],
     )
-  }, [logout])
+  }, [logout, t])
 
   const handleSwitchWorkspace = useCallback(() => {
     router.push('/(app)/settings/workspaces' as Href)
@@ -158,7 +162,7 @@ export default function SettingsScreen(): React.ReactNode {
         ) : (
           <View className="items-center py-6">
             <Text className="font-sans text-sm text-content-tertiary">
-              Unable to load profile
+              {t('settings.profile.unableToLoad')}
             </Text>
           </View>
         )}
@@ -166,71 +170,71 @@ export default function SettingsScreen(): React.ReactNode {
         <Divider />
 
         {/* Workspace section */}
-        <SectionHeader title="Workspace" />
+        <SectionHeader title={t('settings.sections.workspace')} />
         {workspaceLoading ? (
           <View className="px-4 py-3">
             <ActivityIndicator size="small" color="#205DC2" />
           </View>
         ) : workspace != null ? (
           <>
-            <SettingsRow label="Name" value={workspace.name} />
+            <SettingsRow label={t('settings.workspace.name')} value={workspace.name} />
             <SettingsRow
-              label="Members"
+              label={t('settings.workspace.members')}
               value={String(workspace.memberCount)}
               onPress={handleMembers}
               showChevron
-              accessibilityLabel="View workspace members"
+              accessibilityLabel={t('settings.workspace.membersAccessibility')}
             />
           </>
         ) : null}
         <SettingsRow
-          label="Switch Workspace"
+          label={t('settings.workspace.switch')}
           onPress={handleSwitchWorkspace}
           showChevron
-          accessibilityLabel="Switch to a different workspace"
+          accessibilityLabel={t('settings.workspace.switchAccessibility')}
         />
 
         <Divider />
 
         {/* Notifications section */}
-        <SectionHeader title="Notifications" />
+        <SectionHeader title={t('settings.sections.notifications')} />
         <SettingsRow
-          label="Notification Preferences"
+          label={t('settings.notifications.preferences')}
           onPress={handleNotifications}
           showChevron
-          accessibilityLabel="Configure notification preferences"
+          accessibilityLabel={t('settings.notifications.preferencesAccessibility')}
         />
 
         <Divider />
 
         {/* Appearance section */}
-        <SectionHeader title="Appearance" />
+        <SectionHeader title={t('settings.sections.appearance')} />
         <ThemeSegmentedControl selected={theme} onSelect={handleThemeChange} />
 
         <Divider />
 
         {/* Account section */}
-        <SectionHeader title="Account" />
+        <SectionHeader title={t('settings.sections.account')} />
         <SettingsRow
-          label="Sign Out"
+          label={t('settings.account.signOut')}
           onPress={handleLogout}
           destructive
-          accessibilityLabel="Sign out of Huly"
+          accessibilityLabel={t('settings.account.signOutAccessibility')}
         />
 
         {/* About section */}
-        <SectionHeader title="About" />
+        <SectionHeader title={t('settings.sections.about')} />
         <SettingsRow
-          label="About Huly"
+          label={t('settings.about.title')}
           onPress={handleAbout}
           showChevron
-          accessibilityLabel="About Huly"
+          accessibilityLabel={t('settings.about.accessibility')}
         />
 
         {/* App info footer */}
         <View className="items-center mt-8">
           <Text className="font-sans text-xs text-content-tertiary">
-            Huly v{appVersion}
+            {t('settings.footer.version', { version: appVersion })}
           </Text>
         </View>
       </ScrollView>
