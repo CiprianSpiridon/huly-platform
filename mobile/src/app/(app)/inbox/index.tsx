@@ -13,13 +13,19 @@
  */
 
 import { useCallback, useState, useMemo } from 'react'
-import { View, Text, RefreshControl, Pressable } from 'react-native'
+import { View, Text, RefreshControl, Pressable, Alert, Modal } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { FlashList } from '@shopify/flash-list'
 import { Ionicons } from '@expo/vector-icons'
 
-import { useNotifications, useMarkAsRead, useArchiveNotifications } from '@/hooks/useNotifications'
+import {
+  useNotifications,
+  useMarkAsRead,
+  useArchiveNotifications,
+  useMarkAllAsRead,
+  useArchiveAll,
+} from '@/hooks/useNotifications'
 import { useInboxStore } from '@/store/inbox'
 import { NotificationFilters } from '@/components/features/NotificationFilters'
 import { NotificationRow } from '@/components/features/NotificationRow'
@@ -81,13 +87,18 @@ export default function InboxScreen(): React.ReactNode {
   // Mutations
   const markAsReadMutation = useMarkAsRead()
   const archiveMutation = useArchiveNotifications()
+  const markAllAsReadMutation = useMarkAllAsRead()
+  const archiveAllMutation = useArchiveAll()
 
   // Local state
   const [refreshing, setRefreshing] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   // Derived
   const items = useMemo(() => notifications?.items ?? [], [notifications])
   const isOffline = fetchStatus === 'paused'
+  const hasItems = items.length > 0
+  const hasUnread = useMemo(() => items.some((item) => item.isViewed !== true), [items])
 
   // ------ Handlers ------
 
@@ -159,6 +170,44 @@ export default function InboxScreen(): React.ReactNode {
     selectAll(items.map((item) => item._id))
   }, [selectAll, items])
 
+  const handleMarkAllAsRead = useCallback(() => {
+    setMenuOpen(false)
+    if (!hasUnread) return
+    Alert.alert(
+      'Mark all as read',
+      'This will mark every notification in your inbox as read.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Mark all read',
+          style: 'default',
+          onPress: () => {
+            markAllAsReadMutation.mutate()
+          },
+        },
+      ]
+    )
+  }, [hasUnread, markAllAsReadMutation])
+
+  const handleArchiveAll = useCallback(() => {
+    setMenuOpen(false)
+    if (!hasItems) return
+    Alert.alert(
+      'Archive all',
+      'This will archive every notification currently in your inbox.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Archive all',
+          style: 'destructive',
+          onPress: () => {
+            archiveAllMutation.mutate()
+          },
+        },
+      ]
+    )
+  }, [hasItems, archiveAllMutation])
+
   const handleLoadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
       void fetchNextPage()
@@ -185,10 +234,20 @@ export default function InboxScreen(): React.ReactNode {
 
   // ------ Loading state ------
 
+  const headerProps = {
+    menuOpen,
+    onMenuOpen: () => setMenuOpen(true),
+    onMenuClose: () => setMenuOpen(false),
+    onMarkAllAsRead: handleMarkAllAsRead,
+    onArchiveAll: handleArchiveAll,
+    canMarkAllAsRead: hasUnread && !markAllAsReadMutation.isPending,
+    canArchiveAll: hasItems && !archiveAllMutation.isPending,
+  }
+
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-        <ScreenHeader />
+        <ScreenHeader {...headerProps} />
         <NotificationFilters activeFilter={activeFilter} onFilterChange={handleFilterChange} />
         <View className="flex-1 items-center justify-center">
           <Text className="font-sans text-sm text-dark">Loading notifications...</Text>
@@ -202,7 +261,7 @@ export default function InboxScreen(): React.ReactNode {
   if (error) {
     return (
       <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-        <ScreenHeader />
+        <ScreenHeader {...headerProps} />
         <NotificationFilters activeFilter={activeFilter} onFilterChange={handleFilterChange} />
         <View className="flex-1 items-center justify-center px-6">
           <Ionicons name="alert-circle-outline" size={48} color="#77818B" />
@@ -231,7 +290,7 @@ export default function InboxScreen(): React.ReactNode {
     const emptyState = EMPTY_STATE_MESSAGES[activeFilter]
     return (
       <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-        <ScreenHeader />
+        <ScreenHeader {...headerProps} />
         <NotificationFilters activeFilter={activeFilter} onFilterChange={handleFilterChange} />
         <View className="flex-1 items-center justify-center px-6">
           <Ionicons name="mail-open-outline" size={48} color="#77818B" />
@@ -250,7 +309,7 @@ export default function InboxScreen(): React.ReactNode {
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-      <ScreenHeader />
+      <ScreenHeader {...headerProps} />
 
       {/* Offline banner */}
       {isOffline && (
@@ -307,10 +366,78 @@ export default function InboxScreen(): React.ReactNode {
 // Screen header
 // ---------------------------------------------------------------------------
 
-function ScreenHeader(): React.ReactNode {
+interface ScreenHeaderProps {
+  menuOpen: boolean
+  onMenuOpen: () => void
+  onMenuClose: () => void
+  onMarkAllAsRead: () => void
+  onArchiveAll: () => void
+  canMarkAllAsRead: boolean
+  canArchiveAll: boolean
+}
+
+function ScreenHeader(props: ScreenHeaderProps): React.ReactNode {
+  const {
+    menuOpen,
+    onMenuOpen,
+    onMenuClose,
+    onMarkAllAsRead,
+    onArchiveAll,
+    canMarkAllAsRead,
+    canArchiveAll,
+  } = props
+
   return (
-    <View className="px-4 pt-2 pb-1">
+    <View className="px-4 pt-2 pb-1 flex-row items-center justify-between">
       <Text className="font-sans-bold text-xl text-caption">Inbox</Text>
+      <Pressable
+        onPress={onMenuOpen}
+        className="h-11 w-11 items-center justify-center rounded-full active:opacity-70"
+        accessibilityRole="button"
+        accessibilityLabel="Inbox actions"
+        accessibilityHint="Opens menu with mark all as read and archive all actions"
+      >
+        <Ionicons name="ellipsis-horizontal" size={22} color="#E6E7E9" />
+      </Pressable>
+
+      <Modal
+        visible={menuOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={onMenuClose}
+      >
+        <Pressable
+          className="flex-1 bg-black/30"
+          onPress={onMenuClose}
+          accessibilityLabel="Close menu"
+          accessibilityRole="button"
+        >
+          <View className="absolute right-4 top-14 w-64 rounded-lg bg-surface-raised py-2 shadow-lg">
+            <Pressable
+              onPress={canMarkAllAsRead ? onMarkAllAsRead : undefined}
+              disabled={!canMarkAllAsRead}
+              className={`flex-row items-center px-4 py-3 ${canMarkAllAsRead ? 'active:bg-surface-accent' : 'opacity-40'}`}
+              accessibilityRole="button"
+              accessibilityLabel="Mark all as read"
+              accessibilityState={{ disabled: !canMarkAllAsRead }}
+            >
+              <Ionicons name="checkmark-done-outline" size={20} color="#E6E7E9" />
+              <Text className="font-sans-medium text-sm text-caption ml-3">Mark All as Read</Text>
+            </Pressable>
+            <Pressable
+              onPress={canArchiveAll ? onArchiveAll : undefined}
+              disabled={!canArchiveAll}
+              className={`flex-row items-center px-4 py-3 ${canArchiveAll ? 'active:bg-surface-accent' : 'opacity-40'}`}
+              accessibilityRole="button"
+              accessibilityLabel="Archive all notifications"
+              accessibilityState={{ disabled: !canArchiveAll }}
+            >
+              <Ionicons name="archive-outline" size={20} color="#E6E7E9" />
+              <Text className="font-sans-medium text-sm text-caption ml-3">Archive All</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   )
 }
