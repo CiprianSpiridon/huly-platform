@@ -17,8 +17,7 @@
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.huly.mobile",
       "associatedDomains": [
-        "applinks:huly.io",
-        "applinks:app.huly.io"
+        "applinks:huly.app"
       ],
       "infoPlist": {
         "NSCameraUsageDescription": "Huly needs camera access to take photos for attachments.",
@@ -39,8 +38,7 @@
           "action": "VIEW",
           "autoVerify": true,
           "data": [
-            { "scheme": "https", "host": "huly.io" },
-            { "scheme": "https", "host": "app.huly.io" }
+            { "scheme": "https", "host": "huly.app" }
           ],
           "category": ["BROWSABLE", "DEFAULT"]
         }
@@ -95,7 +93,7 @@
         "projectId": "your-eas-project-id"
       },
       "router": {
-        "origin": "https://app.huly.io"
+        "origin": "https://huly.app"
       }
     }
   }

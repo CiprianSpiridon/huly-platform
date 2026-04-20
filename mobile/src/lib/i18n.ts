@@ -53,6 +53,10 @@ export function initI18n(): typeof i18n {
   initialized = true
 
   void i18n.use(initReactI18next).init({
+    // Hermes lacks Intl.PluralRules; use the legacy v3 plural format so i18next
+    // does not warn on every render. Remove once Hermes ships full Intl support
+    // and we explicitly switch to v4 plural rules.
+    compatibilityJSON: 'v3',
     resources: {
       en: { translation: enCommon },
     },
