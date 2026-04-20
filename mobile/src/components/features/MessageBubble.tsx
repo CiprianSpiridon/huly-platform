@@ -17,7 +17,7 @@ import { AvatarCircle } from '@/components/ui/AvatarCircle'
 import { ReactionPills } from '@/components/features/ReactionPills'
 import { MarkupRenderer } from '@/components/features/MarkupRenderer'
 import { markupToPlainText } from '@/lib/markupUtils'
-import { getAuthenticatedThumbnailUrl } from '@/repositories/attachment'
+import { getAuthenticatedThumbnailSource } from '@/repositories/attachment'
 import type { MessageItem } from '@/repositories/chat'
 import { showErrorToast, showSuccessToast } from '@/store/toast'
 
@@ -378,7 +378,7 @@ function MessageBubbleInner({
               {message.attachments.map((att) => {
                 const isImage = att.contentType.startsWith('image/')
                 if (isImage) {
-                  const thumbUrl = getAuthenticatedThumbnailUrl(att.blobId, 240, 160)
+                  const thumbSource = getAuthenticatedThumbnailSource(att.blobId, 240, 160)
                   return (
                     <Pressable
                       key={att.blobId}
@@ -388,7 +388,7 @@ function MessageBubbleInner({
                       className="active:opacity-80"
                     >
                       <Image
-                        source={{ uri: thumbUrl }}
+                        source={thumbSource}
                         className="w-[200px] h-[140px] rounded-md"
                         contentFit="cover"
                         transition={200}

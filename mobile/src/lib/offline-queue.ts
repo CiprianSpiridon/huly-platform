@@ -25,7 +25,32 @@ import { queryClient } from '@/client/queryClient'
 import { useOfflineStore, type QueuedMutation } from '@/store/offline'
 import { showErrorToast, showInfoToast, showSuccessToast } from '@/store/toast'
 
-let lastOnline = true
+/**
+ * Map a Huly `_class` reference to the TanStack Query key roots it can affect.
+ * Used after replaying an offline mutation to invalidate the right caches.
+ *
+ * Falls back to a broad set covering all Huly-backed roots when the class
+ * isn't recognized, so we never leave the UI displaying stale data after a
+ * successful sync.
+ */
+function queryRootsFor(_class: string): readonly string[] {
+  if (_class.startsWith('tracker:class:')) {
+    return ['tracker', 'huly']
+  }
+  if (_class.startsWith('chunter:class:')) {
+    return ['chat', 'notifications', 'huly']
+  }
+  if (_class.startsWith('notification:class:')) {
+    return ['notifications', 'huly']
+  }
+  if (_class.startsWith('attachment:class:')) {
+    return ['attachments', 'huly']
+  }
+  return ['tracker', 'chat', 'notifications', 'attachments', 'huly']
+}
+
+let lastOnline = false
+let initialized = false
 
 export function isDeviceOnline(): boolean {
   return lastOnline
@@ -39,14 +64,20 @@ export async function checkIsOnline(): Promise<boolean> {
     // If we can't tell, assume online — avoids false positives blocking mutations.
     lastOnline = true
   }
+  initialized = true
   return lastOnline
 }
 
 /**
  * Returns true iff the device currently can reach the server AND the shared
  * Huly client is connected. Callers use this to decide whether to queue.
+ *
+ * Returns false until the initial NetInfo check has resolved, so mutations
+ * issued during app startup are queued instead of racing against an unknown
+ * network state.
  */
 export function canDispatchMutationNow(): boolean {
+  if (!initialized) return false
   if (!lastOnline) return false
   if (getClient() == null) return false
   return true
@@ -90,9 +121,13 @@ function isConflictError(err: unknown): boolean {
   const msg = (err as { message?: unknown }).message
   if (typeof msg !== 'string') return false
   const lower = msg.toLowerCase()
+  // Classify explicit conflict/auth rejections only. "not found" is ambiguous
+  // — it collides with transient network errors from REST proxies — so we
+  // leave those in the queue for retry rather than promoting them to
+  // user-facing conflicts.
   return (
+    lower.includes('409') ||
     lower.includes('conflict') ||
-    lower.includes('not found') ||
     lower.includes('permission') ||
     lower.includes('forbidden')
   )
@@ -131,12 +166,9 @@ export async function replayQueue(): Promise<{ replayed: number, conflicts: numb
         await runMutation(m)
         useOfflineStore.getState().dequeue(m.id)
         replayed += 1
-        void queryClient.invalidateQueries({
-          predicate: (q) => {
-            const key = q.queryKey
-            return key[0] === 'huly' && key[1] === m._class
-          },
-        })
+        for (const root of queryRootsFor(m._class)) {
+          void queryClient.invalidateQueries({ queryKey: [root] })
+        }
       } catch (err) {
         if (isConflictError(err)) {
           useOfflineStore.getState().recordConflict({
@@ -189,6 +221,7 @@ export function installOfflineQueueWatcher(): void {
     const connected = state.isConnected === true && state.isInternetReachable !== false
     const wasOffline = !lastOnline
     lastOnline = connected
+    initialized = true
     if (connected && wasOffline && canDispatchMutationNow()) {
       void replayQueue()
     }

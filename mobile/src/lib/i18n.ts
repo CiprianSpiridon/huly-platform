@@ -26,6 +26,9 @@ export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number]
  * English is always bundled; additional locales are resolved dynamically so
  * they do not inflate the default JS bundle. Callers should await the returned
  * promise before switching languages with i18n.changeLanguage().
+ *
+ * Prefer {@link setLocale} when you want a one-liner that awaits the bundle
+ * load and then flips i18next's active language.
  */
 export async function loadLocale(locale: string): Promise<boolean> {
   if (locale === DEFAULT_LOCALE) {
@@ -81,6 +84,22 @@ export function initI18n(): typeof i18n {
   })
 
   return i18n
+}
+
+/**
+ * Change the active locale, loading the bundle first if needed.
+ *
+ * Usage:
+ * ```ts
+ * await setLocale('fr')
+ * ```
+ *
+ * Prefer this over calling `i18n.changeLanguage(...)` directly, which can
+ * race with the bundle load and temporarily render English strings.
+ */
+export async function setLocale(locale: string): Promise<void> {
+  await loadLocale(locale)
+  await i18n.changeLanguage(locale)
 }
 
 export default i18n

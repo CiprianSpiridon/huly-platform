@@ -9,8 +9,10 @@
 import * as Sentry from '@sentry/react-native'
 
 const EMAIL_RE = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi
-// Bearer-style tokens or long token-ish hex/base64 strings
-const TOKEN_RE = /\b(?:Bearer\s+)?[A-Za-z0-9_\-]{20,}\.[A-Za-z0-9_\-]{6,}(?:\.[A-Za-z0-9_\-]{6,})?\b/g
+// Bearer-style tokens or long token-ish hex/base64 strings.
+// Source-of-truth pattern as a string; callers build a fresh RegExp per call
+// so the stateful `lastIndex` of a shared global regex can't corrupt results.
+const TOKEN_PATTERN = '\\b(?:Bearer\\s+)?[A-Za-z0-9_\\-]{20,}\\.[A-Za-z0-9_\\-]{6,}(?:\\.[A-Za-z0-9_\\-]{6,})?\\b'
 const WORKSPACE_URL_RE = /https?:\/\/[^\s/]+\.(?:huly\.io|huly\.app)(?:\/[^\s]*)?/gi
 
 const SENSITIVE_KEYS = new Set([
@@ -27,8 +29,11 @@ const SENSITIVE_KEYS = new Set([
 ])
 
 function redactString(value: string): string {
+  // Build a fresh RegExp per call to avoid the shared-lastIndex hazard of
+  // module-level global regexes.
+  const tokenRe = new RegExp(TOKEN_PATTERN, 'g')
   return value
-    .replace(TOKEN_RE, '[REDACTED_TOKEN]')
+    .replace(tokenRe, '[REDACTED_TOKEN]')
     .replace(EMAIL_RE, '[REDACTED_EMAIL]')
     .replace(WORKSPACE_URL_RE, '[REDACTED_WORKSPACE_URL]')
 }
@@ -53,7 +58,7 @@ function scrub(value: unknown, depth = 0): unknown {
   return value
 }
 
-function scrubEvent<T extends Sentry.ErrorEvent | Sentry.TransactionEvent>(event: T): T {
+function scrubEvent<T extends Sentry.ErrorEvent | Sentry.TransactionEvent>(event: T): T | null {
   try {
     // User PII
     if (event.user != null) {
@@ -91,7 +96,7 @@ function scrubEvent<T extends Sentry.ErrorEvent | Sentry.TransactionEvent>(event
     if (event.contexts != null) event.contexts = scrub(event.contexts) as typeof event.contexts
   } catch {
     // If scrubbing itself fails, drop the event rather than leaking data.
-    return event
+    return null
   }
   return event
 }

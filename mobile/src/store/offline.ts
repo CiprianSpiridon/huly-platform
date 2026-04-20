@@ -66,7 +66,9 @@ interface OfflineState {
   clearAll: () => void
 }
 
-let idCounter = 0
+// Seed with a random offset so two consecutive-millisecond enqueues across
+// restarts don't collide on the `m-<date>-<counter>` id.
+let idCounter = Math.floor(Math.random() * 1e6)
 function nextId(): string {
   idCounter = (idCounter + 1) >>> 0
   return `m-${Date.now().toString(36)}-${idCounter.toString(36)}`

@@ -31,6 +31,24 @@ export interface DeepLinkResult {
 }
 
 // ---------------------------------------------------------------------------
+// Safety helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Validate a user-controlled ref string before interpolating it into a route.
+ * Rejects any characters that could escape path segments (slashes, dots, etc.).
+ * Accepts only alphanumerics, `:`, `_`, `-`.
+ */
+export function isSafeRef(s: unknown): s is string {
+  return typeof s === 'string' && s.length > 0 && /^[A-Za-z0-9:_-]+$/.test(s)
+}
+
+const INBOX_FALLBACK: DeepLinkResult = {
+  path: '/(app)/inbox',
+  isKnown: false,
+}
+
+// ---------------------------------------------------------------------------
 // Router
 // ---------------------------------------------------------------------------
 
@@ -45,8 +63,18 @@ export function resolveNotificationRoute(
   objectId: string,
   notificationId?: string
 ): DeepLinkResult {
+  // Reject anything that isn't a well-formed Huly ref. Prevents path traversal
+  // (e.g. `../../../foo`) and unexpected URL segments from untrusted payloads.
+  const objectIdSafe = isSafeRef(objectId)
+  const notificationIdSafe = notificationId == null || isSafeRef(notificationId)
+
+  if (!notificationIdSafe) {
+    return INBOX_FALLBACK
+  }
+
   switch (objectClass) {
     case TRACKER_ISSUE:
+      if (!objectIdSafe) return INBOX_FALLBACK
       return {
         path: `/(app)/tracker/issue/${objectId}`,
         isKnown: true,
@@ -54,6 +82,7 @@ export function resolveNotificationRoute(
 
     case CHUNTER_CHANNEL:
     case CHUNTER_DIRECT_MESSAGE:
+      if (!objectIdSafe) return INBOX_FALLBACK
       return {
         path: `/(app)/chat/channel/${objectId}`,
         isKnown: true,
@@ -67,10 +96,7 @@ export function resolveNotificationRoute(
           isKnown: false,
         }
       }
-      return {
-        path: '/(app)/inbox',
-        isKnown: false,
-      }
+      return INBOX_FALLBACK
 
     default:
       if (notificationId != null) {
@@ -79,10 +105,7 @@ export function resolveNotificationRoute(
           isKnown: false,
         }
       }
-      return {
-        path: '/(app)/inbox',
-        isKnown: false,
-      }
+      return INBOX_FALLBACK
   }
 }
 

@@ -67,8 +67,12 @@ export function ErrorToast(): React.ReactNode {
   const opacity = useSharedValue(0)
   const translateY = useSharedValue(-16)
 
+  // Keep effect deps limited to the toast identity so we don't re-arm the
+  // dismiss timer on unrelated re-renders of the queue.
+  const currentId = current?.id ?? null
+  const currentDurationMs = current?.durationMs ?? 0
   useEffect(() => {
-    if (current == null) {
+    if (currentId == null) {
       opacity.value = withTiming(0, { duration: TOAST_ANIM_MS })
       translateY.value = withTiming(-16, { duration: TOAST_ANIM_MS })
       return
@@ -77,10 +81,10 @@ export function ErrorToast(): React.ReactNode {
     translateY.value = withTiming(0, { duration: TOAST_ANIM_MS })
 
     const timer = setTimeout(() => {
-      dismiss(current.id)
-    }, current.durationMs)
+      dismiss(currentId)
+    }, currentDurationMs)
     return () => clearTimeout(timer)
-  }, [current, dismiss, opacity, translateY])
+  }, [currentId, currentDurationMs, dismiss, opacity, translateY])
 
   const animStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

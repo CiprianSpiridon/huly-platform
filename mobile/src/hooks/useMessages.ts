@@ -29,7 +29,6 @@ import {
   type CursorPaginatedResult,
   type MessageItem,
 } from '@/repositories/chat'
-import { getClient } from '@/client'
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -47,6 +46,7 @@ export function useMessages(
   spaceId: string | undefined
 ): UseInfiniteQueryResult<CursorPaginatedResult<MessageItem>, Error> {
   const wsConnected = useWebSocketStore((s) => s.status === 'connected')
+  const clientReady = useConnectionStore((s) => s.status === 'connected')
 
   return useInfiniteQuery<
     CursorPaginatedResult<MessageItem>,
@@ -63,7 +63,7 @@ export function useMessages(
       lastPage.hasMore ? lastPage.nextCursor : undefined,
     staleTime: wsConnected ? MESSAGES_STALE_TIME_WS : MESSAGES_STALE_TIME,
     gcTime: MESSAGES_GC_TIME,
-    enabled: spaceId !== undefined && getClient() !== null,
+    enabled: spaceId !== undefined && clientReady,
     select: (data) => {
       // Flatten all pages into a single result, newest first
       const allItems = data.pages.flatMap((page) => page.items)
@@ -104,8 +104,14 @@ export function useSendMessage(): UseMutationResult<MessageItem, Error, SendMess
       // Snapshot the previous value
       const previousData = queryClient.getQueryData(['chat', 'messages', variables.spaceId])
 
-      // Read currentSocialId fresh from the store to avoid stale closure captures
-      const currentSocialId = useConnectionStore.getState().currentSocialId ?? 'unknown'
+      // Read currentSocialId fresh from the store to avoid stale closure captures.
+      // If we don't know the current social id yet, fall back to non-optimistic
+      // behaviour so we never stamp a message with 'unknown' (which breaks
+      // sender-equality checks downstream).
+      const currentSocialId = useConnectionStore.getState().currentSocialId
+      if (currentSocialId == null) {
+        return { previousData }
+      }
 
       // Optimistically add the new message at the top (newest first)
       const optimisticMessage: MessageItem = {
@@ -201,8 +207,14 @@ export function useToggleReaction(): UseMutationResult<void, Error, ToggleReacti
       await queryClient.cancelQueries({ queryKey: ['chat', 'messages', variables.spaceId] })
       const previousData = queryClient.getQueryData(['chat', 'messages', variables.spaceId])
 
-      // Read currentSocialId fresh from the store to avoid stale closure captures
-      const currentSocialId = useConnectionStore.getState().currentSocialId ?? 'unknown'
+      // Read currentSocialId fresh from the store to avoid stale closure captures.
+      // If we don't know who we are yet, skip the optimistic update entirely
+      // rather than attributing the reaction to 'unknown' and corrupting the
+      // userIds list on conflict.
+      const currentSocialId = useConnectionStore.getState().currentSocialId
+      if (currentSocialId == null) {
+        return { previousData, previousThreadData: [] }
+      }
 
       // Optimistically update reaction counts
       queryClient.setQueryData<InfiniteData<CursorPaginatedResult<MessageItem>>>(
@@ -259,7 +271,9 @@ export function useToggleReaction(): UseMutationResult<void, Error, ToggleReacti
 
       const threadQueries = queryClient.getQueriesData<{ parent: MessageItem; replies: MessageItem[] }>({ queryKey: ['chat', 'thread'] })
       const previousThreadData: Array<[readonly unknown[], unknown]> = threadQueries.map(
-        ([key, data]) => [key, structuredClone(data)] as [readonly unknown[], unknown]
+        // Hermes lacks structuredClone; JSON round-trip is sufficient here because
+        // the cached thread data is already a plain JSON-serializable shape.
+        ([key, data]) => [key, data != null ? JSON.parse(JSON.stringify(data)) as unknown : data] as [readonly unknown[], unknown]
       )
       for (const [key, data] of threadQueries) {
         if (!data) continue
