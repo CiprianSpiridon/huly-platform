@@ -18,7 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { FlashList } from '@shopify/flash-list'
 import { Ionicons } from '@expo/vector-icons'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 
 import {
   useNotifications,
@@ -27,7 +27,7 @@ import {
   useMarkAllAsRead,
   useArchiveAll,
   useUnarchiveNotifications,
-  notificationKeys,
+  useDeleteNotifications,
 } from '@/hooks/useNotifications'
 import { useInboxStore } from '@/store/inbox'
 import { NotificationFilters } from '@/components/features/NotificationFilters'
@@ -39,7 +39,6 @@ import {
 } from '@/components/features/NotificationGroupCard'
 import { resolveNotificationRoute } from '@/lib/notificationRouter'
 import {
-  deleteNotifications,
   getNotifyContextsByIds,
   humanizeObjectClass,
   type NotificationItem,
@@ -100,19 +99,12 @@ export default function InboxScreen(): React.ReactNode {
   } = useNotifications(activeFilter, readStatusFilter)
 
   // Mutations
-  const queryClient = useQueryClient()
   const markAsReadMutation = useMarkAsRead()
   const archiveMutation = useArchiveNotifications()
   const markAllAsReadMutation = useMarkAllAsRead()
   const archiveAllMutation = useArchiveAll()
   const unarchiveMutation = useUnarchiveNotifications()
-  const deleteMutation = useMutation<void, Error, string[]>({
-    mutationFn: (ids) => deleteNotifications(ids),
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: notificationKeys.all })
-      void queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount })
-    },
-  })
+  const deleteMutation = useDeleteNotifications()
 
   // Local state
   const [refreshing, setRefreshing] = useState(false)
@@ -137,7 +129,10 @@ export default function InboxScreen(): React.ReactNode {
   }, [items])
 
   const { data: contextInfo } = useQuery<Map<string, NotifyContextInfo>>({
-    queryKey: ['notifications', 'contextInfo', contextIds.join(',')],
+    // Pass the array directly — TanStack Query does deep equality on query keys,
+    // so concatenating IDs into a string would cause cache fragmentation when
+    // the same IDs arrive in a different order across re-renders.
+    queryKey: ['notifications', 'contextInfo', contextIds],
     queryFn: () => getNotifyContextsByIds(contextIds),
     enabled: contextIds.length > 0,
     staleTime: 60_000,
@@ -425,6 +420,15 @@ export default function InboxScreen(): React.ReactNode {
 
   const keyExtractor = useCallback((group: NotificationGroup) => group.contextId, [])
 
+  // FlashList v2 uses getItemType to recycle correctly across heterogeneous
+  // rows. Single-notification groups render as <NotificationRow>, multi-item
+  // groups as <NotificationGroupCard> -- returning a distinct type per variant
+  // keeps the recycler from trying to reuse a view across component boundaries.
+  const getItemType = useCallback(
+    (group: NotificationGroup) => (group.items.length === 1 ? 'row' : 'group'),
+    []
+  )
+
   // ------ Loading state ------
 
   const headerProps = {
@@ -575,6 +579,7 @@ export default function InboxScreen(): React.ReactNode {
         data={groups}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
+        getItemType={getItemType}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
         refreshControl={

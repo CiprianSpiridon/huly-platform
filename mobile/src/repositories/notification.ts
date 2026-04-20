@@ -278,6 +278,10 @@ export function humanizeObjectClass(classRef: string): string {
 
 /**
  * Fetch notification contexts for the current user.
+ *
+ * Filters by the authenticated account's UUID. Without this filter, a
+ * transactor that returns mixed data would leak other users' contexts into
+ * the current user's inbox.
  */
 export async function getNotificationContexts(): Promise<Doc[]> {
   const client = getClient()
@@ -286,9 +290,10 @@ export async function getNotificationContexts(): Promise<Doc[]> {
   }
 
   try {
+    const account = await client.getAccount()
     const result = await client.findAll(
       NOTIFICATION_CLASS.DocNotifyContext,
-      { hidden: false } as Record<string, unknown>,
+      { user: account.uuid, hidden: false } as Record<string, unknown>,
       { sort: { lastUpdateTimestamp: SortingOrder.Descending } as Record<string, SortingOrder> }
     )
     return [...result]

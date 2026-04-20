@@ -52,8 +52,6 @@ interface NotificationListenerState {
 export function useNotificationListeners(): NotificationListenerState {
   const [bannerNotification, setBannerNotification] = useState<BannerNotification | null>(null)
   const queryClient = useQueryClient()
-  const preferences = usePushStore((s) => s.preferences)
-  const typePreferences = usePushStore((s) => s.typePreferences)
 
   const foregroundListenerRef = useRef<Notifications.Subscription | null>(null)
   const responseListenerRef = useRef<Notifications.Subscription | null>(null)
@@ -62,11 +60,17 @@ export function useNotificationListeners(): NotificationListenerState {
   // Foreground notification received
   // ---------------------------------------------------------------------------
 
+  // Preferences are read live via usePushStore.getState() inside the listener
+  // so toggling a preference does not tear down and recreate the OS-level
+  // notification subscription on every render.
   useEffect(() => {
     foregroundListenerRef.current = Notifications.addNotificationReceivedListener(
       (notification) => {
         const data = notification.request.content.data as unknown as HulyPushPayload | undefined
         const content = notification.request.content
+
+        // Read current preferences at notification-arrival time.
+        const { preferences, typePreferences } = usePushStore.getState()
 
         // Check if this notification category is enabled in preferences,
         // then enforce the per-type (sub-category) toggle.
@@ -109,7 +113,7 @@ export function useNotificationListeners(): NotificationListenerState {
         Notifications.removeNotificationSubscription(foregroundListenerRef.current)
       }
     }
-  }, [queryClient, preferences, typePreferences])
+  }, [queryClient])
 
   // ---------------------------------------------------------------------------
   // Notification tap (background/killed)

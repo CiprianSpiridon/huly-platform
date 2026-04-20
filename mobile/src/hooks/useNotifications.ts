@@ -15,6 +15,7 @@ import {
 } from '@tanstack/react-query'
 
 import {
+  deleteNotifications,
   getNotifications,
   markAsRead,
   markAllAsRead,
@@ -26,7 +27,7 @@ import {
   type NotificationReadStatus,
   type PaginatedNotifications,
 } from '@/repositories/notification'
-import { getClient } from '@/client'
+import { useConnectionStore } from '@/store/connection'
 import { useInboxStore } from '@/store/inbox'
 import { useWebSocketStore } from '@/store/websocket'
 
@@ -62,6 +63,9 @@ export function useNotifications(
   const effectiveFilter = filter === 'all' ? undefined : filter
   const effectiveReadStatus = readStatus === 'all' ? undefined : readStatus
   const wsConnected = useWebSocketStore((s) => s.status === 'connected')
+  // Reactive gate: re-enable the query as soon as the data client is connected,
+  // instead of sampling getClient() once per render.
+  const isConnected = useConnectionStore((s) => s.status === 'connected')
 
   return useInfiniteQuery<
     PaginatedNotifications,
@@ -89,7 +93,7 @@ export function useNotifications(
       lastPage.hasMore ? lastPage.nextCursor : undefined,
     staleTime: wsConnected ? NOTIFICATIONS_STALE_TIME_WS : NOTIFICATIONS_STALE_TIME,
     gcTime: NOTIFICATIONS_GC_TIME,
-    enabled: getClient() !== null,
+    enabled: isConnected,
     select: (data) => {
       const allItems = data.pages.flatMap((page) => page.items)
       const lastPage = data.pages[data.pages.length - 1]
@@ -247,12 +251,46 @@ export function useArchiveNotifications(): UseMutationResult<void, Error, string
 export function useMarkAllAsRead(): UseMutationResult<void, Error, void> {
   const queryClient = useQueryClient()
 
-  return useMutation<void, Error, void>({
+  return useMutation<
+    void,
+    Error,
+    void,
+    { previous: Map<string, unknown>; previousUnreadTotal: number }
+  >({
     mutationFn: () => markAllAsRead(),
 
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: notificationKeys.all })
+
+      // Snapshot every cached notification query for rollback on failure.
+      const previous = new Map<string, unknown>()
+      queryClient.getQueriesData({ queryKey: notificationKeys.all }).forEach(([key, data]) => {
+        previous.set(JSON.stringify(key), data)
+      })
+      const previousUnreadTotal = useInboxStore.getState().unreadTotal
+
+      // Optimistically flip every visible notification to viewed so individual
+      // rows stop showing the unread indicator immediately (not just the badge).
+      queryClient.setQueriesData(
+        { queryKey: notificationKeys.all },
+        (old: unknown) => {
+          if (old === undefined || old === null) return old
+          return optimisticallyMarkAllViewed(old)
+        }
+      )
+
       useInboxStore.getState().setUnreadTotal(0)
+
+      return { previous, previousUnreadTotal }
+    },
+
+    onError: (_error, _vars, context) => {
+      if (context === undefined) return
+      context.previous.forEach((data, keyStr) => {
+        const key = JSON.parse(keyStr) as string[]
+        queryClient.setQueryData(key, data)
+      })
+      useInboxStore.getState().setUnreadTotal(context.previousUnreadTotal)
     },
 
     onSettled: () => {
@@ -321,6 +359,56 @@ export function useUnarchiveNotifications(): UseMutationResult<void, Error, stri
 }
 
 // ---------------------------------------------------------------------------
+// useDeleteNotifications
+// ---------------------------------------------------------------------------
+
+/**
+ * Permanently delete notifications. Optimistically removes the items from the
+ * cache and rolls back on error so deletion feels instant but recovers if the
+ * server refuses the request.
+ */
+export function useDeleteNotifications(): UseMutationResult<void, Error, string[]> {
+  const queryClient = useQueryClient()
+
+  return useMutation<void, Error, string[], { previous: Map<string, unknown> }>({
+    mutationFn: (ids) => deleteNotifications(ids),
+
+    onMutate: async (ids) => {
+      await queryClient.cancelQueries({ queryKey: notificationKeys.all })
+
+      const previous = new Map<string, unknown>()
+      queryClient.getQueriesData({ queryKey: notificationKeys.all }).forEach(([key, data]) => {
+        previous.set(JSON.stringify(key), data)
+      })
+
+      queryClient.setQueriesData(
+        { queryKey: notificationKeys.all },
+        (old: unknown) => {
+          if (old === undefined || old === null) return old
+          return optimisticallyRemoveItems(old, ids)
+        }
+      )
+
+      return { previous }
+    },
+
+    onError: (_error, _ids, context) => {
+      if (context?.previous !== undefined) {
+        context.previous.forEach((data, keyStr) => {
+          const key = JSON.parse(keyStr) as string[]
+          queryClient.setQueryData(key, data)
+        })
+      }
+    },
+
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: notificationKeys.all })
+      void queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount })
+    },
+  })
+}
+
+// ---------------------------------------------------------------------------
 // Optimistic update helpers
 // ---------------------------------------------------------------------------
 
@@ -340,6 +428,29 @@ function optimisticallyMarkViewed(data: unknown, ids: string[]): unknown {
         ...page,
         items: page.items.map((item) =>
           idSet.has(item._id) ? { ...item, isViewed: true } : item
+        ),
+      })),
+    }
+  }
+
+  return data
+}
+
+/**
+ * Optimistically set isViewed=true on every notification item in the cache.
+ * Used by useMarkAllAsRead so individual rows clear their unread indicator
+ * immediately instead of waiting for the onSettled invalidation.
+ */
+function optimisticallyMarkAllViewed(data: unknown): unknown {
+  const record = data as Record<string, unknown>
+
+  if (Array.isArray(record.pages)) {
+    return {
+      ...record,
+      pages: (record.pages as PaginatedNotifications[]).map((page) => ({
+        ...page,
+        items: page.items.map((item) =>
+          item.isViewed === true ? item : { ...item, isViewed: true }
         ),
       })),
     }
