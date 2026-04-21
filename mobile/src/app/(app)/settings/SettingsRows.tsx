@@ -41,6 +41,7 @@ import { NameRow } from './rows/NameRow'
 import { PasswordRow } from './rows/PasswordRow'
 import { TwoFactorRow } from './rows/TwoFactorRow'
 import { LanguageRow } from './rows/LanguageRow'
+import { DeleteAccountRow } from './rows/DeleteAccountRow'
 // </registry:imports>
 
 // ---------------------------------------------------------------------------
@@ -286,6 +287,9 @@ export function SettingsRows(): React.ReactNode {
       />
 
       {/* <registry:danger> -- TASK-008 registers DeleteAccountRow here */}
+      <Divider />
+      <SectionHeader title="Danger Zone" />
+      <DeleteAccountRow />
 
       {/* App info footer */}
       <View className="items-center mt-8">
