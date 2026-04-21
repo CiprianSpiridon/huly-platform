@@ -60,22 +60,37 @@ export function useNotificationListeners(): NotificationListenerState {
   // Foreground notification received
   // ---------------------------------------------------------------------------
 
+  // Preferences are read live via usePushStore.getState() inside the listener
+  // so toggling a preference does not tear down and recreate the OS-level
+  // notification subscription on every render.
   useEffect(() => {
     foregroundListenerRef.current = Notifications.addNotificationReceivedListener(
       (notification) => {
         const data = notification.request.content.data as unknown as HulyPushPayload | undefined
         const content = notification.request.content
 
-        // Read preferences fresh on each notification so the listener doesn't
-        // need to be torn down and rebuilt when the user toggles categories.
-        const prefs = usePushStore.getState().preferences
+        // Read current preferences at notification-arrival time.
+        // Reading fresh inside the listener avoids tearing down and rebuilding
+        // the OS-level subscription whenever the user toggles a preference.
+        const { preferences, typePreferences } = usePushStore.getState()
 
-        // Check if this notification category is enabled in preferences
+        // Check if this notification category is enabled in preferences,
+        // then enforce the per-type (sub-category) toggle.
         if (data?.type != null) {
           const category = mapTypeToCategory(data.type)
-          if (category != null && !prefs[category]) {
+          if (category != null && !preferences[category]) {
             // User has disabled this category -- suppress the banner
             return
+          }
+          if (category != null) {
+            const subType = mapTypeToSubType(data.type)
+            if (subType != null) {
+              const categoryTypes = typePreferences[category] as Record<string, boolean>
+              if (categoryTypes[subType] === false) {
+                // Child type disabled -- suppress the banner.
+                return
+              }
+            }
           }
         }
 
@@ -256,6 +271,28 @@ function mapTypeToCategory(type: string): 'chat' | 'tracker' | 'inbox' | null {
       return 'tracker'
     case 'inbox':
       return 'inbox'
+    default:
+      return null
+  }
+}
+
+/**
+ * Map push notification type to its per-category sub-type key so that
+ * per-type toggles (mentions, replies, etc.) can suppress foreground banners.
+ *
+ * Returns null when the incoming type does not map to a known sub-type; the
+ * category-level check still applies in that case.
+ */
+function mapTypeToSubType(type: string): string | null {
+  switch (type) {
+    case 'mention':
+      return 'mentions'
+    case 'message':
+      return 'messages'
+    case 'issue':
+      return 'assigned'
+    case 'inbox':
+      return 'activity'
     default:
       return null
   }

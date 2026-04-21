@@ -51,8 +51,12 @@ const BATCH_CHUNK_SIZE = 50
 
 export type NotificationFilterType = 'all' | 'mentions' | 'reactions' | 'updates'
 
+export type NotificationReadStatus = 'all' | 'read' | 'unread'
+
 export interface NotificationFilters {
   type?: NotificationFilterType
+  readStatus?: NotificationReadStatus
+  archived?: boolean
 }
 
 export interface NotificationPagination {
@@ -78,6 +82,8 @@ export interface NotificationItem {
   modifiedBy: string
   /** Notification subtype for filtering */
   notificationType: NotificationFilterType
+  /** Ref to DocNotifyContext linking this notification to its source document (for grouping) */
+  docNotifyContext: string
 }
 
 export interface PaginatedNotifications {
@@ -129,6 +135,7 @@ function toNotificationItem(doc: Doc): NotificationItem {
     modifiedOn: Number(record.modifiedOn ?? 0),
     modifiedBy: String(record.modifiedBy ?? ''),
     notificationType: inferNotificationType(record),
+    docNotifyContext: String(record.docNotifyContext ?? ''),
   }
 }
 
@@ -152,7 +159,16 @@ export async function getNotifications(
     const _class = classForFilter(filters?.type)
     const limit = pagination?.limit ?? DEFAULT_PAGE_SIZE
 
-    const query: Record<string, unknown> = { archived: false }
+    // Default to non-archived list unless explicitly requested otherwise.
+    const archivedFilter = filters?.archived ?? false
+    const query: Record<string, unknown> = { archived: archivedFilter }
+
+    // Read/unread filter maps to the server-side isViewed boolean.
+    if (filters?.readStatus === 'read') {
+      query.isViewed = true
+    } else if (filters?.readStatus === 'unread') {
+      query.isViewed = false
+    }
 
     // Use cursor as a modifiedOn upper bound for pagination
     if (pagination?.cursor !== undefined) {
@@ -190,7 +206,82 @@ export async function getNotifications(
 }
 
 /**
+ * Minimal DocNotifyContext info used to build inbox group cards.
+ */
+export interface NotifyContextInfo {
+  _id: string
+  objectId: string
+  objectClass: string
+  title: string | undefined
+}
+
+/**
+ * Fetch minimal context metadata for a set of DocNotifyContext IDs.
+ *
+ * Returns a Map keyed by context ref. Unknown IDs are silently omitted so
+ * the caller can fall back to a class-based label.
+ */
+export async function getNotifyContextsByIds(
+  ids: string[]
+): Promise<Map<string, NotifyContextInfo>> {
+  const map = new Map<string, NotifyContextInfo>()
+  const uniqueIds = Array.from(new Set(ids.filter((id) => id !== '')))
+  if (uniqueIds.length === 0) return map
+
+  const client = getClient()
+  if (client === null) return map
+
+  try {
+    const result = await client.findAll(
+      NOTIFICATION_CLASS.DocNotifyContext,
+      { _id: { $in: uniqueIds } as unknown as DocumentQuery<Doc>['_id'] },
+      {
+        projection: {
+          _id: 1,
+          objectId: 1,
+          objectClass: 1,
+          title: 1,
+        } as Record<string, number>,
+      }
+    )
+    for (const doc of result) {
+      const record = doc as unknown as Record<string, unknown>
+      const id = String(record._id ?? '')
+      if (id === '') continue
+      const titleRaw = record.title
+      map.set(id, {
+        _id: id,
+        objectId: String(record.objectId ?? ''),
+        objectClass: String(record.objectClass ?? ''),
+        title: typeof titleRaw === 'string' && titleRaw !== '' ? titleRaw : undefined,
+      })
+    }
+  } catch {
+    // Missing/unknown contexts are not fatal -- caller falls back to the
+    // object class label for grouping display.
+  }
+
+  return map
+}
+
+/**
+ * Humanize a Huly class ref like `tracker:class:Issue` into `Issue`.
+ * Used as the group fallback label when no resolved title is available.
+ */
+export function humanizeObjectClass(classRef: string): string {
+  if (classRef === '') return 'Document'
+  const parts = classRef.split(':')
+  const last = parts[parts.length - 1]
+  if (last === undefined || last === '') return 'Document'
+  return last
+}
+
+/**
  * Fetch notification contexts for the current user.
+ *
+ * Filters by the authenticated account's UUID. Without this filter, a
+ * transactor that returns mixed data would leak other users' contexts into
+ * the current user's inbox.
  */
 export async function getNotificationContexts(): Promise<Doc[]> {
   const client = getClient()
@@ -199,9 +290,10 @@ export async function getNotificationContexts(): Promise<Doc[]> {
   }
 
   try {
+    const account = await client.getAccount()
     const result = await client.findAll(
       NOTIFICATION_CLASS.DocNotifyContext,
-      { hidden: false } as Record<string, unknown>,
+      { user: account.uuid, hidden: false } as Record<string, unknown>,
       { sort: { lastUpdateTimestamp: SortingOrder.Descending } as Record<string, SortingOrder> }
     )
     return [...result]
@@ -358,6 +450,82 @@ export async function archiveAll(): Promise<void> {
     }
   } catch (error) {
     throw wrapRepositoryError(DOMAIN, 'archiveAll', error)
+  }
+}
+
+/**
+ * Restore (unarchive) previously archived notifications.
+ */
+export async function unarchiveNotifications(ids: string[]): Promise<void> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'unarchiveNotifications')
+  }
+
+  if (ids.length === 0) return
+
+  try {
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+
+    // Fetch notifications (including archived) so we can target their real space.
+    const notifications = await client.findAll(
+      NOTIFICATION_CLASS.InboxNotification as Ref<Class<Doc>>,
+      { _id: { $in: ids } as unknown as DocumentQuery<Doc>['_id'] }
+    )
+    const txes = notifications.map((notif) =>
+      factory.createTxUpdateDoc(
+        notif._class,
+        notif.space,
+        notif._id,
+        { archived: false } as Record<string, unknown>
+      )
+    )
+    for (let i = 0; i < txes.length; i += BATCH_CHUNK_SIZE) {
+      const chunk = txes.slice(i, i + BATCH_CHUNK_SIZE)
+      await Promise.all(chunk.map((tx) => client.tx(tx)))
+    }
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'unarchiveNotifications', error)
+  }
+}
+
+/**
+ * Permanently delete notifications by ID.
+ *
+ * Uses TxFactory.createTxRemoveDoc() to issue a hard-delete transaction for
+ * each notification. IDs that no longer exist (already removed on the
+ * server) are silently skipped rather than raising: we only emit remove
+ * transactions for notifications we were able to re-fetch.
+ */
+export async function deleteNotifications(ids: string[]): Promise<void> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'deleteNotifications')
+  }
+
+  if (ids.length === 0) return
+
+  try {
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+
+    // Re-fetch notifications so we have their real class + space. Any IDs
+    // missing from the result have already been removed and are dropped.
+    const notifications = await client.findAll(
+      NOTIFICATION_CLASS.InboxNotification as Ref<Class<Doc>>,
+      { _id: { $in: ids } as unknown as DocumentQuery<Doc>['_id'] }
+    )
+
+    const txes = notifications.map((notif) =>
+      factory.createTxRemoveDoc(notif._class, notif.space, notif._id)
+    )
+    for (let i = 0; i < txes.length; i += BATCH_CHUNK_SIZE) {
+      const chunk = txes.slice(i, i + BATCH_CHUNK_SIZE)
+      await Promise.all(chunk.map((tx) => client.tx(tx)))
+    }
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'deleteNotifications', error)
   }
 }
 

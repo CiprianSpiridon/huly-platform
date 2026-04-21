@@ -19,6 +19,15 @@ const CHUNTER_DIRECT_MESSAGE = 'chunter:class:DirectMessage'
 const CHUNTER_CHAT_MESSAGE = 'chunter:class:ChatMessage'
 const ACTIVITY_MESSAGE = 'activity:class:ActivityMessage'
 
+// Expanded coverage (TASK-006). These fall back to the inbox detail screen
+// because the mobile app does not yet ship dedicated HR/recruit/document/board
+// surfaces, but they are still treated as known so we do not log them as
+// "unrecognized class" in analytics.
+const HR_DEPARTMENT = 'hr:class:Department'
+const RECRUIT_APPLICANT = 'recruit:class:Applicant'
+const DOCUMENT_DOCUMENT = 'document:class:Document'
+const BOARD_CARD = 'board:class:Card'
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -51,6 +60,17 @@ const INBOX_FALLBACK: DeepLinkResult = {
 // ---------------------------------------------------------------------------
 // Router
 // ---------------------------------------------------------------------------
+
+/**
+ * Build the inbox detail fallback path for a notification, or the inbox root
+ * if no notification id is available.
+ */
+function inboxFallback(notificationId?: string): string {
+  if (notificationId != null && notificationId !== '') {
+    return `/(app)/inbox/notification/${notificationId}`
+  }
+  return '/(app)/inbox'
+}
 
 /**
  * Resolve a notification's objectClass + objectId into an in-app route.
@@ -90,28 +110,47 @@ export function resolveNotificationRoute(
 
     case CHUNTER_CHAT_MESSAGE:
     case ACTIVITY_MESSAGE:
-      if (notificationId != null) {
-        return {
-          path: `/(app)/inbox/notification/${notificationId}`,
-          isKnown: false,
-        }
+      return {
+        path: inboxFallback(notificationId),
+        isKnown: false,
       }
-      return INBOX_FALLBACK
+
+    // Known object classes without dedicated mobile surfaces: route to the
+    // inbox detail screen so the user can still read the notification body,
+    // but report them as known so the default case does not fire.
+    case HR_DEPARTMENT:
+    case RECRUIT_APPLICANT:
+    case DOCUMENT_DOCUMENT:
+    case BOARD_CARD:
+      return {
+        path: inboxFallback(notificationId),
+        isKnown: true,
+      }
 
     default:
-      if (notificationId != null) {
-        return {
-          path: `/(app)/inbox/notification/${notificationId}`,
-          isKnown: false,
-        }
+      return {
+        path: inboxFallback(notificationId),
+        isKnown: false,
       }
-      return INBOX_FALLBACK
   }
 }
 
 /**
  * Check if an objectClass maps to a known deep-link target.
+ *
+ * Includes classes with dedicated surfaces (tracker, chunter channels) as
+ * well as classes whose mobile surface is the inbox detail fallback
+ * (hr, recruit, document, board) so that unknown-class analytics do not
+ * fire for these.
  */
 export function isKnownObjectClass(objectClass: string): boolean {
-  return [TRACKER_ISSUE, CHUNTER_CHANNEL, CHUNTER_DIRECT_MESSAGE].includes(objectClass)
+  return [
+    TRACKER_ISSUE,
+    CHUNTER_CHANNEL,
+    CHUNTER_DIRECT_MESSAGE,
+    HR_DEPARTMENT,
+    RECRUIT_APPLICANT,
+    DOCUMENT_DOCUMENT,
+    BOARD_CARD,
+  ].includes(objectClass)
 }

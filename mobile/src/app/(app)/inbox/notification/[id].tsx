@@ -67,7 +67,7 @@ export default function NotificationDetailScreen(): React.ReactNode {
         return
       }
     }
-  }, [record])
+  }, [record, id])
 
   useEffect(() => {
     if (!id) router.replace('/(app)/inbox' as never)

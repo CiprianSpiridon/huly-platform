@@ -106,8 +106,10 @@ function NotificationRowInner({
     onArchive(notification._id)
   }, [notification._id, onArchive])
 
-  // Swipe gesture for archive
+  // Swipe gesture for archive -- disabled in selection mode so row taps toggle
+  // selection instead of revealing a destructive swipe action.
   const panGesture = Gesture.Pan()
+    .enabled(!isSelectionMode)
     .activeOffsetX([-15, 15])
     .failOffsetY([-10, 10])
     .onUpdate((event) => {
@@ -130,6 +132,18 @@ function NotificationRowInner({
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
   }))
+
+  // VoiceOver / TalkBack alternative for the swipe-archive gesture. Users can
+  // activate "Archive" via the rotor / custom actions menu without needing to
+  // execute the gesture themselves.
+  const handleAccessibilityAction = useCallback(
+    (event: { nativeEvent: { actionName: string } }) => {
+      if (event.nativeEvent.actionName === 'archive') {
+        triggerArchive()
+      }
+    },
+    [triggerArchive]
+  )
 
   return (
     <View className="relative overflow-hidden">
@@ -156,6 +170,8 @@ function NotificationRowInner({
             accessibilityLabel={`${notification.isViewed ? '' : 'Unread '}notification: ${notification.title || 'Notification'}. ${timeAgo}`}
             accessibilityHint="Double tap to open. Swipe left to archive."
             accessibilityState={{ selected: isSelected }}
+            accessibilityActions={[{ name: 'archive', label: 'Archive notification' }]}
+            onAccessibilityAction={handleAccessibilityAction}
           >
             <View className="flex-row items-start gap-3">
               {/* Selection checkbox or type icon */}

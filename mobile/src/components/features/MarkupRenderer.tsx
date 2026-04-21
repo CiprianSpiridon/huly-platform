@@ -115,14 +115,27 @@ const ALLOWED_URL_SCHEMES = new Set(['https:', 'http:', 'mailto:'])
 /**
  * Returns true if the URL uses an allowed scheme (https, http, mailto).
  * Blocks dangerous schemes like javascript:, tel:, file:, intent:, market:.
+ *
+ * Hermes does not ship a WHATWG-compliant `URL` constructor by default.
+ * When it throws (either because the URL is malformed or because `URL` is
+ * unavailable), we fall back to a conservative scheme-prefix check so
+ * absolute links still work and the call site cannot crash.
  */
 function isAllowedUrl(url: string): boolean {
   try {
     const parsed = new URL(url)
     return ALLOWED_URL_SCHEMES.has(parsed.protocol)
   } catch {
-    // Malformed URL -- reject
-    return false
+    // Fall back to a prefix-based check when `new URL()` is unavailable or
+    // the input is not parseable. Any string whose scheme is not in the
+    // allow-list (including relative paths and dangerous schemes like
+    // javascript: or file:) is rejected.
+    const lower = url.trim().toLowerCase()
+    return (
+      lower.startsWith('https://') ||
+      lower.startsWith('http://') ||
+      lower.startsWith('mailto:')
+    )
   }
 }
 

@@ -26,6 +26,12 @@ interface BulkActionBarProps {
   onArchive: () => void
   onSelectAll: () => void
   onCancel: () => void
+  /**
+   * Optional permanent-delete action. When provided, a Delete button is shown
+   * alongside Mark Read and Archive. The caller is responsible for confirming
+   * the action (e.g. via Alert) before invoking the mutation.
+   */
+  onDelete?: () => void
 }
 
 // ---------------------------------------------------------------------------
@@ -39,6 +45,7 @@ function BulkActionBarInner({
   onArchive,
   onSelectAll,
   onCancel,
+  onDelete,
 }: BulkActionBarProps): React.ReactNode {
   const handleMarkAsRead = useCallback(() => {
     lightImpact()
@@ -55,6 +62,11 @@ function BulkActionBarInner({
     selection()
     onSelectAll()
   }, [onSelectAll])
+
+  const handleDelete = useCallback(() => {
+    triggerHaptic()
+    if (onDelete !== undefined) onDelete()
+  }, [onDelete])
 
   return (
     <View className="bg-surface-panel border-b border-divider px-4 py-2">
@@ -116,6 +128,20 @@ function BulkActionBarInner({
             Archive ({selectedCount})
           </Text>
         </Pressable>
+
+        {onDelete !== undefined && (
+          <Pressable
+            className="flex-1 flex-row items-center justify-center bg-surface-accent rounded-md py-2.5 active:opacity-80"
+            onPress={handleDelete}
+            accessibilityRole="button"
+            accessibilityLabel={`Delete ${selectedCount} notifications permanently`}
+          >
+            <Ionicons name="trash-outline" size={18} color="#EF4444" />
+            <Text className="font-sans-medium text-sm text-negative ml-1.5">
+              Delete ({selectedCount})
+            </Text>
+          </Pressable>
+        )}
       </View>
     </View>
   )

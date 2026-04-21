@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query'
 import type { Doc, Ref, Class } from '@hcengineering/core'
 
 import { getClient } from '@/client'
+import { useAuthStore } from '@/store/auth'
 import { useChatStore } from '@/store/chat'
 import { useConnectionStore } from '@/store/connection'
 import { useWebSocketStore } from '@/store/websocket'
@@ -35,7 +36,9 @@ const POLL_INTERVAL_WS = 2 * 60_000 // 2 minutes (WS connected)
 export function useChatUnreadSync(): void {
   const resetAllUnread = useChatStore((s) => s.resetAllUnread)
   const setUnreadCount = useChatStore((s) => s.setUnreadCount)
-  const currentSocialId = useConnectionStore((s) => s.currentSocialId)
+  // DocNotifyContext.user is typed as AccountUuid (not PersonId / social id),
+  // so we must filter using the authenticated account UUID from the auth store.
+  const accountUuid = useAuthStore((s) => s.account)
   const clientReady = useConnectionStore((s) => s.status === 'connected')
   const wsConnected = useWebSocketStore((s) => s.status === 'connected')
   const effectiveInterval = wsConnected ? POLL_INTERVAL_WS : POLL_INTERVAL
@@ -43,21 +46,21 @@ export function useChatUnreadSync(): void {
   const { data: contexts } = useQuery({
     // Include effectiveInterval in the key so WS toggling re-keys (and refetches)
     // the query instead of waiting for the next stale-time window.
-    queryKey: ['chat', 'unread-contexts', currentSocialId, effectiveInterval],
+    queryKey: ['chat', 'unread-contexts', accountUuid, effectiveInterval],
     queryFn: async () => {
       const client = getClient()
-      if (client === null || currentSocialId == null) return []
+      if (client === null || accountUuid == null) return []
 
       return await client.findAll<Doc>(
         NOTIFY_CONTEXT_CLASS,
         {
-          user: currentSocialId,
+          user: accountUuid,
           objectClass: { $in: [CHANNEL_CLASS, DM_CLASS] },
           hidden: { $ne: true },
         } as Record<string, unknown>
       )
     },
-    enabled: clientReady && currentSocialId != null,
+    enabled: clientReady && accountUuid != null,
     staleTime: effectiveInterval,
     refetchInterval: effectiveInterval,
   })
