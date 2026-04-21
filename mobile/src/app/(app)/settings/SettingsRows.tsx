@@ -20,20 +20,24 @@
 
 import { useCallback } from 'react'
 import { View, Text, Alert, ActivityIndicator, Pressable } from 'react-native'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { router, type Href } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 
 import { useProfile } from '@/hooks/useProfile'
 import { useWorkspaceInfo } from '@/hooks/useWorkspaces'
 import { useLogout } from '@/hooks/use-auth'
+import { useImagePicker } from '@/hooks/useImagePicker'
 import { useSettingsStore, type ThemePreference } from '@/store/settings'
 import { ProfileHeader } from '@/components/features/ProfileHeader'
 import { SettingsRow } from '@/components/features/SettingsRow'
+import { updateAvatar } from '@/repositories/settings'
 
 // ---------------------------------------------------------------------------
 // Registry imports (append-only -- later tasks add new imports here)
 // ---------------------------------------------------------------------------
 // <registry:imports>
+import { NameRow } from './rows/NameRow'
 // </registry:imports>
 
 // ---------------------------------------------------------------------------
@@ -112,6 +116,31 @@ export function SettingsRows(): React.ReactNode {
   const theme = useSettingsStore((s) => s.theme)
   const setTheme = useSettingsStore((s) => s.setTheme)
   const appVersion = useSettingsStore((s) => s.appVersion)
+  const { pickFromGallery } = useImagePicker()
+  const queryClient = useQueryClient()
+
+  const avatarMutation = useMutation({
+    mutationFn: async (picked: { uri: string; filename: string; mimeType: string }) => {
+      await updateAvatar(picked.uri, picked.filename, picked.mimeType)
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['profile'] })
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : 'Avatar upload failed'
+      Alert.alert('Upload failed', msg, [{ text: 'OK' }])
+    },
+  })
+
+  const handleEditAvatar = useCallback(async () => {
+    const picked = await pickFromGallery()
+    if (picked == null) return
+    avatarMutation.mutate({
+      uri: picked.uri,
+      filename: picked.filename,
+      mimeType: picked.mimeType,
+    })
+  }, [pickFromGallery, avatarMutation])
 
   const handleThemeChange = useCallback(
     (newTheme: ThemePreference) => {
@@ -159,11 +188,18 @@ export function SettingsRows(): React.ReactNode {
           <ActivityIndicator size="small" color="#205DC2" />
         </View>
       ) : profile != null ? (
-        <ProfileHeader
-          firstName={profile.firstName}
-          lastName={profile.lastName}
-          email={profile.email}
-        />
+        <>
+          <ProfileHeader
+            firstName={profile.firstName}
+            lastName={profile.lastName}
+            email={profile.email}
+            onEditAvatar={() => { void handleEditAvatar() }}
+            isUploadingAvatar={avatarMutation.isPending}
+          />
+          {/* <registry:profile> */}
+          <NameRow profile={profile} />
+          {/* </registry:profile> */}
+        </>
       ) : (
         <View className="items-center py-6">
           <Text className="font-sans text-sm text-content-tertiary">
@@ -171,8 +207,6 @@ export function SettingsRows(): React.ReactNode {
           </Text>
         </View>
       )}
-
-      {/* <registry:profile> -- TASK-001 registers NameRow here */}
 
       <Divider />
 
