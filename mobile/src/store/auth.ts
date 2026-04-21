@@ -7,6 +7,7 @@
 
 import { create } from 'zustand'
 import * as SecureStore from 'expo-secure-store'
+import NetInfo from '@react-native-community/netinfo'
 import type { AccountUuid } from '@hcengineering/core'
 import type { LoginInfo } from '@hcengineering/account-client'
 
@@ -247,13 +248,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           biometricLocked: biometricEnabled,
         })
       } catch (err) {
-        const isNetworkError =
-          err instanceof TypeError ||
-          (err instanceof Error &&
-            /network|fetch|abort|timeout|internet/i.test(err.message))
+        // Distinguishing "we are offline" from "the server rejected us"
+        // cannot be done by error shape alone — RN's fetch throws a
+        // TypeError for CORS, DNS, TLS, and 5xx edge cases too. Consult
+        // NetInfo authoritatively. Only trust the cached token when we
+        // know we are offline; otherwise treat the failure as auth.
+        let isOffline = false
+        try {
+          const netState = await NetInfo.fetch()
+          // `isInternetReachable` is the strongest signal; fall back to
+          // `isConnected` when the reachability probe hasn't completed.
+          if (netState.isInternetReachable === false) {
+            isOffline = true
+          } else if (netState.isInternetReachable == null && netState.isConnected === false) {
+            isOffline = true
+          }
+        } catch {
+          // NetInfo itself failed — conservatively treat as online so we
+          // don't extend a session against a genuinely revoked token.
+          isOffline = false
+        }
 
-        if (isNetworkError) {
-          // Network failure — trust the persisted token optimistically so the
+        if (isOffline) {
+          // Offline — trust the persisted token optimistically so the
           // user isn't bounced to the login screen on flaky connectivity.
           // The connection store handles real-time connectivity state, and
           // any subsequent 401 from the transactor will clear auth explicitly.
@@ -264,13 +281,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             biometricEnabled,
             biometricLocked: biometricEnabled,
           })
+          void err
           return
         }
 
-        // Auth failure (invalid signature, revoked, 401). Clear everything,
-        // including workspace keys, so the next launch doesn't try to restore
-        // a workspace the user can no longer access. Also clear the
-        // biometric flag — the token it was protecting is gone.
+        // Online but verification failed (invalid signature, revoked, 401,
+        // 5xx, CORS). Clear everything — including workspace keys — so the
+        // next launch doesn't try to restore a workspace the user can no
+        // longer access. Also clear the biometric flag; the token it was
+        // protecting is gone.
         await SecureStore.deleteItemAsync('auth_token')
         await SecureStore.deleteItemAsync('account_id')
         await SecureStore.deleteItemAsync(BIOMETRIC_FLAG_KEY)
