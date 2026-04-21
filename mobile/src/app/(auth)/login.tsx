@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import {
   View,
   Text,
@@ -13,7 +13,8 @@ import { router } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import * as WebBrowser from 'expo-web-browser'
 
-import { useLogin } from '@/hooks/use-auth'
+import { useLogin, useBiometricAuth, getBiometricStatus } from '@/hooks/use-auth'
+import { useAuthStore } from '@/store/auth'
 import { getServerUrl, loadServerConfig } from '@/client/config'
 
 const OAUTH_RETURN_URL = 'https://huly.app/login/auth'
@@ -24,6 +25,34 @@ export default function LoginScreen(): React.ReactNode {
   const [password, setPassword] = useState('')
   const { login, isLoading, error } = useLogin()
   const isSubmitting = useRef(false)
+
+  // -------------------------------------------------------------------------
+  // Biometric setup (TASK-004) — declared first because handleLogin &
+  // handleGoogleLogin reference `offerBiometricEnrollment`.
+  // -------------------------------------------------------------------------
+  const biometricEnabledStore = useAuthStore((s) => s.biometricEnabled)
+  const setBiometricEnabledStore = useAuthStore((s) => s.setBiometricEnabled)
+
+  const offerBiometricEnrollment = useCallback(async (): Promise<void> => {
+    try {
+      const status = await getBiometricStatus()
+      if (status !== 'available') return
+      if (biometricEnabledStore) return
+      Alert.alert(
+        t('auth.biometric.enablePromptTitle'),
+        t('auth.biometric.enablePromptMessage'),
+        [
+          { text: t('auth.biometric.skipAction'), style: 'cancel' },
+          {
+            text: t('auth.biometric.enableAction'),
+            onPress: () => { void setBiometricEnabledStore(true) },
+          },
+        ],
+      )
+    } catch {
+      // Non-fatal — never block login on biometric prompt issues.
+    }
+  }, [biometricEnabledStore, setBiometricEnabledStore, t])
 
   const handleLogin = useCallback(async () => {
     if (isSubmitting.current) return
@@ -40,13 +69,16 @@ export default function LoginScreen(): React.ReactNode {
         return
       }
 
+      // Offer biometric enrollment after the first successful password login.
+      // Non-blocking — the alert resolves independently of the navigation.
+      void offerBiometricEnrollment()
       router.replace('/(auth)/workspace-select')
     } catch {
       Alert.alert(t('auth.login.failureTitle'), t('auth.login.failureMessage'))
     } finally {
       isSubmitting.current = false
     }
-  }, [email, password, login, t])
+  }, [email, password, login, t, offerBiometricEnrollment])
 
   const [isOAuthLoading, setIsOAuthLoading] = useState(false)
   const isOAuthSubmitting = useRef(false)
@@ -107,6 +139,73 @@ export default function LoginScreen(): React.ReactNode {
     }
   }, [t])
 
+  // -------------------------------------------------------------------------
+  // Biometric unlock (TASK-004)
+  // -------------------------------------------------------------------------
+  const biometricLocked = useAuthStore((s) => s.biometricLocked)
+  const storedToken = useAuthStore((s) => s.token)
+  const setBiometricLocked = useAuthStore((s) => s.setBiometricLocked)
+  const completeBiometricUnlock = useAuthStore((s) => s.completeBiometricUnlock)
+  const clearAuth = useAuthStore((s) => s.clearAuth)
+  const { promptIfNeeded: promptBiometric } = useBiometricAuth()
+  const biometricPromptedRef = useRef(false)
+
+  const handleBiometricUnlock = useCallback(async (): Promise<void> => {
+    const result = await promptBiometric(t('auth.biometric.promptReason'))
+    if (result.status === 'success') {
+      // Flip biometricLocked -> false and isAuthenticated -> true in a
+      // single set so navigation transitions cleanly. AuthLayout will then
+      // route the user into (app) (or workspace-select if none selected).
+      completeBiometricUnlock()
+      return
+    }
+    if (result.status === 'cancel') {
+      // User cancelled -- stay on login so they can type a password.
+      setBiometricLocked(false)
+      return
+    }
+    if (result.status === 'lockout') {
+      setBiometricLocked(false)
+      Alert.alert(t('auth.login.failureTitle'), t('auth.biometric.lockout'))
+      return
+    }
+    if (result.status === 'no-hardware' || result.status === 'not-enrolled') {
+      // Hardware missing or biometry revoked — drop the flag and let the
+      // user log in with password.
+      await setBiometricEnabledStore(false)
+      setBiometricLocked(false)
+      return
+    }
+    // Generic failure — surface to the user, allow password fallback.
+    setBiometricLocked(false)
+    Alert.alert(t('auth.login.failureTitle'), t('auth.biometric.failed'))
+  }, [promptBiometric, t, setBiometricLocked, setBiometricEnabledStore, completeBiometricUnlock])
+
+  // Cold-launch auto-prompt: run exactly once per mount when the store
+  // reports `biometricLocked: true` AND we still have a stored token.
+  useEffect(() => {
+    if (biometricPromptedRef.current) return
+    if (!biometricLocked || !biometricEnabledStore) return
+    if (storedToken == null) {
+      // Secure-store tamper: flag set but token missing. Clear both and
+      // route into a fresh login (AuthLayout will land us here regardless).
+      void (async () => {
+        await setBiometricEnabledStore(false)
+        await clearAuth()
+      })()
+      return
+    }
+    biometricPromptedRef.current = true
+    void handleBiometricUnlock()
+  }, [
+    biometricLocked,
+    biometricEnabledStore,
+    storedToken,
+    setBiometricEnabledStore,
+    clearAuth,
+    handleBiometricUnlock,
+  ])
+
   const isFormValid = email.includes('@') && password.length > 0
 
   return (
@@ -126,6 +225,19 @@ export default function LoginScreen(): React.ReactNode {
           </View>
 
           <View className="gap-4">
+            {biometricEnabledStore && storedToken != null && (
+              <Pressable
+                className="rounded-md p-3 items-center bg-primary"
+                onPress={() => { void handleBiometricUnlock() }}
+                accessibilityRole="button"
+                accessibilityLabel={t('auth.login.biometricAccessibility')}
+              >
+                <Text className="font-sans-medium text-base text-white">
+                  {t('auth.login.biometricPrompt')}
+                </Text>
+              </Pressable>
+            )}
+
             <View className="gap-1">
               <Text className="font-sans-medium text-sm text-content">
                 {t('auth.login.emailLabel')}

@@ -11,6 +11,7 @@
 import { useState, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { LoginInfo, OtpInfo } from '@hcengineering/account-client'
+import * as LocalAuthentication from 'expo-local-authentication'
 
 import { getOrCreateAccountClient, clearAccountClient } from '@/client/account'
 import { clearConfig } from '@/client/config'
@@ -247,6 +248,96 @@ export function useOAuthLogin(): {
   )
 
   return { loginWithToken, isLoading, error }
+}
+
+// ---------------------------------------------------------------------------
+// useBiometricAuth -- opt-in Face ID / Touch ID unlock
+// ---------------------------------------------------------------------------
+
+export type BiometricStatus =
+  | 'available' // hardware + enrolled
+  | 'no-hardware' // device has no biometric sensor
+  | 'not-enrolled' // sensor present, user has not enrolled any biometry
+  | 'lockout' // OS temporarily locked biometry after repeated failures
+
+export interface BiometricAttemptResult {
+  status: 'success' | BiometricStatus | 'failed' | 'cancel'
+  error?: string
+}
+
+/**
+ * Returns the current biometric availability on the device. See the plan's
+ * failure-modes table for each return value's meaning.
+ */
+export async function getBiometricStatus(): Promise<BiometricStatus> {
+  const hasHardware = await LocalAuthentication.hasHardwareAsync()
+  if (!hasHardware) return 'no-hardware'
+  const enrolled = await LocalAuthentication.isEnrolledAsync()
+  if (!enrolled) return 'not-enrolled'
+  return 'available'
+}
+
+/**
+ * Biometric auth hook.
+ *
+ * `promptIfNeeded()` runs the OS biometric prompt and resolves with a tagged
+ * status the caller can branch on. It never throws — every failure mode is
+ * surfaced via the status union. This matches the plan's requirement to
+ * keep password fallback paths working without try/catch sprawl in screens.
+ */
+export function useBiometricAuth(): {
+  promptIfNeeded: (reason: string) => Promise<BiometricAttemptResult>
+  isLoading: boolean
+} {
+  const [isLoading, setIsLoading] = useState(false)
+  const setBiometricLocked = useAuthStore((s) => s.setBiometricLocked)
+  const setBiometricEnabled = useAuthStore((s) => s.setBiometricEnabled)
+
+  const promptIfNeeded = useCallback(
+    async (reason: string): Promise<BiometricAttemptResult> => {
+      setIsLoading(true)
+      try {
+        const status = await getBiometricStatus()
+        if (status !== 'available') {
+          // Hardware missing or biometry revoked in OS Settings. Clear the
+          // opt-in flag so we don't loop on the next launch, and surface
+          // the status so the caller can fall back to password login.
+          if (status === 'not-enrolled') {
+            await setBiometricEnabled(false)
+          }
+          setBiometricLocked(false)
+          return { status }
+        }
+
+        const result = await LocalAuthentication.authenticateAsync({
+          promptMessage: reason,
+          disableDeviceFallback: false,
+          cancelLabel: 'Cancel',
+        })
+
+        if (result.success) {
+          setBiometricLocked(false)
+          return { status: 'success' }
+        }
+
+        // `result.error` is a lowercase-kebab string per expo-local-authentication.
+        const errCode = 'error' in result ? result.error : undefined
+        if (errCode === 'user_cancel' || errCode === 'system_cancel' || errCode === 'app_cancel') {
+          return { status: 'cancel' }
+        }
+        if (errCode === 'lockout') {
+          // OS lockout — do not retry the biometric prompt in a loop.
+          return { status: 'lockout', error: errCode }
+        }
+        return { status: 'failed', error: errCode }
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [setBiometricLocked, setBiometricEnabled],
+  )
+
+  return { promptIfNeeded, isLoading }
 }
 
 // ---------------------------------------------------------------------------

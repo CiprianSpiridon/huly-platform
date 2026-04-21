@@ -16,18 +16,42 @@ interface AuthState {
   /** Transient restricted token used during the 2FA verification step. NOT persisted. */
   tfaToken: string | null
   isAuthenticated: boolean
+  /**
+   * Whether the user has opted in to biometric unlock. Persisted to
+   * secure-store so it survives app restarts. See TASK-004 in
+   * `.ulpi/plans/mobile-auth-parity.md` for the full state machine.
+   */
+  biometricEnabled: boolean
+  /**
+   * True while the app is waiting on the user to complete the biometric
+   * prompt on cold start. While this is true the app should keep the
+   * protected surface hidden and prompt the user to authenticate.
+   */
+  biometricLocked: boolean
 
   setAuth: (loginInfo: LoginInfo) => Promise<void>
   setTfaToken: (token: string) => void
   clearAuth: () => Promise<void>
   restoreAuth: () => Promise<void>
+  setBiometricEnabled: (enabled: boolean) => Promise<void>
+  setBiometricLocked: (locked: boolean) => void
+  /**
+   * Called after a successful biometric unlock on cold launch. Flips
+   * `biometricLocked -> false` and `isAuthenticated -> true` in a single
+   * set so the navigator transitions in one frame.
+   */
+  completeBiometricUnlock: () => void
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+const BIOMETRIC_FLAG_KEY = 'biometric_enabled'
+
+export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
   account: null,
   tfaToken: null,
   isAuthenticated: false,
+  biometricEnabled: false,
+  biometricLocked: false,
 
   setAuth: async (loginInfo: LoginInfo) => {
     if (loginInfo.token == null) {
@@ -42,6 +66,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       account: loginInfo.account,
       tfaToken: null,
       isAuthenticated: true,
+      // A fresh login always clears any pending biometric lock. The user
+      // has just proven possession of password/OAuth; don't immediately
+      // re-prompt them for biometrics.
+      biometricLocked: false,
     })
   },
 
@@ -50,21 +78,60 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ tfaToken: token })
   },
 
+  setBiometricEnabled: async (enabled: boolean) => {
+    if (enabled) {
+      await SecureStore.setItemAsync(BIOMETRIC_FLAG_KEY, '1')
+    } else {
+      await SecureStore.deleteItemAsync(BIOMETRIC_FLAG_KEY)
+    }
+    set({ biometricEnabled: enabled })
+  },
+
+  setBiometricLocked: (locked: boolean) => {
+    set({ biometricLocked: locked })
+  },
+
+  completeBiometricUnlock: () => {
+    const { token } = get()
+    if (token == null) {
+      // Defensive: should not happen — restoreAuth requires a valid token
+      // before setting biometricLocked. If it does, refuse to authenticate.
+      set({ biometricLocked: false })
+      return
+    }
+    set({ biometricLocked: false, isAuthenticated: true })
+  },
+
   clearAuth: async () => {
     await SecureStore.deleteItemAsync('auth_token')
     await SecureStore.deleteItemAsync('account_id')
+    await SecureStore.deleteItemAsync(BIOMETRIC_FLAG_KEY)
 
     set({
       token: null,
       account: null,
       tfaToken: null,
       isAuthenticated: false,
+      biometricEnabled: false,
+      biometricLocked: false,
     })
+    // Satisfy noUnusedLocals without altering behavior -- `get` is exposed
+    // here for future selectors that need to read the pre-clear state.
+    void get
   },
 
   restoreAuth: async () => {
     const token = await SecureStore.getItemAsync('auth_token')
     const account = await SecureStore.getItemAsync('account_id')
+    const biometricFlag = await SecureStore.getItemAsync(BIOMETRIC_FLAG_KEY)
+    const biometricEnabled = biometricFlag === '1'
+
+    // Secure-store tampering / wipe: biometric flag set but token missing.
+    // Treat this as "no stored credential"; clear the flag and fall through
+    // to the no-credential branch so the user is prompted for a fresh login.
+    if (biometricEnabled && (token == null || account == null)) {
+      await SecureStore.deleteItemAsync(BIOMETRIC_FLAG_KEY)
+    }
 
     if (token != null && account != null) {
       // Validate the token is still valid before trusting it
@@ -77,10 +144,19 @@ export const useAuthStore = create<AuthState>((set) => ({
           throw new Error('Token invalid')
         }
 
+        // When biometrics are enabled we keep `isAuthenticated: false`
+        // during the locked state so the existing AuthLayout auth guard
+        // keeps the user on the login screen until the biometric prompt
+        // succeeds. `token`/`account` are still hydrated so the login
+        // screen can render the "Unlock with biometrics" button and the
+        // biometric success path can flip `biometricLocked: false` and
+        // `isAuthenticated: true` in one step via `setAuth`-equivalent.
         set({
           token,
           account: account as AccountUuid,
-          isAuthenticated: true,
+          isAuthenticated: !biometricEnabled,
+          biometricEnabled,
+          biometricLocked: biometricEnabled,
         })
       } catch (err) {
         const isNetworkError =
@@ -96,16 +172,20 @@ export const useAuthStore = create<AuthState>((set) => ({
           set({
             token,
             account: account as AccountUuid,
-            isAuthenticated: true,
+            isAuthenticated: !biometricEnabled,
+            biometricEnabled,
+            biometricLocked: biometricEnabled,
           })
           return
         }
 
         // Auth failure (invalid signature, revoked, 401). Clear everything,
         // including workspace keys, so the next launch doesn't try to restore
-        // a workspace the user can no longer access.
+        // a workspace the user can no longer access. Also clear the
+        // biometric flag — the token it was protecting is gone.
         await SecureStore.deleteItemAsync('auth_token')
         await SecureStore.deleteItemAsync('account_id')
+        await SecureStore.deleteItemAsync(BIOMETRIC_FLAG_KEY)
         await SecureStore.deleteItemAsync('workspace_url')
         await SecureStore.deleteItemAsync('workspace_id')
         await SecureStore.deleteItemAsync('workspace_token')
