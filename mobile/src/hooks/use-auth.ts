@@ -4,6 +4,7 @@
  * - `useLogin` -- email+password login, handles 2FA redirect
  * - `useOtpLogin` -- OTP-based login (request + validate)
  * - `useTwoFactor` -- 2FA verification with TOTP code
+ * - `useOAuthLogin` -- Google OAuth via universal-link capture
  * - `useLogout` -- full sign-out (stores + cache + client reset)
  */
 
@@ -178,6 +179,74 @@ export function useTwoFactor(): {
   )
 
   return { verify, isLoading, error }
+}
+
+// ---------------------------------------------------------------------------
+// useOAuthLogin -- social login (Google via universal-link capture)
+// ---------------------------------------------------------------------------
+
+/**
+ * Validates a JWT-shaped string (three base64url segments separated by dots).
+ * This is a syntactic check only — signature verification happens server-side
+ * when the token is exchanged for a `LoginInfo`.
+ */
+export function isJwtShaped(token: string): boolean {
+  if (token.length === 0) return false
+  const parts = token.split('.')
+  if (parts.length !== 3) return false
+  const base64urlSegment = /^[A-Za-z0-9_-]+$/
+  return parts.every((part) => part.length > 0 && base64urlSegment.test(part))
+}
+
+/**
+ * Consume a JWT captured via the `/login/auth?token=<jwt>` universal link.
+ *
+ * Hydrates a full `LoginInfo` via `getLoginInfoByToken()` (the store's
+ * `setAuth` requires `LoginInfo`, not a bare JWT) and persists it.
+ */
+export function useOAuthLogin(): {
+  loginWithToken: (token: string) => Promise<LoginInfo>
+  isLoading: boolean
+  error: string | null
+} {
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const setAuth = useAuthStore((s) => s.setAuth)
+
+  const loginWithToken = useCallback(
+    async (token: string): Promise<LoginInfo> => {
+      setIsLoading(true)
+      setError(null)
+      try {
+        if (!isJwtShaped(token)) {
+          throw new Error('Invalid OAuth token')
+        }
+        const client = await getOrCreateAccountClient(token)
+        const info = await client.getLoginInfoByToken()
+
+        if (info == null || typeof info !== 'object' || !('account' in info)) {
+          throw new Error('OAuth token rejected by server')
+        }
+
+        const loginInfo = info as LoginInfo
+        if (loginInfo.token == null) {
+          throw new Error('OAuth login info missing token')
+        }
+
+        await setAuth(loginInfo)
+        return loginInfo
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'OAuth login failed'
+        setError(message)
+        throw err
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [setAuth],
+  )
+
+  return { loginWithToken, isLoading, error }
 }
 
 // ---------------------------------------------------------------------------
