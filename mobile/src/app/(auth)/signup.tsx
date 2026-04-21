@@ -73,7 +73,7 @@ export default function SignUpScreen(): React.ReactNode {
       await client.signUpOtp(trimmedEmail, trimmedFirst, trimmedLast)
       router.replace({
         pathname: '/(auth)/otp',
-        params: { email: trimmedEmail, step: 'code' },
+        params: { email: trimmedEmail, step: 'code', origin: 'signup' },
       })
     } catch (err) {
       if (isDuplicateEmailError(err)) {

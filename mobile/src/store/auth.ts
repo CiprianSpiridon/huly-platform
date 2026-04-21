@@ -55,6 +55,19 @@ interface AuthState {
 const BIOMETRIC_FLAG_KEY = 'biometric_enabled'
 
 /**
+ * SecureStore options for the biometric-enabled flag. The flag itself is
+ * not secret, but the presence of a biometric-gated persisted token
+ * should not survive a re-enroll of Face ID / Touch ID. Using
+ * `keychainAccessible: AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY` bounds the
+ * flag to the current device; `requireAuthentication: true` additionally
+ * invalidates the flag when biometry is re-enrolled on iOS.
+ */
+const BIOMETRIC_STORE_OPTIONS: SecureStore.SecureStoreOptions = {
+  keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY,
+  requireAuthentication: true,
+}
+
+/**
  * Thrown by `setAuth()` when the caller passes a `LoginInfo` without a
  * concrete token (e.g. `tfaRequired: true` response). Callers should
  * route the user to the 2FA screen via `setTfaToken()` instead.
@@ -126,7 +139,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   setBiometricEnabled: async (enabled: boolean) => {
     if (enabled) {
-      await SecureStore.setItemAsync(BIOMETRIC_FLAG_KEY, '1')
+      try {
+        await SecureStore.setItemAsync(BIOMETRIC_FLAG_KEY, '1', BIOMETRIC_STORE_OPTIONS)
+      } catch {
+        // If the secure-enclave / keystore is unavailable (hardware
+        // missing, user revoked biometry mid-flow) fall back to a
+        // plain write so the app at least remembers the user's choice.
+        await SecureStore.setItemAsync(BIOMETRIC_FLAG_KEY, '1')
+      }
     } else {
       await SecureStore.deleteItemAsync(BIOMETRIC_FLAG_KEY)
     }

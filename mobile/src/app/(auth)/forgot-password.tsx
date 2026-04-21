@@ -55,9 +55,13 @@ export default function ForgotPasswordScreen(): React.ReactNode {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const isSubmitting = useRef(false)
 
-  // Resend countdown
+  // Interval owner effect: starts a 1s ticker whenever we enter the
+  // success state with a pending countdown. Updates via functional
+  // setState so the effect does NOT depend on `countdown` (which would
+  // tear down and rebuild the interval on every tick).
   useEffect(() => {
-    if (!isSuccess || countdown <= 0) return undefined
+    if (!isSuccess) return undefined
+    if (timerRef.current !== null) return undefined
 
     timerRef.current = setInterval(() => {
       setCountdown((prev) => {
@@ -72,13 +76,19 @@ export default function ForgotPasswordScreen(): React.ReactNode {
       })
     }, 1000)
 
+    return undefined
+  }, [isSuccess])
+
+  // Unmount cleanup effect — runs exactly once. Ensures the ticker is
+  // cleared if the user backs out mid-countdown.
+  useEffect(() => {
     return () => {
       if (timerRef.current !== null) {
         clearInterval(timerRef.current)
         timerRef.current = null
       }
     }
-  }, [isSuccess, countdown])
+  }, [])
 
   const sendReset = useCallback(async (): Promise<void> => {
     if (isSubmitting.current) return
@@ -96,8 +106,14 @@ export default function ForgotPasswordScreen(): React.ReactNode {
         setIsSuccess(true)
         setCountdown(RESEND_SECONDS)
       } else {
-        const message = err instanceof Error ? err.message : null
-        setError(message ?? t('auth.forgotPassword.networkError'))
+        // Do NOT surface the raw error message — it can leak server-side
+        // details (account existence, internal error codes). Log for
+        // dev diagnostics and show a generic network message to the user.
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.warn('[forgot-password] requestPasswordReset failed', err)
+        }
+        setError(t('auth.forgotPassword.networkError'))
       }
     } finally {
       setIsLoading(false)

@@ -10,21 +10,27 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 
 import { useOtpLogin } from '@/hooks/use-auth'
+import type { OtpOrigin } from '@/hooks/use-auth'
 
 export default function OtpScreen(): React.ReactNode {
+  const { t } = useTranslation()
   // Optional params let callers (e.g. signup) prefill the email and jump
-  // straight to the code-entry step: `/otp?email=foo@bar.com&step=code`.
+  // straight to the code-entry step: `/otp?email=foo@bar.com&step=code&origin=signup`.
   const params = useLocalSearchParams<{
     email?: string | string[]
     step?: string | string[]
+    origin?: string | string[]
   }>()
   const initialEmail =
     (Array.isArray(params.email) ? params.email[0] : params.email) ?? ''
   const initialStepParam = Array.isArray(params.step) ? params.step[0] : params.step
   const initialStep: 'email' | 'code' =
     initialStepParam === 'code' && initialEmail.length > 0 ? 'code' : 'email'
+  const rawOrigin = Array.isArray(params.origin) ? params.origin[0] : params.origin
+  const origin: OtpOrigin = rawOrigin === 'signup' ? 'signup' : 'login'
 
   const [email, setEmail] = useState(initialEmail)
   const [code, setCode] = useState('')
@@ -63,15 +69,15 @@ export default function OtpScreen(): React.ReactNode {
     if (isSubmitting.current) return
     isSubmitting.current = true
     try {
-      const otpInfo = await requestOtp(email)
+      const otpInfo = await requestOtp(email, undefined, origin)
       setRetryAt(otpInfo.retryOn)
       setStep('code')
     } catch {
-      Alert.alert('Error', 'Failed to send verification code. Please try again.')
+      Alert.alert(t('auth.otp.failureTitle'), t('auth.otp.requestFailed'))
     } finally {
       isSubmitting.current = false
     }
-  }, [email, requestOtp])
+  }, [email, requestOtp, origin, t])
 
   const handleValidateOtp = useCallback(async () => {
     if (isSubmitting.current) return
@@ -85,27 +91,36 @@ export default function OtpScreen(): React.ReactNode {
       }
 
       if (loginInfo.token == null) {
-        Alert.alert('Email not confirmed', 'Please confirm your email before signing in.')
+        Alert.alert(
+          t('auth.otp.emailUnconfirmedTitle'),
+          t('auth.otp.emailUnconfirmedMessage'),
+        )
         return
       }
 
       router.replace('/(auth)/workspace-select')
     } catch {
-      Alert.alert('Error', 'Invalid verification code. Please try again.')
+      Alert.alert(t('auth.otp.failureTitle'), t('auth.otp.validateFailed'))
     } finally {
       isSubmitting.current = false
     }
-  }, [email, code, validateOtp])
+  }, [email, code, validateOtp, t])
 
   const handleResend = useCallback(async () => {
     setCode('')
     try {
-      const otpInfo = await requestOtp(email)
+      // Route the resend back through the same origin the user entered on;
+      // signup-origin resends MUST hit signUpOtp so the server knows to
+      // rotate the pending-confirmation code for the not-yet-confirmed
+      // identity.
+      const otpInfo = await requestOtp(email, undefined, origin)
       setRetryAt(otpInfo.retryOn)
     } catch {
-      Alert.alert('Error', 'Failed to resend code.')
+      Alert.alert(t('auth.otp.failureTitle'), t('auth.otp.resendFailed'))
     }
-  }, [email, requestOtp])
+  }, [email, requestOtp, origin, t])
+
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 
   return (
     <SafeAreaView className="flex-1 bg-surface">
@@ -116,12 +131,12 @@ export default function OtpScreen(): React.ReactNode {
         <View className="flex-1 justify-center px-6">
           <View className="items-center mb-8">
             <Text className="font-sans-bold text-2xl text-caption">
-              Sign in with OTP
+              {t('auth.otp.title')}
             </Text>
             <Text className="font-sans text-sm text-content mt-2">
               {step === 'email'
-                ? 'Enter your email to receive a verification code'
-                : `Enter the code sent to ${email}`}
+                ? t('auth.otp.subtitleEmail')
+                : t('auth.otp.subtitleCode', { email })}
             </Text>
           </View>
 
@@ -129,13 +144,13 @@ export default function OtpScreen(): React.ReactNode {
             <View className="gap-4">
               <View className="gap-1">
                 <Text className="font-sans-medium text-sm text-content">
-                  Email
+                  {t('auth.otp.emailLabel')}
                 </Text>
                 <TextInput
                   className="rounded-md bg-surface-panel p-3 font-sans text-base text-caption"
                   value={email}
                   onChangeText={setEmail}
-                  placeholder="you@company.com"
+                  placeholder={t('auth.otp.emailPlaceholder')}
                   placeholderTextColor="#77818B"
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -143,20 +158,20 @@ export default function OtpScreen(): React.ReactNode {
                   textContentType="emailAddress"
                   autoCorrect={false}
                   editable={!isLoading}
-                  accessibilityLabel="Email address"
+                  accessibilityLabel={t('auth.otp.emailAccessibility')}
                 />
               </View>
 
               <Pressable
-                className={`rounded-md p-3 items-center ${email.includes('@') && !isLoading ? 'bg-primary' : 'bg-primary/50'}`}
+                className={`rounded-md p-3 items-center ${isEmailValid && !isLoading ? 'bg-primary' : 'bg-primary/50'}`}
                 onPress={handleRequestOtp}
-                disabled={!email.includes('@') || isLoading}
+                disabled={!isEmailValid || isLoading}
                 accessibilityRole="button"
-                accessibilityLabel="Continue"
-                accessibilityState={{ disabled: !email.includes('@') || isLoading }}
+                accessibilityLabel={t('auth.otp.continueAccessibility')}
+                accessibilityState={{ disabled: !isEmailValid || isLoading }}
               >
                 <Text className="font-sans-medium text-base text-white">
-                  {isLoading ? 'Sending...' : 'Continue'}
+                  {isLoading ? t('auth.otp.continueSubmitting') : t('auth.otp.continue')}
                 </Text>
               </Pressable>
             </View>
@@ -164,20 +179,20 @@ export default function OtpScreen(): React.ReactNode {
             <View className="gap-4">
               <View className="gap-1">
                 <Text className="font-sans-medium text-sm text-content">
-                  Verification code
+                  {t('auth.otp.codeLabel')}
                 </Text>
                 <TextInput
                   className="rounded-md bg-surface-panel p-3 font-sans text-base text-caption text-center tracking-widest"
                   value={code}
                   onChangeText={setCode}
-                  placeholder="000000"
+                  placeholder={t('auth.otp.codePlaceholder')}
                   placeholderTextColor="#77818B"
                   keyboardType="number-pad"
                   autoComplete="one-time-code"
                   textContentType="oneTimeCode"
                   maxLength={6}
                   editable={!isLoading}
-                  accessibilityLabel="Verification code"
+                  accessibilityLabel={t('auth.otp.codeAccessibility')}
                 />
               </View>
 
@@ -192,28 +207,28 @@ export default function OtpScreen(): React.ReactNode {
                 onPress={handleValidateOtp}
                 disabled={code.length < 6 || isLoading}
                 accessibilityRole="button"
-                accessibilityLabel="Sign in"
+                accessibilityLabel={t('auth.otp.submitAccessibility')}
                 accessibilityState={{ disabled: code.length < 6 || isLoading }}
               >
                 <Text className="font-sans-medium text-base text-white">
-                  {isLoading ? 'Verifying...' : 'Sign in'}
+                  {isLoading ? t('auth.otp.submitSubmitting') : t('auth.otp.submit')}
                 </Text>
               </Pressable>
 
               <View className="flex-row justify-center gap-4">
                 {countdown > 0 ? (
                   <Text className="font-sans text-sm text-content">
-                    Resend in {countdown}s
+                    {t('auth.otp.resendCountdown', { seconds: countdown })}
                   </Text>
                 ) : (
                   <Pressable
                     onPress={handleResend}
                     disabled={isLoading}
                     accessibilityRole="button"
-                    accessibilityLabel="Resend code"
+                    accessibilityLabel={t('auth.otp.resendAccessibility')}
                   >
                     <Text className="font-sans text-sm text-link">
-                      Resend code
+                      {t('auth.otp.resend')}
                     </Text>
                   </Pressable>
                 )}
@@ -225,10 +240,10 @@ export default function OtpScreen(): React.ReactNode {
                   }}
                   disabled={isLoading}
                   accessibilityRole="button"
-                  accessibilityLabel="Back to email"
+                  accessibilityLabel={t('auth.otp.backAccessibility')}
                 >
                   <Text className="font-sans text-sm text-link">
-                    Back
+                    {t('auth.otp.back')}
                   </Text>
                 </Pressable>
               </View>
