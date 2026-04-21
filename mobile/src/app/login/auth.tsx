@@ -36,29 +36,40 @@ export default function OAuthCaptureScreen(): React.ReactNode {
   const hasConsumedRef = useRef(false)
 
   useEffect(() => {
-    if (hasConsumedRef.current) return
-    hasConsumedRef.current = true
-
     // No token (or not a string) -> surface a login error and kick back to login.
     if (rawToken == null || rawToken.length === 0) {
       setError(t('auth.login.oauthInvalidToken'))
-      // Delay the replace slightly so the error is visible before route change.
       const timeout = setTimeout(() => { router.replace('/(auth)/login') }, 1200)
       return () => { clearTimeout(timeout) }
     }
 
-    void (async () => {
-      try {
-        await loginWithToken(rawToken)
+    // Guard against strict-mode double-invoke: mark the ref ONLY inside the
+    // in-progress branch, so if the effect body runs twice before the async
+    // work starts we still consume the token exactly once.
+    if (hasConsumedRef.current) return undefined
+
+    // Hard 30-second ceiling on the consume path — prevents a dropped
+    // response from stranding the user on the capture spinner. Owned at
+    // the effect body (not inside an async IIFE) so React's cleanup can
+    // clear it on unmount.
+    const timeout = setTimeout(() => {
+      setError(t('auth.login.oauthInvalidToken'))
+      router.replace('/(auth)/login')
+    }, 30_000)
+
+    hasConsumedRef.current = true
+    void loginWithToken(rawToken)
+      .then(() => {
         // Strip the token from URL and advance to workspace selection.
         router.replace('/(auth)/workspace-select')
-      } catch {
+      })
+      .catch(() => {
         setError(t('auth.login.oauthInvalidToken'))
-        const timeout = setTimeout(() => { router.replace('/(auth)/login') }, 1500)
-        return () => { clearTimeout(timeout) }
-      }
-    })()
-    return undefined
+        setTimeout(() => { router.replace('/(auth)/login') }, 1500)
+      })
+      .finally(() => { clearTimeout(timeout) })
+
+    return () => { clearTimeout(timeout) }
   }, [rawToken, loginWithToken, t])
 
   if (error !== null) {

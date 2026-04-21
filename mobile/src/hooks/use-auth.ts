@@ -187,16 +187,40 @@ export function useTwoFactor(): {
 // ---------------------------------------------------------------------------
 
 /**
- * Validates a JWT-shaped string (three base64url segments separated by dots).
- * This is a syntactic check only — signature verification happens server-side
- * when the token is exchanged for a `LoginInfo`.
+ * Validates a JWT-shaped string: exactly three non-empty base64url segments
+ * separated by dots, and a payload that parses as JSON and carries at least
+ * one of the standard claims (`exp` or `iss`). This is a syntactic+shape
+ * check only — signature verification happens server-side when the token is
+ * exchanged for a `LoginInfo`.
  */
 export function isJwtShaped(token: string): boolean {
-  if (token.length === 0) return false
+  if (typeof token !== 'string' || token.length === 0) return false
   const parts = token.split('.')
   if (parts.length !== 3) return false
   const base64urlSegment = /^[A-Za-z0-9_-]+$/
-  return parts.every((part) => part.length > 0 && base64urlSegment.test(part))
+  if (!parts.every((part) => part.length > 0 && base64urlSegment.test(part))) {
+    return false
+  }
+
+  // Decode the payload and confirm it looks like a JWT body. `atob` is
+  // available on Hermes (SDK 55) and produces a UTF-8 byte string, which
+  // for JSON with ASCII keys we can JSON.parse directly.
+  try {
+    const payloadPart = parts[1] ?? ''
+    // Pad to a multiple of 4 and translate base64url -> base64 before atob.
+    const padLen = (4 - (payloadPart.length % 4)) % 4
+    const b64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat(padLen)
+    // eslint-disable-next-line no-restricted-globals
+    const decoded = (globalThis as { atob?: (s: string) => string }).atob?.(b64)
+    if (decoded == null) return false
+    const parsed: unknown = JSON.parse(decoded)
+    if (typeof parsed !== 'object' || parsed === null) return false
+    const hasExp = typeof (parsed as { exp?: unknown }).exp === 'number'
+    const hasIss = typeof (parsed as { iss?: unknown }).iss === 'string'
+    return hasExp || hasIss
+  } catch {
+    return false
+  }
 }
 
 /**

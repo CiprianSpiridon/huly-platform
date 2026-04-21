@@ -12,12 +12,36 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import * as WebBrowser from 'expo-web-browser'
+import * as SecureStore from 'expo-secure-store'
 
 import { useLogin, useBiometricAuth, getBiometricStatus } from '@/hooks/use-auth'
 import { useAuthStore } from '@/store/auth'
 import { getServerUrl, loadServerConfig } from '@/client/config'
 
 const OAUTH_RETURN_URL = 'https://huly.app/login/auth'
+const OAUTH_STATE_KEY = 'oauth_state'
+const OAUTH_STATE_TTL_MS = 10 * 60 * 1000 // 10 minutes
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+/**
+ * Generate a random OAuth `state` parameter. `Math.random()` is not
+ * cryptographically secure, but for CSRF protection on a short-TTL
+ * state token bound to a single redirect the entropy is adequate.
+ * A dedicated `expo-crypto` dependency is avoided because this app
+ * already ships without one.
+ */
+function generateOAuthState(): string {
+  const timestamp = Date.now().toString(36)
+  const rand = Array.from({ length: 6 })
+    .map(() => Math.random().toString(36).slice(2, 10))
+    .join('')
+  return `${timestamp}.${rand}`
+}
+
+interface StoredOAuthState {
+  state: string
+  issuedAt: number
+}
 
 export default function LoginScreen(): React.ReactNode {
   const { t } = useTranslation()
@@ -93,10 +117,27 @@ export default function LoginScreen(): React.ReactNode {
       const accountsUrl = config.ACCOUNTS_URL.endsWith('/')
         ? config.ACCOUNTS_URL.slice(0, -1)
         : config.ACCOUNTS_URL
-      const providerStartUrl = `${accountsUrl}/auth/google`
+
+      // CSRF protection: persist a random `state` with a short TTL and
+      // require it to echo back in the redirect URL before we trust the
+      // captured token. The Huly account server currently does not
+      // implement PKCE for the mobile flow, so we rely on state/nonce
+      // only. If PKCE support lands server-side, extend this block with
+      // a code_verifier/code_challenge pair and forward the verifier on
+      // the token-exchange request.
+      const state = generateOAuthState()
+      const stored: StoredOAuthState = { state, issuedAt: Date.now() }
+      await SecureStore.setItemAsync(OAUTH_STATE_KEY, JSON.stringify(stored))
+
+      const providerStartUrl =
+        `${accountsUrl}/auth/google?state=${encodeURIComponent(state)}`
 
       // `prefersEphemeralWebBrowserSession: true` prevents the OS chooser
       // from leaking the redirect token to other apps' cookie jars.
+      // Note: `preferEphemeralSession` is iOS-only (ASWebAuthenticationSession).
+      // On Android the flow uses Chrome Custom Tabs which share the system
+      // Chrome cookie jar — a follow-up may need a custom-tabs isolation
+      // strategy to fully match iOS behaviour.
       const result = await WebBrowser.openAuthSessionAsync(
         providerStartUrl,
         OAUTH_RETURN_URL,
@@ -105,12 +146,13 @@ export default function LoginScreen(): React.ReactNode {
 
       // User closed the browser / cancelled — no partial auth state persists.
       if (result.type === 'cancel' || result.type === 'dismiss') {
-        // Silent: just return to the login screen; no alert needed.
+        await SecureStore.deleteItemAsync(OAUTH_STATE_KEY)
         return
       }
 
       // Any non-success result with no URL is a generic failure.
       if (result.type !== 'success' || result.url.length === 0) {
+        await SecureStore.deleteItemAsync(OAUTH_STATE_KEY)
         Alert.alert(t('auth.login.failureTitle'), t('auth.login.googleFailed'))
         return
       }
@@ -119,9 +161,45 @@ export default function LoginScreen(): React.ReactNode {
       // the OS routes `https://huly.app/login/auth?token=...` directly into
       // `mobile/src/app/login/auth.tsx`. `openAuthSessionAsync` will, however,
       // sometimes hand us the redirect URL back directly on iOS — in which
-      // case we extract the token and forward it to the capture route.
+      // case we extract the token and forward it to the capture route after
+      // validating origin, pathname, and state.
       try {
         const parsed = new URL(result.url)
+
+        // Hard origin + path check: the server always redirects to
+        // exactly `https://huly.app/login/auth`. Anything else is either
+        // a misconfigured provider or an attempted redirect hijack.
+        if (parsed.origin !== 'https://huly.app' || parsed.pathname !== '/login/auth') {
+          await SecureStore.deleteItemAsync(OAUTH_STATE_KEY)
+          Alert.alert(t('auth.login.failureTitle'), t('auth.login.googleFailed'))
+          return
+        }
+
+        // State echo: must match, must be within TTL. Any mismatch is a
+        // CSRF / replay signal — drop it.
+        const returnedState = parsed.searchParams.get('state')
+        const storedRaw = await SecureStore.getItemAsync(OAUTH_STATE_KEY)
+        await SecureStore.deleteItemAsync(OAUTH_STATE_KEY)
+        if (storedRaw == null) {
+          Alert.alert(t('auth.login.failureTitle'), t('auth.login.googleFailed'))
+          return
+        }
+        let storedState: StoredOAuthState | null = null
+        try {
+          storedState = JSON.parse(storedRaw) as StoredOAuthState
+        } catch {
+          storedState = null
+        }
+        if (
+          storedState == null ||
+          returnedState == null ||
+          returnedState !== storedState.state ||
+          Date.now() - storedState.issuedAt > OAUTH_STATE_TTL_MS
+        ) {
+          Alert.alert(t('auth.login.failureTitle'), t('auth.login.googleFailed'))
+          return
+        }
+
         const token = parsed.searchParams.get('token')
         if (token != null && token.length > 0) {
           router.replace({ pathname: '/login/auth', params: { token } })
@@ -129,9 +207,11 @@ export default function LoginScreen(): React.ReactNode {
         }
         Alert.alert(t('auth.login.failureTitle'), t('auth.login.googleFailed'))
       } catch {
+        await SecureStore.deleteItemAsync(OAUTH_STATE_KEY)
         Alert.alert(t('auth.login.failureTitle'), t('auth.login.googleFailed'))
       }
     } catch {
+      await SecureStore.deleteItemAsync(OAUTH_STATE_KEY)
       Alert.alert(t('auth.login.failureTitle'), t('auth.login.googleFailed'))
     } finally {
       setIsOAuthLoading(false)
@@ -213,7 +293,7 @@ export default function LoginScreen(): React.ReactNode {
     handleBiometricUnlock,
   ])
 
-  const isFormValid = email.includes('@') && password.length > 0
+  const isFormValid = EMAIL_REGEX.test(email) && password.length > 0
 
   return (
     <SafeAreaView className="flex-1 bg-surface">
