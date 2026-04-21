@@ -40,6 +40,7 @@ import { updateAvatar } from '@/repositories/settings'
 import { NameRow } from './rows/NameRow'
 import { PasswordRow } from './rows/PasswordRow'
 import { TwoFactorRow } from './rows/TwoFactorRow'
+import { LanguageRow } from './rows/LanguageRow'
 // </registry:imports>
 
 // ---------------------------------------------------------------------------
@@ -254,6 +255,7 @@ export function SettingsRows(): React.ReactNode {
       <SectionHeader title={t('settings.sections.appearance')} />
       <ThemeSegmentedControl selected={theme} onSelect={handleThemeChange} />
       {/* <registry:appearance> -- TASK-007 registers LanguageRow here */}
+      <LanguageRow />
 
       <Divider />
 
