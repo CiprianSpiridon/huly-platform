@@ -132,6 +132,18 @@ export default function LoginScreen(): React.ReactNode {
                 {t('auth.login.otpLink')}
               </Text>
             </Pressable>
+
+            <Pressable
+              className="items-center p-3"
+              onPress={() => { router.push('/(auth)/forgot-password') }}
+              disabled={isLoading}
+              accessibilityRole="link"
+              accessibilityLabel={t('auth.login.forgotPasswordAccessibility')}
+            >
+              <Text className="font-sans text-sm text-link">
+                {t('auth.login.forgotPasswordLink')}
+              </Text>
+            </Pressable>
           </View>
         </View>
       </KeyboardAvoidingView>
