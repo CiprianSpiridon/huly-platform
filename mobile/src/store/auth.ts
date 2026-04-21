@@ -28,6 +28,13 @@ interface AuthState {
    * protected surface hidden and prompt the user to authenticate.
    */
   biometricLocked: boolean
+  /**
+   * Epoch ms of the last successful biometric unlock. Used to debounce
+   * the foreground re-lock path — a brief app-switch (e.g. the OS
+   * credential-picker sheet) should NOT re-prompt Face ID immediately.
+   * Only in-memory; never persisted.
+   */
+  lastBiometricUnlockAt: number | null
 
   setAuth: (loginInfo: LoginInfo) => Promise<void>
   setTfaToken: (token: string) => void
@@ -38,12 +45,25 @@ interface AuthState {
   /**
    * Called after a successful biometric unlock on cold launch. Flips
    * `biometricLocked -> false` and `isAuthenticated -> true` in a single
-   * set so the navigator transitions in one frame.
+   * set so the navigator transitions in one frame. Also stamps
+   * `lastBiometricUnlockAt` for foreground-cooldown debouncing.
    */
-  completeBiometricUnlock: () => void
+  completeBiometricUnlock: () => Promise<void>
 }
 
 const BIOMETRIC_FLAG_KEY = 'biometric_enabled'
+
+/**
+ * Thrown by `setAuth()` when the caller passes a `LoginInfo` without a
+ * concrete token (e.g. `tfaRequired: true` response). Callers should
+ * route the user to the 2FA screen via `setTfaToken()` instead.
+ */
+export class MissingLoginTokenError extends Error {
+  constructor() {
+    super('LoginInfo did not include a bearer token; refusing to persist auth.')
+    this.name = 'MissingLoginTokenError'
+  }
+}
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
@@ -52,14 +72,38 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   biometricEnabled: false,
   biometricLocked: false,
+  lastBiometricUnlockAt: null,
 
   setAuth: async (loginInfo: LoginInfo) => {
     if (loginInfo.token == null) {
-      throw new Error('Login response missing token')
+      throw new MissingLoginTokenError()
     }
+
+    const previousAccount = get().account
+    const switchingAccounts =
+      previousAccount != null && previousAccount !== loginInfo.account
 
     await SecureStore.setItemAsync('auth_token', loginInfo.token)
     await SecureStore.setItemAsync('account_id', loginInfo.account)
+
+    // Cross-tenant safety: when the account ID changes out from under us
+    // (e.g. user logs out of tenant A and into tenant B without clearing
+    // the workspace store), purge any persisted workspace keys from the
+    // previous tenant. The next workspace-select call will repopulate
+    // them; until then the router will land on workspace-select.
+    if (switchingAccounts) {
+      await SecureStore.deleteItemAsync('workspace_url')
+      await SecureStore.deleteItemAsync('workspace_id')
+      await SecureStore.deleteItemAsync('workspace_token')
+      await SecureStore.deleteItemAsync('workspace_endpoint')
+      try {
+        const { useWorkspaceStore } = await import('@/store/workspace')
+        await useWorkspaceStore.getState().clearWorkspace()
+      } catch {
+        // Clearing the in-memory store is best-effort — the secure-store
+        // wipe above is what actually guarantees cross-tenant isolation.
+      }
+    }
 
     set({
       token: loginInfo.token,
@@ -70,6 +114,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // has just proven possession of password/OAuth; don't immediately
       // re-prompt them for biometrics.
       biometricLocked: false,
+      lastBiometricUnlockAt: Date.now(),
     })
   },
 
@@ -91,15 +136,57 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ biometricLocked: locked })
   },
 
-  completeBiometricUnlock: () => {
-    const { token } = get()
-    if (token == null) {
+  completeBiometricUnlock: async () => {
+    const { token, account } = get()
+    if (token == null || account == null) {
       // Defensive: should not happen — restoreAuth requires a valid token
       // before setting biometricLocked. If it does, refuse to authenticate.
       set({ biometricLocked: false })
       return
     }
-    set({ biometricLocked: false, isAuthenticated: true })
+
+    // Re-verify the stored token against the server before flipping
+    // `isAuthenticated`. This prevents a stale revoked token from
+    // unlocking the UI just because Face ID succeeded locally.
+    try {
+      const { getOrCreateAccountClient } = await import('@/client/account')
+      const client = await getOrCreateAccountClient(token)
+      const info = await client.getLoginInfoByToken()
+      if (info == null) {
+        throw new Error('Token verification returned no login info')
+      }
+    } catch (err) {
+      const isNetworkError =
+        err instanceof TypeError ||
+        (err instanceof Error &&
+          /network|fetch|abort|timeout|internet/i.test(err.message))
+      if (!isNetworkError) {
+        // Token rejected / revoked — clear everything and force re-login.
+        await SecureStore.deleteItemAsync('auth_token')
+        await SecureStore.deleteItemAsync('account_id')
+        await SecureStore.deleteItemAsync(BIOMETRIC_FLAG_KEY)
+        set({
+          token: null,
+          account: null,
+          tfaToken: null,
+          isAuthenticated: false,
+          biometricEnabled: false,
+          biometricLocked: false,
+          lastBiometricUnlockAt: null,
+        })
+        return
+      }
+      // Network error: fall through and trust the token. The offline-aware
+      // restoreAuth path has already vetted this same token; the user
+      // deserves to see cached data rather than be bounced to login when
+      // they're simply on a flaky connection.
+    }
+
+    set({
+      biometricLocked: false,
+      isAuthenticated: true,
+      lastBiometricUnlockAt: Date.now(),
+    })
   },
 
   clearAuth: async () => {
@@ -114,6 +201,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       isAuthenticated: false,
       biometricEnabled: false,
       biometricLocked: false,
+      lastBiometricUnlockAt: null,
     })
     // Satisfy noUnusedLocals without altering behavior -- `get` is exposed
     // here for future selectors that need to read the pre-clear state.

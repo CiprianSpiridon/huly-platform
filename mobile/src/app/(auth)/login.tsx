@@ -156,7 +156,9 @@ export default function LoginScreen(): React.ReactNode {
       // Flip biometricLocked -> false and isAuthenticated -> true in a
       // single set so navigation transitions cleanly. AuthLayout will then
       // route the user into (app) (or workspace-select if none selected).
-      completeBiometricUnlock()
+      // completeBiometricUnlock re-verifies the token server-side before
+      // unlocking; await it so the caller knows the final state.
+      await completeBiometricUnlock()
       return
     }
     if (result.status === 'cancel') {
@@ -181,11 +183,16 @@ export default function LoginScreen(): React.ReactNode {
     Alert.alert(t('auth.login.failureTitle'), t('auth.biometric.failed'))
   }, [promptBiometric, t, setBiometricLocked, setBiometricEnabledStore, completeBiometricUnlock])
 
-  // Cold-launch auto-prompt: run exactly once per mount when the store
-  // reports `biometricLocked: true` AND we still have a stored token.
+  // Auto-prompt on cold launch AND on every foreground re-lock: once per
+  // `biometricLocked: true` transition. The ref resets when the flag flips
+  // to false so a subsequent re-lock re-arms the prompt.
   useEffect(() => {
+    if (!biometricLocked) {
+      biometricPromptedRef.current = false
+      return
+    }
+    if (!biometricEnabledStore) return
     if (biometricPromptedRef.current) return
-    if (!biometricLocked || !biometricEnabledStore) return
     if (storedToken == null) {
       // Secure-store tamper: flag set but token missing. Clear both and
       // route into a fresh login (AuthLayout will land us here regardless).

@@ -1,7 +1,8 @@
 import '../../global.css'
 
-import { useEffect, useState } from 'react'
-import { View, Text, Pressable, Linking } from 'react-native'
+import { useEffect, useRef, useState } from 'react'
+import { AppState, View, Text, Pressable, Linking } from 'react-native'
+import type { AppStateStatus } from 'react-native'
 import { useFonts } from 'expo-font'
 import { Stack, router } from 'expo-router'
 import type { Href } from 'expo-router'
@@ -242,6 +243,43 @@ function RootLayoutContent(): React.ReactNode {
     // Cold-start URL (universal link tapped while app was killed).
     void Linking.getInitialURL().then((url) => handleIncomingUrl(url))
     const sub = Linking.addEventListener('url', (event) => handleIncomingUrl(event.url))
+    return () => sub.remove()
+  }, [])
+
+  // ---------------------------------------------------------------------
+  // Biometric re-lock on app resume.
+  //
+  // When the app comes back to the foreground from `background`, re-arm
+  // the biometric lock so the user must authenticate again before the
+  // protected UI is revealed. A short cooldown (BIOMETRIC_RELOCK_COOLDOWN_MS)
+  // suppresses re-prompts after a brief switch so a quick trip to
+  // Settings (or the OS password-manager sheet) does not turn into a
+  // chain of Face ID prompts.
+  // ---------------------------------------------------------------------
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState)
+
+  useEffect(() => {
+    const BIOMETRIC_RELOCK_COOLDOWN_MS = 30_000
+
+    const onChange = (next: AppStateStatus): void => {
+      const prev = appStateRef.current
+      appStateRef.current = next
+
+      const becameActive = next === 'active' && prev === 'background'
+      if (!becameActive) return
+
+      const authState = useAuthStore.getState()
+      if (!authState.isAuthenticated) return
+      if (!authState.biometricEnabled) return
+      if (authState.biometricLocked) return
+
+      const lastUnlock = authState.lastBiometricUnlockAt ?? 0
+      if (Date.now() - lastUnlock < BIOMETRIC_RELOCK_COOLDOWN_MS) return
+
+      authState.setBiometricLocked(true)
+    }
+
+    const sub = AppState.addEventListener('change', onChange)
     return () => sub.remove()
   }, [])
 
