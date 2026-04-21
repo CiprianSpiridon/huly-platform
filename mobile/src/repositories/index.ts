@@ -51,5 +51,7 @@ export {
   getLocalFileSize,
   getAuthenticatedFileUrl,
   getAuthenticatedThumbnailUrl,
+  getAuthenticatedFileSource,
+  getAuthenticatedThumbnailSource,
 } from './attachment'
-export type { UploadResult, AttachmentMeta } from './attachment'
+export type { UploadResult, AttachmentMeta, AuthenticatedImageSource } from './attachment'

@@ -52,7 +52,6 @@ interface NotificationListenerState {
 export function useNotificationListeners(): NotificationListenerState {
   const [bannerNotification, setBannerNotification] = useState<BannerNotification | null>(null)
   const queryClient = useQueryClient()
-  const preferences = usePushStore((s) => s.preferences)
 
   const foregroundListenerRef = useRef<Notifications.Subscription | null>(null)
   const responseListenerRef = useRef<Notifications.Subscription | null>(null)
@@ -67,10 +66,14 @@ export function useNotificationListeners(): NotificationListenerState {
         const data = notification.request.content.data as unknown as HulyPushPayload | undefined
         const content = notification.request.content
 
+        // Read preferences fresh on each notification so the listener doesn't
+        // need to be torn down and rebuilt when the user toggles categories.
+        const prefs = usePushStore.getState().preferences
+
         // Check if this notification category is enabled in preferences
         if (data?.type != null) {
           const category = mapTypeToCategory(data.type)
-          if (category != null && !preferences[category]) {
+          if (category != null && !prefs[category]) {
             // User has disabled this category -- suppress the banner
             return
           }
@@ -97,7 +100,7 @@ export function useNotificationListeners(): NotificationListenerState {
         Notifications.removeNotificationSubscription(foregroundListenerRef.current)
       }
     }
-  }, [queryClient, preferences])
+  }, [queryClient])
 
   // ---------------------------------------------------------------------------
   // Notification tap (background/killed)
@@ -122,12 +125,18 @@ export function useNotificationListeners(): NotificationListenerState {
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
+    let cancelled = false
+    let timer: ReturnType<typeof setTimeout> | null = null
+
     async function checkColdStart(): Promise<void> {
       try {
         const lastResponse = await Notifications.getLastNotificationResponseAsync()
+        if (cancelled) return
         if (lastResponse != null) {
           // Small delay to let the navigation tree mount
-          setTimeout(() => {
+          timer = setTimeout(() => {
+            timer = null
+            if (cancelled) return
             handleNotificationResponse(lastResponse)
           }, 500)
         }
@@ -137,6 +146,14 @@ export function useNotificationListeners(): NotificationListenerState {
     }
 
     void checkColdStart()
+
+    return () => {
+      cancelled = true
+      if (timer !== null) {
+        clearTimeout(timer)
+        timer = null
+      }
+    }
   }, [])
 
   // ---------------------------------------------------------------------------

@@ -11,11 +11,19 @@ import { useCallback, useMemo } from 'react'
 
 import { useQuery, type UseQueryResult } from '@tanstack/react-query'
 
-import { uploadFile, getLocalFileSize, getAuthenticatedFileUrl, getAuthenticatedThumbnailUrl, getAttachments, type AttachmentMeta } from '@/repositories/attachment'
-import { getClient } from '@/client'
+import {
+  uploadFile,
+  getLocalFileSize,
+  getAuthenticatedFileSource,
+  getAuthenticatedThumbnailSource,
+  getAttachments,
+  type AttachmentMeta,
+  type AuthenticatedImageSource,
+} from '@/repositories/attachment'
 import { useUploadStore } from '@/store/upload'
 import type { UploadEntry, UploadStatus } from '@/store/upload'
 import { useAuthStore } from '@/store/auth'
+import { useConnectionStore } from '@/store/connection'
 import { useShallow } from 'zustand/react/shallow'
 
 // ---------------------------------------------------------------------------
@@ -48,7 +56,7 @@ export function useUploadAttachment(): UseUploadAttachmentReturn {
   const completeUpload = useUploadStore((s) => s.completeUpload)
   const failUpload = useUploadStore((s) => s.failUpload)
   const clearCompleted = useUploadStore((s) => s.clearCompleted)
-  const uploads = useUploadStore((s) => [...s.uploads.values()])
+  const uploads = useUploadStore(useShallow((s) => [...s.uploads.values()]))
   const hasActive = useUploadStore((s) => {
     for (const e of s.uploads.values()) {
       if (e.status === 'pending' || e.status === 'uploading') return true
@@ -91,13 +99,29 @@ export function useUploadAttachment(): UseUploadAttachmentReturn {
 // ---------------------------------------------------------------------------
 
 interface UseAttachmentUrlReturn {
+  /** Source for the full-size file, safe to pass directly to `<Image source={...} />`. */
+  fileSource: AuthenticatedImageSource
+  /** Source for the thumbnail, safe to pass directly to `<Image source={...} />`. */
+  thumbnailSource: AuthenticatedImageSource
+  /**
+   * @deprecated Use `fileSource` instead — this field omits the auth header
+   * and will 401 without it. Retained to keep compile compatibility during
+   * the migration.
+   */
   fileUrl: string
+  /**
+   * @deprecated Use `thumbnailSource` instead.
+   */
   thumbnailUrl: string
 }
 
 /**
- * Hook to get authenticated file and thumbnail URLs for a blob ID.
- * URLs include the auth token as a query parameter for expo-image compatibility.
+ * Hook to get authenticated file and thumbnail sources for a blob ID.
+ *
+ * Returns `{ uri, headers }` objects suitable for `<Image source={...} />`
+ * (both React Native's built-in Image and expo-image). The Authorization
+ * header carries the workspace JWT, so the token is never leaked into the
+ * image cache key, HTTP logs, or Sentry breadcrumbs.
  */
 export function useAttachmentUrl(
   blobId: string,
@@ -106,13 +130,25 @@ export function useAttachmentUrl(
 ): UseAttachmentUrlReturn {
   const token = useAuthStore((s) => s.token)
 
-  const fileUrl = useMemo(() => getAuthenticatedFileUrl(blobId), [blobId, token])
-  const thumbnailUrl = useMemo(
-    () => getAuthenticatedThumbnailUrl(blobId, thumbnailWidth, thumbnailHeight),
+  const fileSource = useMemo(
+    () => getAuthenticatedFileSource(blobId),
+    // token is part of the returned headers, so rebuild the source whenever
+    // it changes (e.g. after re-login).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [blobId, token]
+  )
+  const thumbnailSource = useMemo(
+    () => getAuthenticatedThumbnailSource(blobId, thumbnailWidth, thumbnailHeight),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [blobId, thumbnailWidth, thumbnailHeight, token]
   )
 
-  return { fileUrl, thumbnailUrl }
+  return {
+    fileSource,
+    thumbnailSource,
+    fileUrl: fileSource.uri,
+    thumbnailUrl: thumbnailSource.uri,
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -129,12 +165,13 @@ const ATTACHMENTS_GC_TIME = 5 * 60_000  // 5 minutes
 export function useDocAttachments(
   docId: string | undefined
 ): UseQueryResult<AttachmentMeta[], Error> {
+  const clientReady = useConnectionStore((s) => s.status === 'connected')
   return useQuery<AttachmentMeta[], Error>({
     queryKey: ['attachments', docId],
     queryFn: () => getAttachments(docId!),
     staleTime: ATTACHMENTS_STALE_TIME,
     gcTime: ATTACHMENTS_GC_TIME,
-    enabled: docId !== undefined && getClient() !== null,
+    enabled: docId !== undefined && clientReady,
   })
 }
 

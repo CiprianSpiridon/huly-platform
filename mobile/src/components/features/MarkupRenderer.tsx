@@ -9,9 +9,14 @@
  * has an accessibilityLabel.
  */
 
-import { memo } from 'react'
-import { View, Text, Pressable, Linking } from 'react-native'
+import { memo, useCallback, useMemo, useState } from 'react'
+import { View, Text, Pressable, Linking, useWindowDimensions } from 'react-native'
 import { router, type Href } from 'expo-router'
+import { Image } from 'expo-image'
+import { Ionicons } from '@expo/vector-icons'
+import * as Clipboard from 'expo-clipboard'
+
+import { showErrorToast, showSuccessToast } from '@/store/toast'
 
 import {
   MarkupNodeType,
@@ -21,6 +26,13 @@ import {
   type MarkupNode,
   type MarkupMark,
 } from '@/types/markup'
+import {
+  classForToken,
+  countLines,
+  highlight,
+  MAX_HIGHLIGHT_LINES,
+  normalizeLanguage,
+} from '@/lib/syntax-highlight'
 
 // ---------------------------------------------------------------------------
 // Props
@@ -220,14 +232,17 @@ function RenderNode({ node }: { node: MarkupNode }): React.ReactNode {
         </View>
       )
 
-    case MarkupNodeType.code_block:
+    case MarkupNodeType.code_block: {
+      const language = typeof node.attrs?.['language'] === 'string'
+        ? node.attrs['language']
+        : (typeof node.attrs?.['params'] === 'string' ? node.attrs['params'] : null)
       return (
-        <View className="bg-surface-tertiary rounded-md p-3 my-1.5">
-          <Text className="font-mono text-xs text-content-primary leading-4">
-            <RenderChildren nodes={node.content} />
-          </Text>
-        </View>
+        <RenderCodeBlock
+          source={collectPlainText(node)}
+          language={language}
+        />
       )
+    }
 
     case MarkupNodeType.bullet_list:
       return (
@@ -292,21 +307,8 @@ function RenderNode({ node }: { node: MarkupNode }): React.ReactNode {
     case MarkupNodeType.image: {
       const src = node.attrs?.['src'] as string | undefined
       const alt = (node.attrs?.['alt'] as string | undefined) ?? 'Image'
-      if (src == null) return null
-      return (
-        <Pressable
-          className="my-1.5"
-          onPress={() => {
-            if (isAllowedUrl(src)) {
-              void Linking.openURL(src)
-            }
-          }}
-          accessibilityRole="image"
-          accessibilityLabel={alt}
-        >
-          <Text className="font-sans text-sm text-accent-primary underline">[{alt}]</Text>
-        </Pressable>
-      )
+      if (src == null || !isAllowedUrl(src)) return null
+      return <RenderInlineImage src={src} alt={alt} />
     }
 
     case MarkupNodeType.emoji: {
@@ -366,6 +368,147 @@ function RenderNode({ node }: { node: MarkupNode }): React.ReactNode {
       return null
   }
 }
+
+// ---------------------------------------------------------------------------
+// Inline image renderer (expo-image, with placeholder on failure)
+// ---------------------------------------------------------------------------
+
+const IMAGE_HORIZONTAL_PADDING = 24 // screen padding + any parent margin budget
+const DEFAULT_IMAGE_ASPECT = 16 / 9
+
+const RenderInlineImage = memo(function RenderInlineImage({
+  src,
+  alt,
+}: { src: string, alt: string }): React.ReactNode {
+  const { width: screenWidth } = useWindowDimensions()
+  const [aspect, setAspect] = useState<number>(DEFAULT_IMAGE_ASPECT)
+  const [failed, setFailed] = useState<boolean>(false)
+
+  const maxWidth = Math.max(80, screenWidth - IMAGE_HORIZONTAL_PADDING)
+
+  const handlePress = (): void => {
+    if (isAllowedUrl(src)) {
+      void Linking.openURL(src)
+    }
+  }
+
+  if (failed) {
+    return (
+      <Pressable
+        className="my-1.5 flex-row items-center bg-surface-tertiary rounded-md px-3 py-2"
+        onPress={handlePress}
+        accessibilityRole="image"
+        accessibilityLabel={`Broken image: ${alt}`}
+      >
+        <Ionicons name="image-outline" size={20} color="#77818B" />
+        <Text className="font-sans text-sm text-content-tertiary ml-2 flex-1" numberOfLines={1}>
+          {alt}
+        </Text>
+      </Pressable>
+    )
+  }
+
+  return (
+    <Pressable
+      className="my-1.5"
+      onPress={handlePress}
+      accessibilityRole="image"
+      accessibilityLabel={alt}
+      accessibilityHint="Tap to open image"
+    >
+      <Image
+        source={{ uri: src }}
+        style={{ width: maxWidth, aspectRatio: aspect, borderRadius: 6 }}
+        contentFit="contain"
+        transition={150}
+        cachePolicy="memory-disk"
+        onLoad={(e) => {
+          const size = e.source
+          if (size != null && size.width > 0 && size.height > 0) {
+            setAspect(size.width / size.height)
+          }
+        }}
+        onError={() => setFailed(true)}
+        accessibilityLabel={alt}
+      />
+    </Pressable>
+  )
+})
+
+// ---------------------------------------------------------------------------
+// Code block helpers + memoized highlighter
+// ---------------------------------------------------------------------------
+
+function collectPlainText(node: MarkupNode): string {
+  if (node.type === MarkupNodeType.text) {
+    return node.text ?? ''
+  }
+  if (node.type === MarkupNodeType.hard_break) {
+    return '\n'
+  }
+  if (node.content == null || node.content.length === 0) return ''
+  let out = ''
+  for (const c of node.content) {
+    out += collectPlainText(c)
+  }
+  return out
+}
+
+interface RenderCodeBlockProps {
+  source: string
+  language: string | null
+}
+
+const RenderCodeBlock = memo(function RenderCodeBlock({
+  source,
+  language,
+}: RenderCodeBlockProps): React.ReactNode {
+  const supported = normalizeLanguage(language)
+  const lines = useMemo(() => countLines(source), [source])
+  const truncated = lines > MAX_HIGHLIGHT_LINES
+
+  const tokens = useMemo(() => {
+    if (supported == null) return null
+    return highlight(source, supported)
+  }, [source, supported])
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await Clipboard.setStringAsync(source)
+      showSuccessToast('Copied code to clipboard')
+    } catch (err) {
+      showErrorToast(err, 'Unable to copy to clipboard')
+    }
+  }, [source])
+
+  return (
+    <Pressable
+      className="bg-surface-tertiary rounded-md p-3 my-1.5 active:opacity-90"
+      onLongPress={() => void handleCopy()}
+      delayLongPress={400}
+      accessibilityRole="button"
+      accessibilityLabel={supported != null ? `${supported} code block` : 'Code block'}
+      accessibilityHint="Long press to copy"
+    >
+      <Text className="font-mono text-xs leading-4">
+        {tokens == null ? (
+          <Text className="text-content-primary">{source}</Text>
+        ) : (
+          tokens.map((tok, idx) => (
+            <Text key={`tok-${idx}`} className={classForToken(tok.kind)}>
+              {tok.text}
+            </Text>
+          ))
+        )}
+      </Text>
+      {truncated && (
+        <Text className="font-sans text-xs text-content-tertiary italic mt-2">
+          [truncated — {lines - MAX_HIGHLIGHT_LINES} more lines]
+        </Text>
+      )}
+    </Pressable>
+  )
+})
 
 function RenderOrderedListItem({
   node,

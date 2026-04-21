@@ -1,6 +1,7 @@
 import { Redirect, Tabs } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { View } from 'react-native'
+import { useTranslation } from 'react-i18next'
 
 import { useAuthStore } from '@/store/auth'
 import { useWorkspaceStore } from '@/store/workspace'
@@ -50,6 +51,7 @@ function AuthenticatedTabShell(): React.ReactNode {
   // Push token registration — acquires token and registers with backend
   usePushRegistration()
 
+  const { t } = useTranslation()
   const chatBadge = useChatStore((s) => s.unreadTotal)
   const inboxBadge = useInboxStore((s) => s.unreadTotal)
 
@@ -71,13 +73,13 @@ function AuthenticatedTabShell(): React.ReactNode {
         <Tabs.Screen
           name="tracker"
           options={{
-            title: 'Tracker',
+            title: t('tabs.tracker'),
             tabBarIcon: ({ color, size }) => (
               <Ionicons
                 name="checkmark-circle-outline"
                 size={size}
                 color={color}
-                accessibilityLabel="Tracker tab"
+                accessibilityLabel={t('tabs.tracker')}
               />
             ),
           }}
@@ -85,14 +87,14 @@ function AuthenticatedTabShell(): React.ReactNode {
         <Tabs.Screen
           name="chat"
           options={{
-            title: 'Chat',
+            title: t('tabs.chat'),
             tabBarBadge: chatBadge > 0 ? chatBadge : undefined,
             tabBarIcon: ({ color, size }) => (
               <Ionicons
                 name="chatbubbles-outline"
                 size={size}
                 color={color}
-                accessibilityLabel="Chat tab"
+                accessibilityLabel={t('tabs.chat')}
               />
             ),
           }}
@@ -100,14 +102,14 @@ function AuthenticatedTabShell(): React.ReactNode {
         <Tabs.Screen
           name="inbox"
           options={{
-            title: 'Inbox',
+            title: t('tabs.inbox'),
             tabBarBadge: inboxBadge > 0 ? inboxBadge : undefined,
             tabBarIcon: ({ color, size }) => (
               <Ionicons
                 name="notifications-outline"
                 size={size}
                 color={color}
-                accessibilityLabel="Inbox tab"
+                accessibilityLabel={t('tabs.inbox')}
               />
             ),
           }}
@@ -115,13 +117,13 @@ function AuthenticatedTabShell(): React.ReactNode {
         <Tabs.Screen
           name="settings"
           options={{
-            title: 'Settings',
+            title: t('tabs.settings'),
             tabBarIcon: ({ color, size }) => (
               <Ionicons
                 name="settings-outline"
                 size={size}
                 color={color}
-                accessibilityLabel="Settings tab"
+                accessibilityLabel={t('tabs.settings')}
               />
             ),
           }}

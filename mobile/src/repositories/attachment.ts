@@ -196,18 +196,60 @@ export async function downloadAndShare(
 // ---------------------------------------------------------------------------
 
 /**
- * Build an authenticated download URL with token as query param.
- * Used for expo-image source URIs where custom headers are not supported.
+ * Authenticated image source for RN `<Image source={...} />` / expo-image.
+ *
+ * Uses an Authorization header instead of a query-string token so the JWT
+ * doesn't leak into expo-image disk caches, HTTP Referer, server logs, or
+ * Sentry breadcrumbs (where query strings on datalake hosts are not covered
+ * by the workspace-URL scrubber).
  */
-export function getAuthenticatedFileUrl(blobId: string): string {
-  const config = getConfig()
-  const token = useAuthStore.getState().token
-  const url = getFileUrl(config, blobId, getWorkspaceId())
-  return token != null ? `${url}?token=${encodeURIComponent(token)}` : url
+export interface AuthenticatedImageSource {
+  uri: string
+  headers: Record<string, string>
+}
+
+function buildAuthHeaders(token: string | null): Record<string, string> {
+  return token != null ? { Authorization: `Bearer ${token}` } : {}
 }
 
 /**
- * Build an authenticated thumbnail URL for image previews.
+ * Build an authenticated download source for display.
+ *
+ * Prefer this over {@link getAuthenticatedFileUrl} for any `<Image>` render.
+ */
+export function getAuthenticatedFileSource(blobId: string): AuthenticatedImageSource {
+  const config = getConfig()
+  const token = useAuthStore.getState().token
+  const uri = getFileUrl(config, blobId, getWorkspaceId())
+  return { uri, headers: buildAuthHeaders(token) }
+}
+
+/**
+ * Build an authenticated thumbnail source for image previews.
+ */
+export function getAuthenticatedThumbnailSource(
+  blobId: string,
+  width: number = 200,
+  height: number = 200
+): AuthenticatedImageSource {
+  const config = getConfig()
+  const token = useAuthStore.getState().token
+  const uri = getThumbnailUrl(config, blobId, getWorkspaceId(), width, height)
+  return { uri, headers: buildAuthHeaders(token) }
+}
+
+/**
+ * @deprecated Use {@link getAuthenticatedFileSource} instead.
+ * Kept for backwards compatibility; the returned URL does NOT contain a token
+ * and requires an Authorization header at the fetch site.
+ */
+export function getAuthenticatedFileUrl(blobId: string): string {
+  const config = getConfig()
+  return getFileUrl(config, blobId, getWorkspaceId())
+}
+
+/**
+ * @deprecated Use {@link getAuthenticatedThumbnailSource} instead.
  */
 export function getAuthenticatedThumbnailUrl(
   blobId: string,
@@ -215,9 +257,7 @@ export function getAuthenticatedThumbnailUrl(
   height: number = 200
 ): string {
   const config = getConfig()
-  const token = useAuthStore.getState().token
-  const url = getThumbnailUrl(config, blobId, getWorkspaceId(), width, height)
-  return token != null ? `${url}&token=${encodeURIComponent(token)}` : url
+  return getThumbnailUrl(config, blobId, getWorkspaceId(), width, height)
 }
 
 // ---------------------------------------------------------------------------

@@ -22,6 +22,7 @@ import type {
 } from '@hcengineering/core'
 
 import { getClient } from '@/client'
+import { useConnectionStore } from '@/store/connection'
 
 // ---------------------------------------------------------------------------
 // Query key helpers
@@ -90,6 +91,7 @@ export function useHulyQuery<T extends Doc> (
   options?: UseHulyQueryOptions<T>
 ): UseQueryResult<FindResult<T>, Error> {
   const queryKey = createHulyQueryKey(_class, query, options?.findOptions)
+  const clientReady = useConnectionStore((s) => s.status === 'connected')
 
   return useQuery<FindResult<T>, Error>({
     queryKey,
@@ -100,7 +102,7 @@ export function useHulyQuery<T extends Doc> (
       }
       return await client.findAll(_class, query, options?.findOptions)
     },
-    enabled: getClient() !== null,
+    enabled: clientReady,
     ...options?.queryOptions,
   })
 }
@@ -122,6 +124,7 @@ export function useHulyFindOne<T extends Doc> (
   options?: UseHulyFindOneOptions<T>
 ): UseQueryResult<WithLookup<T> | undefined, Error> {
   const queryKey = [...createHulyQueryKey(_class, query, options?.findOptions), 'one'] as const
+  const clientReady = useConnectionStore((s) => s.status === 'connected')
 
   return useQuery<WithLookup<T> | undefined, Error>({
     queryKey,
@@ -132,7 +135,7 @@ export function useHulyFindOne<T extends Doc> (
       }
       return await client.findOne(_class, query, options?.findOptions)
     },
-    enabled: getClient() !== null,
+    enabled: clientReady,
     ...options?.queryOptions,
   })
 }

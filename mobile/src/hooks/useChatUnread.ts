@@ -36,11 +36,14 @@ export function useChatUnreadSync(): void {
   const resetAllUnread = useChatStore((s) => s.resetAllUnread)
   const setUnreadCount = useChatStore((s) => s.setUnreadCount)
   const currentSocialId = useConnectionStore((s) => s.currentSocialId)
+  const clientReady = useConnectionStore((s) => s.status === 'connected')
   const wsConnected = useWebSocketStore((s) => s.status === 'connected')
   const effectiveInterval = wsConnected ? POLL_INTERVAL_WS : POLL_INTERVAL
 
   const { data: contexts } = useQuery({
-    queryKey: ['chat', 'unread-contexts', currentSocialId],
+    // Include effectiveInterval in the key so WS toggling re-keys (and refetches)
+    // the query instead of waiting for the next stale-time window.
+    queryKey: ['chat', 'unread-contexts', currentSocialId, effectiveInterval],
     queryFn: async () => {
       const client = getClient()
       if (client === null || currentSocialId == null) return []
@@ -54,7 +57,7 @@ export function useChatUnreadSync(): void {
         } as Record<string, unknown>
       )
     },
-    enabled: getClient() !== null && currentSocialId != null,
+    enabled: clientReady && currentSocialId != null,
     staleTime: effectiveInterval,
     refetchInterval: effectiveInterval,
   })

@@ -30,7 +30,7 @@ interface ImageViewerProps {
 
 function ImageViewer({ blobId, filename, onClose }: ImageViewerProps): React.ReactNode {
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions()
-  const { fileUrl } = useAttachmentUrl(blobId)
+  const { fileSource } = useAttachmentUrl(blobId)
 
   const handleShare = useCallback(() => {
     void downloadAndShare(blobId, filename)
@@ -66,7 +66,7 @@ function ImageViewer({ blobId, filename, onClose }: ImageViewerProps): React.Rea
       {/* Image */}
       <View className="flex-1 items-center justify-center">
         <Image
-          source={{ uri: fileUrl }}
+          source={fileSource}
           style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT * 0.7 }}
           contentFit="contain"
           transition={300}

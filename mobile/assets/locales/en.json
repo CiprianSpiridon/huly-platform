@@ -1,0 +1,78 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "ok": "OK",
+    "error": "Error",
+    "loading": "Loading...",
+    "retry": "Retry"
+  },
+  "tabs": {
+    "tracker": "Tracker",
+    "chat": "Chat",
+    "inbox": "Inbox",
+    "settings": "Settings"
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in to Huly",
+      "subtitle": "Enter your email and password",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@company.com",
+      "emailAccessibility": "Email address",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Enter password",
+      "passwordAccessibility": "Password",
+      "submit": "Sign in",
+      "submitting": "Signing in...",
+      "submitAccessibility": "Sign in",
+      "otpLink": "Sign in with OTP",
+      "otpAccessibility": "Sign in with OTP",
+      "failureTitle": "Error",
+      "failureMessage": "Login failed. Please check your credentials and try again."
+    }
+  },
+  "settings": {
+    "sections": {
+      "workspace": "Workspace",
+      "notifications": "Notifications",
+      "appearance": "Appearance",
+      "account": "Account",
+      "about": "About"
+    },
+    "profile": {
+      "unableToLoad": "Unable to load profile"
+    },
+    "workspace": {
+      "name": "Name",
+      "members": "Members",
+      "membersAccessibility": "View workspace members",
+      "switch": "Switch Workspace",
+      "switchAccessibility": "Switch to a different workspace"
+    },
+    "notifications": {
+      "preferences": "Notification Preferences",
+      "preferencesAccessibility": "Configure notification preferences"
+    },
+    "appearance": {
+      "accessibility": "Theme preference",
+      "dark": "Dark",
+      "light": "Light",
+      "system": "System",
+      "themeAccessibility": "{{label}} theme"
+    },
+    "account": {
+      "signOut": "Sign Out",
+      "signOutAccessibility": "Sign out of Huly",
+      "confirmTitle": "Sign Out",
+      "confirmMessage": "Are you sure you want to sign out of Huly?",
+      "confirmAction": "Sign Out"
+    },
+    "about": {
+      "title": "About Huly",
+      "accessibility": "About Huly"
+    },
+    "footer": {
+      "version": "Huly v{{version}}"
+    }
+  }
+}

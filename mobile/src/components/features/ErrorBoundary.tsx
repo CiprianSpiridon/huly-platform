@@ -7,6 +7,8 @@
 
 import React from 'react'
 
+import { captureBoundaryError } from '@/lib/sentry'
+
 import { ErrorFallback } from './ErrorFallback'
 
 interface ErrorBoundaryProps {
@@ -36,7 +38,12 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     if (__DEV__) {
       console.error('[ErrorBoundary]', error, errorInfo.componentStack)
     }
-    // In production, send to error reporting service here
+    // Report to Sentry with minimal, PII-scrubbed context.
+    captureBoundaryError(error, {
+      componentStack: errorInfo.componentStack ?? null,
+      screen: null,
+      lastAction: null,
+    })
   }
 
   handleReset = (): void => {
