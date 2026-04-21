@@ -19,6 +19,7 @@ import {
 import { getClient } from '@/client'
 import { getOrCreateAccountClient } from '@/client/account'
 import { useAuthStore } from '@/store/auth'
+import { useWorkspaceStore } from '@/store/workspace'
 import { RepositoryError, wrapRepositoryError } from './base'
 
 // ---------------------------------------------------------------------------
@@ -193,9 +194,6 @@ export async function removeMember(targetAccount: AccountUuid): Promise<void> {
  * updateWorkspaceRole, leaveWorkspace) require the workspace token.
  */
 function getWorkspaceScopedToken(): string | null {
-  // Local require to avoid a static cycle between members and workspace store.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { useWorkspaceStore } = require('@/store/workspace') as typeof import('@/store/workspace')
   const wsToken = useWorkspaceStore.getState().workspaceToken
   if (wsToken != null) return wsToken
   return useAuthStore.getState().token
