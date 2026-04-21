@@ -424,6 +424,7 @@ export default function ChannelSettingsScreen(): React.ReactNode {
               const memberInfo = allMembers?.find((m) => m._id === cm.memberId)
               const displayMember: MemberItem = memberInfo ?? {
                 _id: cm.memberId,
+                accountUuid: cm.memberId,
                 name: cm.memberId,
                 email: '',
                 avatarUrl: undefined,
