@@ -17,6 +17,7 @@ export default function SettingsLayout(): React.ReactNode {
       <Stack.Screen name="members" options={{ title: 'Members' }} />
       <Stack.Screen name="invite-member" options={{ title: 'Invite Member' }} />
       <Stack.Screen name="change-password" options={{ title: 'Change Password' }} />
+      <Stack.Screen name="two-factor" options={{ title: 'Two-Factor Authentication' }} />
       <Stack.Screen name="about" options={{ title: 'About' }} />
     </Stack>
   )

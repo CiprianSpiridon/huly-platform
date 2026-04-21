@@ -39,6 +39,7 @@ import { updateAvatar } from '@/repositories/settings'
 // <registry:imports>
 import { NameRow } from './rows/NameRow'
 import { PasswordRow } from './rows/PasswordRow'
+import { TwoFactorRow } from './rows/TwoFactorRow'
 // </registry:imports>
 
 // ---------------------------------------------------------------------------
@@ -260,6 +261,7 @@ export function SettingsRows(): React.ReactNode {
       <SectionHeader title="Security" />
       {/* <registry:security> -- TASK-005 / TASK-006 register PasswordRow + TwoFactorRow here */}
       <PasswordRow />
+      <TwoFactorRow />
 
       <Divider />
 
