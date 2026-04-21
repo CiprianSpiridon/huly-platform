@@ -116,20 +116,58 @@ export default function RootLayout(): React.ReactNode {
 }
 
 /**
- * Convert an incoming universal link URL (https://huly.io/...) into an
+ * Hosts we accept universal-link traffic from. Kept in sync with
+ * `ios.associatedDomains` and `android.intentFilters[].data[].host` in
+ * `mobile/app.json`. If a new host is added there it MUST be added here
+ * or incoming links will fall through to the default inbox tab.
+ */
+const ALLOWED_UNIVERSAL_LINK_HOSTS = new Set<string>([
+  'huly.app',
+  'www.huly.app',
+])
+
+/**
+ * Convert an incoming universal link URL (https://huly.app/...) into an
  * in-app route using the same resolver the notification deep-link flow
  * uses. Unknown paths fall back to the default inbox tab.
+ *
+ * Special-cases `/login/recovery` and `/login/auth` up-front so the
+ * server-emitted password-reset and OAuth redirect URLs land on their
+ * dedicated capture screens instead of being treated as tab segments.
  */
-function resolveUniversalLink(rawUrl: string): string {
+function resolveUniversalLink(rawUrl: string): string | null {
   try {
     const parsed = new URL(rawUrl)
-    // Only act on our known hosts; foreign domains fall back to inbox.
     const host = parsed.hostname.toLowerCase()
-    if (host !== 'huly.io' && host !== 'app.huly.io' && host !== 'www.huly.io') {
-      return '/(app)/inbox'
+
+    // Reject foreign origins outright rather than routing to a default tab.
+    // A link pointing at huly.io (not in our associatedDomains) should not
+    // silently deep-link into a signed-in session on a different product.
+    if (!ALLOWED_UNIVERSAL_LINK_HOSTS.has(host)) {
+      return null
     }
 
+    const rawPath = parsed.pathname.toLowerCase()
     const segments = parsed.pathname.split('/').filter((s) => s.length > 0)
+
+    // Auth capture routes — must be handled before the tab switch because
+    // `login/recovery?id=...` and `login/auth?token=...` carry query params
+    // that must be preserved.
+    if (rawPath === '/login/recovery' || rawPath.startsWith('/login/recovery/')) {
+      const id = parsed.searchParams.get('id')
+      if (id != null && id.length > 0) {
+        return `/login/recovery?id=${encodeURIComponent(id)}`
+      }
+      return '/login/recovery'
+    }
+    if (rawPath === '/login/auth' || rawPath.startsWith('/login/auth/')) {
+      const token = parsed.searchParams.get('token')
+      if (token != null && token.length > 0) {
+        return `/login/auth?token=${encodeURIComponent(token)}`
+      }
+      return '/login/auth'
+    }
+
     // Supported shapes:
     //   /tracker/issue/<id>        -> tracker issue
     //   /tracker/<id>              -> tracker issue (shorthand)
@@ -182,6 +220,8 @@ function handleIncomingUrl(url: string | null | undefined): void {
   // Pass through huly:// custom scheme links unchanged; expo-router has them.
   if (url.startsWith('huly://')) return
   const dest = resolveUniversalLink(url)
+  // Host not in our allowlist — ignore the link silently.
+  if (dest == null) return
   try {
     router.push(dest as Href)
   } catch {
