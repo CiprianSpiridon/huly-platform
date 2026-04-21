@@ -9,14 +9,26 @@ import {
   Alert,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { router } from 'expo-router'
+import { router, useLocalSearchParams } from 'expo-router'
 
 import { useOtpLogin } from '@/hooks/use-auth'
 
 export default function OtpScreen(): React.ReactNode {
-  const [email, setEmail] = useState('')
+  // Optional params let callers (e.g. signup) prefill the email and jump
+  // straight to the code-entry step: `/otp?email=foo@bar.com&step=code`.
+  const params = useLocalSearchParams<{
+    email?: string | string[]
+    step?: string | string[]
+  }>()
+  const initialEmail =
+    (Array.isArray(params.email) ? params.email[0] : params.email) ?? ''
+  const initialStepParam = Array.isArray(params.step) ? params.step[0] : params.step
+  const initialStep: 'email' | 'code' =
+    initialStepParam === 'code' && initialEmail.length > 0 ? 'code' : 'email'
+
+  const [email, setEmail] = useState(initialEmail)
   const [code, setCode] = useState('')
-  const [step, setStep] = useState<'email' | 'code'>('email')
+  const [step, setStep] = useState<'email' | 'code'>(initialStep)
   const [retryAt, setRetryAt] = useState<number | null>(null)
   const [countdown, setCountdown] = useState(0)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
