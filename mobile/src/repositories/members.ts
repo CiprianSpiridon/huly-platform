@@ -46,6 +46,13 @@ const DOMAIN = 'members'
 /** Minimal member representation for the mobile UI. */
 export interface MemberItem {
   _id: string
+  /**
+   * Account UUID (Person.personUuid). Required for workspace role mutations
+   * (`updateWorkspaceRole`, `leaveWorkspace`). Falls back to `_id` when the
+   * Person doc has no personUuid (legacy accounts) so the field is always
+   * present at runtime.
+   */
+  accountUuid: string
   name: string
   email: string
   avatarUrl: string | undefined
@@ -219,8 +226,12 @@ function docToMemberItem(doc: Doc): MemberItem {
   const avatar = record.avatar as string | undefined
   const avatarUrl = typeof avatar === 'string' && avatar.length > 0 ? avatar : undefined
 
+  const personUuid = record.personUuid as string | undefined
+  const id = String(record._id ?? '')
+
   return {
-    _id: String(record._id ?? ''),
+    _id: id,
+    accountUuid: typeof personUuid === 'string' && personUuid.length > 0 ? personUuid : id,
     name,
     email,
     avatarUrl,
