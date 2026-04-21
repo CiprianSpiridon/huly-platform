@@ -49,7 +49,7 @@ function AttachmentThumbnailInner({
   onPress,
 }: AttachmentThumbnailProps): React.ReactNode {
   const isImage = mimeType.startsWith('image/')
-  const { thumbnailUrl } = useAttachmentUrl(blobId)
+  const { thumbnailSource } = useAttachmentUrl(blobId)
 
   const handlePress = useCallback(() => {
     onPress(blobId, filename, mimeType)
@@ -64,7 +64,7 @@ function AttachmentThumbnailInner({
     >
       {isImage ? (
         <Image
-          source={{ uri: thumbnailUrl }}
+          source={thumbnailSource}
           className="w-full h-[100px]"
           contentFit="cover"
           transition={300}

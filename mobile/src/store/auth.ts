@@ -89,10 +89,21 @@ export const useAuthStore = create<AuthState>((set) => ({
             /network|fetch|abort|timeout|internet/i.test(err.message))
 
         if (isNetworkError) {
-          set({ isAuthenticated: false })
+          // Network failure — trust the persisted token optimistically so the
+          // user isn't bounced to the login screen on flaky connectivity.
+          // The connection store handles real-time connectivity state, and
+          // any subsequent 401 from the transactor will clear auth explicitly.
+          set({
+            token,
+            account: account as AccountUuid,
+            isAuthenticated: true,
+          })
           return
         }
 
+        // Auth failure (invalid signature, revoked, 401). Clear everything,
+        // including workspace keys, so the next launch doesn't try to restore
+        // a workspace the user can no longer access.
         await SecureStore.deleteItemAsync('auth_token')
         await SecureStore.deleteItemAsync('account_id')
         await SecureStore.deleteItemAsync('workspace_url')

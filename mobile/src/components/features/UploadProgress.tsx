@@ -10,6 +10,8 @@ import { memo, useEffect, useRef, useCallback } from 'react'
 import { View, Text, Pressable, Animated } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 
+import { useShallow } from 'zustand/react/shallow'
+
 import { useUploadStore } from '@/store/upload'
 import type { UploadEntry } from '@/store/upload'
 import { formatFileSize } from '@/lib/format'
@@ -127,7 +129,7 @@ const UploadPill = memo(UploadPillInner)
 // ---------------------------------------------------------------------------
 
 function UploadProgress(): React.ReactNode {
-  const uploads = useUploadStore((s) => [...s.uploads.values()])
+  const uploads = useUploadStore(useShallow((s) => [...s.uploads.values()]))
   const removeUpload = useUploadStore((s) => s.removeUpload)
 
   const handleDismiss = useCallback(

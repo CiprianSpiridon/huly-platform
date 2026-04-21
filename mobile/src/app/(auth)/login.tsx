@@ -10,10 +10,12 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 
 import { useLogin } from '@/hooks/use-auth'
 
 export default function LoginScreen(): React.ReactNode {
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const { login, isLoading, error } = useLogin()
@@ -36,11 +38,11 @@ export default function LoginScreen(): React.ReactNode {
 
       router.replace('/(auth)/workspace-select')
     } catch {
-      Alert.alert('Error', 'Login failed. Please check your credentials and try again.')
+      Alert.alert(t('auth.login.failureTitle'), t('auth.login.failureMessage'))
     } finally {
       isSubmitting.current = false
     }
-  }, [email, password, login])
+  }, [email, password, login, t])
 
   const isFormValid = email.includes('@') && password.length > 0
 
@@ -53,23 +55,23 @@ export default function LoginScreen(): React.ReactNode {
         <View className="flex-1 justify-center px-6">
           <View className="items-center mb-8">
             <Text className="font-sans-bold text-2xl text-caption">
-              Sign in to Huly
+              {t('auth.login.title')}
             </Text>
             <Text className="font-sans text-sm text-content mt-2">
-              Enter your email and password
+              {t('auth.login.subtitle')}
             </Text>
           </View>
 
           <View className="gap-4">
             <View className="gap-1">
               <Text className="font-sans-medium text-sm text-content">
-                Email
+                {t('auth.login.emailLabel')}
               </Text>
               <TextInput
                 className="rounded-md bg-surface-panel p-3 font-sans text-base text-caption"
                 value={email}
                 onChangeText={setEmail}
-                placeholder="you@company.com"
+                placeholder={t('auth.login.emailPlaceholder')}
                 placeholderTextColor="#77818B"
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -77,26 +79,26 @@ export default function LoginScreen(): React.ReactNode {
                 textContentType="emailAddress"
                 autoCorrect={false}
                 editable={!isLoading}
-                accessibilityLabel="Email address"
+                accessibilityLabel={t('auth.login.emailAccessibility')}
               />
             </View>
 
             <View className="gap-1">
               <Text className="font-sans-medium text-sm text-content">
-                Password
+                {t('auth.login.passwordLabel')}
               </Text>
               <TextInput
                 className="rounded-md bg-surface-panel p-3 font-sans text-base text-caption"
                 value={password}
                 onChangeText={setPassword}
-                placeholder="Enter password"
+                placeholder={t('auth.login.passwordPlaceholder')}
                 placeholderTextColor="#77818B"
                 secureTextEntry
                 autoCapitalize="none"
                 autoComplete="password"
                 textContentType="password"
                 editable={!isLoading}
-                accessibilityLabel="Password"
+                accessibilityLabel={t('auth.login.passwordAccessibility')}
               />
             </View>
 
@@ -111,11 +113,11 @@ export default function LoginScreen(): React.ReactNode {
               onPress={handleLogin}
               disabled={!isFormValid || isLoading}
               accessibilityRole="button"
-              accessibilityLabel="Sign in"
+              accessibilityLabel={t('auth.login.submitAccessibility')}
               accessibilityState={{ disabled: !isFormValid || isLoading }}
             >
               <Text className="font-sans-medium text-base text-white">
-                {isLoading ? 'Signing in...' : 'Sign in'}
+                {isLoading ? t('auth.login.submitting') : t('auth.login.submit')}
               </Text>
             </Pressable>
 
@@ -124,10 +126,10 @@ export default function LoginScreen(): React.ReactNode {
               onPress={() => { router.push('/(auth)/otp') }}
               disabled={isLoading}
               accessibilityRole="link"
-              accessibilityLabel="Sign in with OTP"
+              accessibilityLabel={t('auth.login.otpAccessibility')}
             >
               <Text className="font-sans text-sm text-link">
-                Sign in with OTP
+                {t('auth.login.otpLink')}
               </Text>
             </Pressable>
           </View>

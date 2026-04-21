@@ -122,7 +122,10 @@ export function usePushRegistration(): void {
     const prevWs = previousWorkspaceRef.current
     previousWorkspaceRef.current = workspaceId
 
-    if (prevWs === undefined) {
+    // Skip on first mount (undefined) AND on the initial login transition
+    // from null → workspaceId, otherwise we immediately deregister a token
+    // the registration effect just registered.
+    if (prevWs == null) {
       return
     }
 

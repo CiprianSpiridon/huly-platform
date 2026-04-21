@@ -11,13 +11,15 @@ import { memo, useCallback, useState, useRef, useEffect } from 'react'
 import { View, Text, Pressable, ScrollView, TextInput, Alert } from 'react-native'
 import { Image } from 'expo-image'
 import { Ionicons } from '@expo/vector-icons'
+import * as Clipboard from 'expo-clipboard'
 
 import { AvatarCircle } from '@/components/ui/AvatarCircle'
 import { ReactionPills } from '@/components/features/ReactionPills'
 import { MarkupRenderer } from '@/components/features/MarkupRenderer'
 import { markupToPlainText } from '@/lib/markupUtils'
-import { getAuthenticatedThumbnailUrl } from '@/repositories/attachment'
+import { getAuthenticatedThumbnailSource } from '@/repositories/attachment'
 import type { MessageItem } from '@/repositories/chat'
+import { showErrorToast, showSuccessToast } from '@/store/toast'
 
 // ---------------------------------------------------------------------------
 // Props
@@ -74,6 +76,7 @@ interface MessageActionMenuProps {
   onDelete: () => void
   onPin: () => void
   onReaction: () => void
+  onCopy: () => void
   onDismiss: () => void
 }
 
@@ -83,6 +86,7 @@ function MessageActionMenu({
   onDelete,
   onPin,
   onReaction,
+  onCopy,
   onDismiss,
 }: MessageActionMenuProps): React.ReactNode {
   return (
@@ -100,6 +104,16 @@ function MessageActionMenu({
         >
           <Ionicons name="happy-outline" size={18} color="#ABABAF" />
           <Text className="font-sans text-sm text-content-primary">React</Text>
+        </Pressable>
+
+        <Pressable
+          className="flex-row items-center gap-3 px-4 py-3 min-h-[44px] active:bg-surface-tertiary"
+          onPress={onCopy}
+          accessibilityRole="button"
+          accessibilityLabel="Copy message text"
+        >
+          <Ionicons name="copy-outline" size={18} color="#ABABAF" />
+          <Text className="font-sans text-sm text-content-primary">Copy Text</Text>
         </Pressable>
 
         <Pressable
@@ -222,12 +236,11 @@ function MessageBubbleInner({
   const isOwnMessage = message.sender === currentUserId
 
   const handleLongPress = useCallback(() => {
-    if (onEdit != null || onDelete != null) {
-      setShowActions(true)
-    } else {
-      onLongPress?.(message)
-    }
-  }, [message, onLongPress, onEdit, onDelete])
+    // Copy Text is always available, so always show the action menu on
+    // long-press. Edit/Delete entries remain gated to own messages inside.
+    setShowActions(true)
+    onLongPress?.(message)
+  }, [message, onLongPress])
 
   const handleThreadPress = useCallback(() => {
     onThreadPress?.(message)
@@ -275,6 +288,17 @@ function MessageBubbleInner({
     onLongPress?.(message)
   }, [message, onLongPress])
 
+  const handleCopyText = useCallback(async () => {
+    setShowActions(false)
+    try {
+      const plain = markupToPlainText(message.content)
+      await Clipboard.setStringAsync(plain)
+      showSuccessToast('Copied message to clipboard')
+    } catch (err) {
+      showErrorToast(err, 'Unable to copy to clipboard')
+    }
+  }, [message.content])
+
   const handleSaveEdit = useCallback(
     (content: string) => {
       onEdit?.(message._id, content)
@@ -301,6 +325,7 @@ function MessageBubbleInner({
           onDelete={handleDeletePress}
           onPin={handlePinPress}
           onReaction={handleReactionFromMenu}
+          onCopy={() => void handleCopyText()}
           onDismiss={handleDismissActions}
         />
       )}
@@ -353,7 +378,7 @@ function MessageBubbleInner({
               {message.attachments.map((att) => {
                 const isImage = att.contentType.startsWith('image/')
                 if (isImage) {
-                  const thumbUrl = getAuthenticatedThumbnailUrl(att.blobId, 240, 160)
+                  const thumbSource = getAuthenticatedThumbnailSource(att.blobId, 240, 160)
                   return (
                     <Pressable
                       key={att.blobId}
@@ -363,7 +388,7 @@ function MessageBubbleInner({
                       className="active:opacity-80"
                     >
                       <Image
-                        source={{ uri: thumbUrl }}
+                        source={thumbSource}
                         className="w-[200px] h-[140px] rounded-md"
                         contentFit="cover"
                         transition={200}

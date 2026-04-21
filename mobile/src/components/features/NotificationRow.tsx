@@ -20,6 +20,7 @@ import Animated, {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 
 import type { NotificationItem } from '@/repositories/notification'
+import { mediumImpact } from '@/lib/haptics'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -100,6 +101,8 @@ function NotificationRowInner({
   }, [notification, onLongPress])
 
   const triggerArchive = useCallback(() => {
+    // Haptic feedback on archive gesture confirmation.
+    mediumImpact()
     onArchive(notification._id)
   }, [notification._id, onArchive])
 

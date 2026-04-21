@@ -41,6 +41,10 @@ jest.mock('@/lib/markupUtils', () => ({
 
 jest.mock('@/repositories/attachment', () => ({
   getAuthenticatedThumbnailUrl: jest.fn(() => 'https://example.com/thumb.jpg'),
+  getAuthenticatedThumbnailSource: jest.fn(() => ({
+    uri: 'https://example.com/thumb.jpg',
+    headers: { Authorization: 'Bearer test-token' },
+  })),
 }))
 
 describe('MessageBubble', () => {

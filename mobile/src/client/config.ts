@@ -20,7 +20,7 @@ let cachedConfig: ServerConfig | null = null
  * Returns the base server URL from the environment or the default.
  */
 export function getServerUrl(): string {
-  return process.env.EXPO_PUBLIC_HULY_URL ?? 'https://app.huly.io'
+  return process.env.EXPO_PUBLIC_HULY_URL ?? 'https://huly.app'
 }
 
 /**
@@ -39,7 +39,7 @@ export async function loadServerConfig(url: string): Promise<ServerConfig> {
   try {
     response = await fetch(configUrl, { signal: controller.signal })
   } catch (err) {
-    if (err instanceof DOMException && err.name === 'AbortError') {
+    if (err instanceof Error && err.name === 'AbortError') {
       throw new Error('Server config request timed out')
     }
     throw err

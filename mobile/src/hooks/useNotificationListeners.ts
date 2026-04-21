@@ -70,6 +70,8 @@ export function useNotificationListeners(): NotificationListenerState {
         const content = notification.request.content
 
         // Read current preferences at notification-arrival time.
+        // Reading fresh inside the listener avoids tearing down and rebuilding
+        // the OS-level subscription whenever the user toggles a preference.
         const { preferences, typePreferences } = usePushStore.getState()
 
         // Check if this notification category is enabled in preferences,
@@ -138,12 +140,18 @@ export function useNotificationListeners(): NotificationListenerState {
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
+    let cancelled = false
+    let timer: ReturnType<typeof setTimeout> | null = null
+
     async function checkColdStart(): Promise<void> {
       try {
         const lastResponse = await Notifications.getLastNotificationResponseAsync()
+        if (cancelled) return
         if (lastResponse != null) {
           // Small delay to let the navigation tree mount
-          setTimeout(() => {
+          timer = setTimeout(() => {
+            timer = null
+            if (cancelled) return
             handleNotificationResponse(lastResponse)
           }, 500)
         }
@@ -153,6 +161,14 @@ export function useNotificationListeners(): NotificationListenerState {
     }
 
     void checkColdStart()
+
+    return () => {
+      cancelled = true
+      if (timer !== null) {
+        clearTimeout(timer)
+        timer = null
+      }
+    }
   }, [])
 
   // ---------------------------------------------------------------------------

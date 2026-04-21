@@ -12,9 +12,9 @@ import { useQuery, type UseQueryResult } from '@tanstack/react-query'
 import { AppState, type AppStateStatus } from 'react-native'
 
 import { getUnreadCount } from '@/repositories/notification'
-import { getClient } from '@/client'
 import { useInboxStore } from '@/store/inbox'
 import { useWebSocketStore } from '@/store/websocket'
+import { useConnectionStore } from '@/store/connection'
 import { setBadgeCount } from '@/lib/notifications'
 import { notificationKeys } from './useNotifications'
 
@@ -39,6 +39,7 @@ const UNREAD_GC_TIME = 5 * 60_000       // 5 minutes
 export function useUnreadCount(): UseQueryResult<number, Error> {
   const setUnreadTotal = useInboxStore((s) => s.setUnreadTotal)
   const wsConnected = useWebSocketStore((s) => s.status === 'connected')
+  const clientReady = useConnectionStore((s) => s.status === 'connected')
 
   const query = useQuery<number, Error>({
     queryKey: notificationKeys.unreadCount,
@@ -46,7 +47,7 @@ export function useUnreadCount(): UseQueryResult<number, Error> {
     staleTime: wsConnected ? UNREAD_STALE_TIME_WS : UNREAD_STALE_TIME,
     gcTime: UNREAD_GC_TIME,
     refetchInterval: wsConnected ? UNREAD_POLL_INTERVAL_WS : UNREAD_POLL_INTERVAL,
-    enabled: getClient() !== null,
+    enabled: clientReady,
   })
 
   // Sync to Zustand and app icon badge whenever the count changes

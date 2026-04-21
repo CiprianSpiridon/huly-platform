@@ -147,15 +147,22 @@ function setupAppStateListener(
         set({ status: 'disconnected' })
       }
     } else if (nextState === 'active' && _wasBackgrounded) {
-      // Reconnect on foreground
+      // Reconnect on foreground using the CURRENT workspace endpoint + token
+      // from the workspace store. Reading module-level `_wsEndpoint` here
+      // would use a stale value after a workspace switch that happened while
+      // the app was backgrounded.
       _wasBackgrounded = false
-      const freshToken = useWorkspaceStore.getState().workspaceToken
-      if (_wsEndpoint !== null && freshToken !== null) {
+      const ws = useWorkspaceStore.getState()
+      const freshEndpoint = ws.workspaceEndpoint
+      const freshToken = ws.workspaceToken
+      if (freshEndpoint !== null && freshToken !== null) {
         // Always create a fresh connection to avoid reusing a stale socket
         if (_connection !== null) {
           _connection.disconnect()
           _connection = null
         }
+        _wsEndpoint = freshEndpoint
+        _wsToken = freshToken
         _connection = new TransactorConnection({
           socketFactory: RNWebSocketFactory,
           onBroadcast: (txes) => {
@@ -165,7 +172,7 @@ function setupAppStateListener(
             set({ status: status as WsStatus })
           },
         })
-        _connection.connect(_wsEndpoint, freshToken)
+        _connection.connect(freshEndpoint, freshToken)
         set({ status: 'connecting' })
 
         // Invalidate all queries on foreground return so stale data refreshes
@@ -201,15 +208,19 @@ function setupNetInfoListener(
         set({ status: 'disconnected' })
       }
     } else if (wasDisconnected) {
-      // Network restored -- reconnect
+      // Network restored -- reconnect using the CURRENT workspace endpoint.
       wasDisconnected = false
-      const freshToken = useWorkspaceStore.getState().workspaceToken
-      if (_wsEndpoint !== null && freshToken !== null) {
+      const ws = useWorkspaceStore.getState()
+      const freshEndpoint = ws.workspaceEndpoint
+      const freshToken = ws.workspaceToken
+      if (freshEndpoint !== null && freshToken !== null) {
         // Always create a fresh connection to avoid reusing a stale socket
         if (_connection !== null) {
           _connection.disconnect()
           _connection = null
         }
+        _wsEndpoint = freshEndpoint
+        _wsToken = freshToken
         _connection = new TransactorConnection({
           socketFactory: RNWebSocketFactory,
           onBroadcast: (txes) => {
@@ -219,7 +230,7 @@ function setupNetInfoListener(
             set({ status: status as WsStatus })
           },
         })
-        _connection.connect(_wsEndpoint, freshToken)
+        _connection.connect(freshEndpoint, freshToken)
         set({ status: 'connecting' })
 
         // Invalidate all queries to refresh stale data

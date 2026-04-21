@@ -13,6 +13,7 @@ import type { Doc, Ref, Class } from '@hcengineering/core'
 import { getClient } from '@/client'
 import { useAuthStore } from '@/store/auth'
 import { useChatStore } from '@/store/chat'
+import { useConnectionStore } from '@/store/connection'
 import { useWebSocketStore } from '@/store/websocket'
 
 const NOTIFY_CONTEXT_CLASS = 'notification:class:DocNotifyContext' as Ref<Class<Doc>>
@@ -38,11 +39,14 @@ export function useChatUnreadSync(): void {
   // DocNotifyContext.user is typed as AccountUuid (not PersonId / social id),
   // so we must filter using the authenticated account UUID from the auth store.
   const accountUuid = useAuthStore((s) => s.account)
+  const clientReady = useConnectionStore((s) => s.status === 'connected')
   const wsConnected = useWebSocketStore((s) => s.status === 'connected')
   const effectiveInterval = wsConnected ? POLL_INTERVAL_WS : POLL_INTERVAL
 
   const { data: contexts } = useQuery({
-    queryKey: ['chat', 'unread-contexts', accountUuid],
+    // Include effectiveInterval in the key so WS toggling re-keys (and refetches)
+    // the query instead of waiting for the next stale-time window.
+    queryKey: ['chat', 'unread-contexts', accountUuid, effectiveInterval],
     queryFn: async () => {
       const client = getClient()
       if (client === null || accountUuid == null) return []
@@ -56,7 +60,7 @@ export function useChatUnreadSync(): void {
         } as Record<string, unknown>
       )
     },
-    enabled: getClient() !== null && accountUuid != null,
+    enabled: clientReady && accountUuid != null,
     staleTime: effectiveInterval,
     refetchInterval: effectiveInterval,
   })

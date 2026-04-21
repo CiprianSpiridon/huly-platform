@@ -5,13 +5,15 @@
  * Provides "Mark as Read" and "Archive" buttons with a count badge.
  * Also includes "Select All" and "Cancel" actions.
  *
- * Haptic feedback is provided via react-native-gesture-handler's
- * built-in haptics when available, or a no-op fallback.
+ * Haptic feedback is provided via the shared expo-haptics wrapper which
+ * respects Reduce Motion and gracefully no-ops on unsupported hardware.
  */
 
 import { memo, useCallback } from 'react'
-import { View, Text, Pressable, Platform } from 'react-native'
+import { View, Text, Pressable } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+
+import { lightImpact, mediumImpact, selection } from '@/lib/haptics'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -33,25 +35,6 @@ interface BulkActionBarProps {
 }
 
 // ---------------------------------------------------------------------------
-// Haptic helper
-// ---------------------------------------------------------------------------
-
-/**
- * Trigger a light haptic impact using React Native's built-in Vibration API.
- * Uses a short 10ms vibration to simulate a light haptic tap.
- */
-function triggerHaptic(): void {
-  try {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      const { Vibration } = require('react-native') as typeof import('react-native')
-      Vibration.vibrate(10)
-    }
-  } catch {
-    // Silently skip if vibration is not available
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
@@ -65,17 +48,18 @@ function BulkActionBarInner({
   onDelete,
 }: BulkActionBarProps): React.ReactNode {
   const handleMarkAsRead = useCallback(() => {
-    triggerHaptic()
+    lightImpact()
     onMarkAsRead()
   }, [onMarkAsRead])
 
   const handleArchive = useCallback(() => {
-    triggerHaptic()
+    // Bulk archive is destructive -- use a stronger tap for confirmation.
+    mediumImpact()
     onArchive()
   }, [onArchive])
 
   const handleSelectAll = useCallback(() => {
-    triggerHaptic()
+    selection()
     onSelectAll()
   }, [onSelectAll])
 
