@@ -21,6 +21,12 @@ interface WorkspaceState {
   setWorkspace: (info: WorkspaceLoginInfo) => Promise<void>
   clearWorkspace: () => Promise<void>
   restoreWorkspace: () => Promise<void>
+  /**
+   * Replace the persisted workspace role. Used after a server-side role
+   * change so subsequent session restores reflect the authoritative value
+   * from the account service rather than the role captured at selection.
+   */
+  setWorkspaceRole: (role: AccountRole) => Promise<void>
 }
 
 /**
@@ -70,6 +76,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
       workspaceToken: null,
       workspaceRole: null,
     })
+  },
+
+  setWorkspaceRole: async (role: AccountRole) => {
+    await SecureStore.setItemAsync('workspace_role', String(role))
+    set({ workspaceRole: role })
   },
 
   restoreWorkspace: async () => {

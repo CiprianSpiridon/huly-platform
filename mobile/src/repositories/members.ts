@@ -14,6 +14,7 @@ import {
   type Class,
   type Doc,
   type Ref,
+  type WorkspaceMemberInfo,
 } from '@hcengineering/core'
 
 import { getClient } from '@/client'
@@ -68,8 +69,15 @@ export interface MemberItem {
 // ---------------------------------------------------------------------------
 
 /**
- * Fetch all workspace members. Queries the Employee mixin with active: true
- * to get only actual workspace members (not all Person contacts).
+ * Fetch all workspace members.
+ *
+ * Role-source note: the transactor Employee mixin stores a `role` that
+ * is NOT kept in sync by `updateWorkspaceRole` — the account service is
+ * the authoritative source for workspace roles (see
+ * `server/account/src/utils.ts:updateWorkspaceRole`). To avoid stale UI
+ * after a role change we fetch `getWorkspaceMembers()` from the account
+ * service and overlay those roles onto the transactor employee list,
+ * matched by personUuid.
  */
 export async function getMembers(): Promise<MemberItem[]> {
   const client = getClient()
@@ -78,23 +86,36 @@ export async function getMembers(): Promise<MemberItem[]> {
   }
 
   try {
-    const result = await client.findAll<Doc>(
-      CONTACT_CLASS.Employee,
-      { active: true } as Record<string, unknown>,
-      {
-        sort: { name: SortingOrder.Ascending } as Record<string, SortingOrder>,
-        limit: 500,
-      }
-    )
+    const wsToken = getWorkspaceScopedToken()
+    const accountClient = wsToken != null ? await getOrCreateAccountClient(wsToken) : null
+    const [result, workspaceMembers] = await Promise.all([
+      client.findAll<Doc>(
+        CONTACT_CLASS.Employee,
+        { active: true } as Record<string, unknown>,
+        {
+          sort: { name: SortingOrder.Ascending } as Record<string, SortingOrder>,
+          limit: 500,
+        }
+      ),
+      accountClient != null
+        ? accountClient.getWorkspaceMembers().catch(() => [] as WorkspaceMemberInfo[])
+        : Promise.resolve([] as WorkspaceMemberInfo[]),
+    ])
 
-    return [...result].map(docToMemberItem)
+    const roleByAccount = new Map<string, AccountRole>()
+    for (const m of workspaceMembers) {
+      roleByAccount.set(String(m.person), m.role)
+    }
+
+    return [...result].map((doc) => docToMemberItem(doc, roleByAccount))
   } catch (error) {
     throw wrapRepositoryError(DOMAIN, 'getMembers', error)
   }
 }
 
 /**
- * Fetch a single member by ID.
+ * Fetch a single member by ID. Role is overlaid from the account service
+ * (same reasoning as `getMembers`).
  */
 export async function getMember(
   memberId: string
@@ -105,13 +126,25 @@ export async function getMember(
   }
 
   try {
-    const doc = await client.findOne<Doc>(
-      CONTACT_CLASS.Employee,
-      { _id: memberId as Ref<Doc> } as Record<string, unknown>
-    )
+    const wsToken = getWorkspaceScopedToken()
+    const accountClient = wsToken != null ? await getOrCreateAccountClient(wsToken) : null
+    const [doc, workspaceMembers] = await Promise.all([
+      client.findOne<Doc>(
+        CONTACT_CLASS.Employee,
+        { _id: memberId as Ref<Doc> } as Record<string, unknown>
+      ),
+      accountClient != null
+        ? accountClient.getWorkspaceMembers().catch(() => [] as WorkspaceMemberInfo[])
+        : Promise.resolve([] as WorkspaceMemberInfo[]),
+    ])
 
     if (doc == null) return undefined
-    return docToMemberItem(doc)
+
+    const roleByAccount = new Map<string, AccountRole>()
+    for (const m of workspaceMembers) {
+      roleByAccount.set(String(m.person), m.role)
+    }
+    return docToMemberItem(doc, roleByAccount)
   } catch (error) {
     throw wrapRepositoryError(DOMAIN, 'getMember', error)
   }
@@ -199,7 +232,10 @@ function getWorkspaceScopedToken(): string | null {
   return useAuthStore.getState().token
 }
 
-function docToMemberItem(doc: Doc): MemberItem {
+function docToMemberItem(
+  doc: Doc,
+  roleByAccount: Map<string, AccountRole>
+): MemberItem {
   const record = doc as unknown as Record<string, unknown>
 
   // Build name from name field or firstName+lastName
@@ -226,14 +262,23 @@ function docToMemberItem(doc: Doc): MemberItem {
 
   const personUuid = record.personUuid as string | undefined
   const id = String(record._id ?? '')
+  const accountUuid =
+    typeof personUuid === 'string' && personUuid.length > 0 ? personUuid : id
+
+  // Prefer the account-service role (authoritative) over the transactor
+  // Employee.role which is not updated by `updateWorkspaceRole`.
+  const authoritativeRole = roleByAccount.get(accountUuid)
+  const role = authoritativeRole != null ? String(authoritativeRole) : String(record.role ?? 'member')
 
   return {
     _id: id,
-    accountUuid: typeof personUuid === 'string' && personUuid.length > 0 ? personUuid : id,
+    accountUuid,
     name,
     email,
     avatarUrl,
-    role: String(record.role ?? 'member'),
+    role,
+    // `active !== false` treats undefined as active (legacy employees without
+    // the `active` flag are considered active members by default).
     isActive: record.active !== false,
     createdOn: Number(record.createdOn ?? 0),
     modifiedOn: Number(record.modifiedOn ?? 0),
