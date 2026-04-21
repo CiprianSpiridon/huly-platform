@@ -6,7 +6,7 @@
  */
 
 import { getClient } from '@hcengineering/account-client'
-import type { AccountClient } from '@hcengineering/account-client'
+import type { AccountClient, WorkspaceLoginInfo } from '@hcengineering/account-client'
 
 import { getServerUrl, loadServerConfig } from './config'
 
@@ -53,4 +53,24 @@ export async function getOrCreateAccountClient(token?: string): Promise<AccountC
 export function clearAccountClient(): void {
   cachedClient = null
   cachedToken = undefined
+}
+
+/**
+ * Creates a new workspace under the current account.
+ *
+ * Thin wrapper around `AccountClient.createWorkspace(name, region?)`. The
+ * caller is responsible for calling `useWorkspaceStore.setWorkspace()` with
+ * the returned `WorkspaceLoginInfo` to switch into the new workspace.
+ */
+export async function createWorkspace(
+  name: string,
+  region?: string
+): Promise<WorkspaceLoginInfo> {
+  const { useAuthStore } = await import('@/store/auth')
+  const token = useAuthStore.getState().token
+  if (token == null) {
+    throw new Error('Not authenticated')
+  }
+  const client = await getOrCreateAccountClient(token)
+  return await client.createWorkspace(name, region)
 }

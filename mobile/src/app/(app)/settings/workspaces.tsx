@@ -8,9 +8,11 @@
  */
 
 import { useCallback, useState } from 'react'
-import { View, Text, Alert, ActivityIndicator } from 'react-native'
+import { View, Text, Alert, ActivityIndicator, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { FlashList } from '@shopify/flash-list'
+import { router, type Href } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 
 import type { WorkspaceInfoWithStatus } from '@hcengineering/core'
 import { useWorkspaces } from '@/hooks/use-workspace'
@@ -126,6 +128,22 @@ export default function WorkspaceSwitcherScreen(): React.ReactNode {
           />
         )}
         ItemSeparatorComponent={ListSeparator}
+        ListFooterComponent={
+          <Pressable
+            onPress={() => {
+              router.push('/(app)/settings/create-workspace' as Href)
+            }}
+            disabled={isSwitching}
+            className="flex-row items-center gap-3 px-4 py-4 min-h-[44px] active:bg-surface-tertiary border-t border-border-primary mt-2"
+            accessibilityRole="button"
+            accessibilityLabel="Create a new workspace"
+          >
+            <Ionicons name="add-circle-outline" size={22} color="#205DC2" />
+            <Text className="font-sans-medium text-base text-accent-primary">
+              Create Workspace
+            </Text>
+          </Pressable>
+        }
       />
 
       {/* Full-screen loading overlay during workspace switch */}
