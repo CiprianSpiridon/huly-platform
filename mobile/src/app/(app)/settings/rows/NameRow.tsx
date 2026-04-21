@@ -66,6 +66,10 @@ export function NameRow({ profile }: NameRowProps): React.ReactNode {
     setSubmitError(null)
   }, [])
 
+  // Depend on the stable `mutation.mutate` reference rather than the
+  // mutation object — the object identity is not guaranteed stable across
+  // renders and would invalidate handleSave unnecessarily.
+  const mutate = mutation.mutate
   const handleSave = useCallback(() => {
     const first = firstName.trim()
     const last = lastName.trim()
@@ -74,8 +78,8 @@ export function NameRow({ profile }: NameRowProps): React.ReactNode {
       return
     }
     setSubmitError(null)
-    mutation.mutate({ first, last })
-  }, [firstName, lastName, mutation])
+    mutate({ first, last })
+  }, [firstName, lastName, mutate])
 
   const displayValue = [profile.firstName, profile.lastName]
     .filter((s) => s.length > 0)
@@ -99,6 +103,8 @@ export function NameRow({ profile }: NameRowProps): React.ReactNode {
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           className="flex-1 justify-end bg-surface-overlay"
+          accessibilityViewIsModal
+          accessibilityLabel="Edit name"
         >
           <View className="bg-surface-secondary rounded-t-xl p-4 pb-8">
             <View className="flex-row items-center justify-between mb-4">
@@ -161,7 +167,10 @@ export function NameRow({ profile }: NameRowProps): React.ReactNode {
             />
 
             {submitError != null && (
-              <View className="flex-row items-center gap-2 mt-3">
+              <View
+                className="flex-row items-center gap-2 mt-3"
+                accessibilityLiveRegion="polite"
+              >
                 <Ionicons name="alert-circle" size={16} color="#EE7A7A" />
                 <Text className="font-sans text-sm text-status-error flex-1">
                   {submitError}

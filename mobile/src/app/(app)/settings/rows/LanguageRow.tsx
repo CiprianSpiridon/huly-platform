@@ -15,6 +15,7 @@
  */
 
 import { View, Text } from 'react-native'
+import { useTranslation } from 'react-i18next'
 
 import { SUPPORTED_LOCALES } from '@/lib/i18n'
 
@@ -23,7 +24,14 @@ const LOCALE_LABELS: Record<string, string> = {
 }
 
 export function LanguageRow(): React.ReactNode {
-  const activeLocale = SUPPORTED_LOCALES[0] ?? 'en'
+  const { i18n } = useTranslation()
+  // Read the live active language from i18next rather than indexing
+  // SUPPORTED_LOCALES[0] — once more bundles ship the first entry will
+  // no longer match the user's active locale.
+  const activeLocale =
+    typeof i18n.language === 'string' && i18n.language.length > 0
+      ? i18n.language.split('-')[0]
+      : SUPPORTED_LOCALES[0] ?? 'en'
   const label = LOCALE_LABELS[activeLocale] ?? activeLocale
 
   return (

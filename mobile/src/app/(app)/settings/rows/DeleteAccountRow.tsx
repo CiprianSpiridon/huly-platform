@@ -146,6 +146,8 @@ export function DeleteAccountRow(): React.ReactNode {
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           className="flex-1 justify-end bg-surface-overlay"
+          accessibilityViewIsModal
+          accessibilityLabel="Confirm account deletion"
         >
           <View className="bg-surface-secondary rounded-t-xl p-4 pb-8">
             {deletionInProgress ? (
@@ -246,7 +248,10 @@ function ConfirmPanel({
       />
 
       {submitError != null && (
-        <View className="flex-row items-start gap-2 mt-3">
+        <View
+          className="flex-row items-start gap-2 mt-3"
+          accessibilityLiveRegion="polite"
+        >
           <Ionicons name="alert-circle" size={16} color="#EE7A7A" />
           <Text className="font-sans text-sm text-status-error flex-1">
             {submitError}
