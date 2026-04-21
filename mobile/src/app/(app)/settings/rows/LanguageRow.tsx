@@ -28,10 +28,11 @@ export function LanguageRow(): React.ReactNode {
   // Read the live active language from i18next rather than indexing
   // SUPPORTED_LOCALES[0] — once more bundles ship the first entry will
   // no longer match the user's active locale.
-  const activeLocale =
+  const rawLanguage =
     typeof i18n.language === 'string' && i18n.language.length > 0
-      ? i18n.language.split('-')[0]
+      ? i18n.language
       : SUPPORTED_LOCALES[0] ?? 'en'
+  const activeLocale = rawLanguage.split('-')[0] ?? rawLanguage
   const label = LOCALE_LABELS[activeLocale] ?? activeLocale
 
   return (
