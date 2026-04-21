@@ -15,6 +15,7 @@ export default function SettingsLayout(): React.ReactNode {
       <Stack.Screen name="create-workspace" options={{ title: 'Create Workspace' }} />
       <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
       <Stack.Screen name="members" options={{ title: 'Members' }} />
+      <Stack.Screen name="invite-member" options={{ title: 'Invite Member' }} />
       <Stack.Screen name="about" options={{ title: 'About' }} />
     </Stack>
   )

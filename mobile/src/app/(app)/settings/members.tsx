@@ -8,11 +8,12 @@
 import { useCallback, useMemo, useState } from 'react'
 import { View, Text, TextInput, ActivityIndicator, SectionList, RefreshControl, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Stack } from 'expo-router'
+import { Stack, router, type Href } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 
 import { useMembers, useSearchMembers } from '@/hooks/useMembers'
 import { MemberRow } from '@/components/features/MemberRow'
+import { useWorkspaceRole } from '@/hooks/useWorkspaceRole'
 import type { MemberItem } from '@/repositories/members'
 
 // ---------------------------------------------------------------------------
@@ -50,6 +51,24 @@ export default function MembersScreen(): React.ReactNode {
   const [searchQuery, setSearchQuery] = useState('')
   const [refreshing, setRefreshing] = useState(false)
   const filteredMembers = useSearchMembers(members, searchQuery)
+  const currentRole = useWorkspaceRole()
+  const canInvite = currentRole === 'owner' || currentRole === 'maintainer'
+
+  const membersHeaderRight = useCallback(() => {
+    if (!canInvite) return null
+    return (
+      <Pressable
+        onPress={() => {
+          router.push('/(app)/settings/invite-member' as Href)
+        }}
+        className="min-h-[44px] min-w-[44px] items-center justify-center pr-2"
+        accessibilityRole="button"
+        accessibilityLabel="Invite a new member"
+      >
+        <Ionicons name="person-add-outline" size={22} color="#205DC2" />
+      </Pressable>
+    )
+  }, [canInvite])
 
   const sections = useMemo(
     () => groupByAlpha(filteredMembers),
@@ -69,7 +88,7 @@ export default function MembersScreen(): React.ReactNode {
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-surface" edges={['bottom']}>
-        <Stack.Screen options={{ title: 'Members' }} />
+        <Stack.Screen options={{ title: 'Members', headerRight: membersHeaderRight }} />
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#205DC2" />
         </View>
@@ -81,7 +100,7 @@ export default function MembersScreen(): React.ReactNode {
   if (error) {
     return (
       <SafeAreaView className="flex-1 bg-surface" edges={['bottom']}>
-        <Stack.Screen options={{ title: 'Members' }} />
+        <Stack.Screen options={{ title: 'Members', headerRight: membersHeaderRight }} />
         <View className="flex-1 items-center justify-center px-4">
           <Ionicons name="alert-circle-outline" size={48} color="#EE7A7A" />
           <Text className="font-sans-medium text-base text-caption mt-3">

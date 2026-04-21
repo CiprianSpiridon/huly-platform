@@ -8,13 +8,17 @@
  */
 
 import {
+  AccountRole,
   SortingOrder,
+  type AccountUuid,
   type Class,
   type Doc,
   type Ref,
 } from '@hcengineering/core'
 
 import { getClient } from '@/client'
+import { getOrCreateAccountClient } from '@/client/account'
+import { useAuthStore } from '@/store/auth'
 import { RepositoryError, wrapRepositoryError } from './base'
 
 // ---------------------------------------------------------------------------
@@ -106,8 +110,89 @@ export async function getMember(
 }
 
 // ---------------------------------------------------------------------------
+// Mutations
+// ---------------------------------------------------------------------------
+
+/**
+ * Sends a workspace invitation to `email` with the given role. Uses the
+ * workspace-scoped token so the server attributes the invite to the current
+ * workspace.
+ */
+export async function inviteMember(
+  email: string,
+  role: AccountRole
+): Promise<void> {
+  const token = getWorkspaceScopedToken()
+  if (token == null) {
+    throw new RepositoryError('Not authenticated', DOMAIN, 'inviteMember')
+  }
+
+  try {
+    const client = await getOrCreateAccountClient(token)
+    await client.sendInvite(email, role)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'inviteMember', error)
+  }
+}
+
+/**
+ * Updates a workspace member's role.
+ */
+export async function updateMemberRole(
+  targetAccount: string,
+  role: AccountRole
+): Promise<void> {
+  const token = getWorkspaceScopedToken()
+  if (token == null) {
+    throw new RepositoryError('Not authenticated', DOMAIN, 'updateMemberRole')
+  }
+
+  try {
+    const client = await getOrCreateAccountClient(token)
+    await client.updateWorkspaceRole(targetAccount, role)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'updateMemberRole', error)
+  }
+}
+
+/**
+ * Removes a member from the current workspace.
+ *
+ * `AccountClient.leaveWorkspace(account)` is the server-side primitive for
+ * both self-leave and admin-removal: the server authorizes based on the
+ * caller's role.
+ */
+export async function removeMember(targetAccount: AccountUuid): Promise<void> {
+  const token = getWorkspaceScopedToken()
+  if (token == null) {
+    throw new RepositoryError('Not authenticated', DOMAIN, 'removeMember')
+  }
+
+  try {
+    const client = await getOrCreateAccountClient(token)
+    await client.leaveWorkspace(targetAccount)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'removeMember', error)
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Returns the workspace-scoped token, falling back to the account token when
+ * no workspace is selected. Workspace-scoped mutations (sendInvite,
+ * updateWorkspaceRole, leaveWorkspace) require the workspace token.
+ */
+function getWorkspaceScopedToken(): string | null {
+  // Local require to avoid a static cycle between members and workspace store.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { useWorkspaceStore } = require('@/store/workspace') as typeof import('@/store/workspace')
+  const wsToken = useWorkspaceStore.getState().workspaceToken
+  if (wsToken != null) return wsToken
+  return useAuthStore.getState().token
+}
 
 function docToMemberItem(doc: Doc): MemberItem {
   const record = doc as unknown as Record<string, unknown>
