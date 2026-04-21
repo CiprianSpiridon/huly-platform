@@ -47,7 +47,7 @@ export default function TwoFactorScreen(): React.ReactNode {
   const queryClient = useQueryClient()
 
   const { data: enabled, isLoading } = useQuery({
-    queryKey: ['account', '2fa-enabled', token],
+    queryKey: ['account', '2fa-enabled'],
     queryFn: async () => {
       if (token == null) return false
       const client = await getOrCreateAccountClient(token)

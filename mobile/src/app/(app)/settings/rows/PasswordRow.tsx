@@ -29,7 +29,7 @@ export function PasswordRow(): React.ReactNode {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
 
   const { data: hasPassword, isLoading } = useQuery({
-    queryKey: ['account', 'hasPassword', token],
+    queryKey: ['account', 'hasPassword'],
     queryFn: async () => {
       if (token == null) return false
       const client = await getOrCreateAccountClient(token)

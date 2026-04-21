@@ -17,7 +17,7 @@ export function TwoFactorRow(): React.ReactNode {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
 
   const { data: enabled } = useQuery({
-    queryKey: ['account', '2fa-enabled', token],
+    queryKey: ['account', '2fa-enabled'],
     queryFn: async () => {
       if (token == null) return false
       const client = await getOrCreateAccountClient(token)
