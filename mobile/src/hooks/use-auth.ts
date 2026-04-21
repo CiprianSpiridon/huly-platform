@@ -8,10 +8,47 @@
  * - `useLogout` -- full sign-out (stores + cache + client reset)
  */
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { LoginInfo, OtpInfo } from '@hcengineering/account-client'
 import * as LocalAuthentication from 'expo-local-authentication'
+
+/**
+ * Throws `AbortError` if the provided signal is already aborted. Used to
+ * bail out of async auth flows before making an expensive network call.
+ */
+function throwIfAborted(signal: AbortSignal | undefined): void {
+  if (signal?.aborted === true) {
+    const err = new Error('Auth request aborted')
+    err.name = 'AbortError'
+    throw err
+  }
+}
+
+/**
+ * Track in-flight auth AbortControllers at module scope so `useLogout`
+ * can cancel them before tearing down the stores. Each controller is
+ * removed automatically on resolution/rejection by `registerAuthAbort`.
+ */
+const liveAuthAborts = new Set<AbortController>()
+
+function registerAuthAbort(): AbortController {
+  const ctrl = new AbortController()
+  liveAuthAborts.add(ctrl)
+  return ctrl
+}
+
+function releaseAuthAbort(ctrl: AbortController): void {
+  liveAuthAborts.delete(ctrl)
+}
+
+/** Aborts every currently in-flight auth call. Called on logout. */
+export function cancelAllAuthRequests(reason: string = 'logout'): void {
+  for (const ctrl of liveAuthAborts) {
+    try { ctrl.abort(reason) } catch { /* noop */ }
+  }
+  liveAuthAborts.clear()
+}
 
 import { getOrCreateAccountClient, clearAccountClient } from '@/client/account'
 import { clearConfig } from '@/client/config'
@@ -26,7 +63,7 @@ import { clearBadge } from '@/lib/notifications'
 // ---------------------------------------------------------------------------
 
 export function useLogin(): {
-  login: (email: string, password: string) => Promise<LoginInfo>
+  login: (email: string, password: string, signal?: AbortSignal) => Promise<LoginInfo>
   isLoading: boolean
   error: string | null
 } {
@@ -34,14 +71,36 @@ export function useLogin(): {
   const [error, setError] = useState<string | null>(null)
   const setAuth = useAuthStore((s) => s.setAuth)
   const setTfaToken = useAuthStore((s) => s.setTfaToken)
+  const controllerRef = useRef<AbortController | null>(null)
+
+  // Cancel any in-flight login when the component unmounts.
+  useEffect(() => {
+    return () => {
+      const ctrl = controllerRef.current
+      if (ctrl != null) {
+        try { ctrl.abort('unmount') } catch { /* noop */ }
+        releaseAuthAbort(ctrl)
+        controllerRef.current = null
+      }
+    }
+  }, [])
 
   const login = useCallback(
-    async (email: string, password: string): Promise<LoginInfo> => {
+    async (email: string, password: string, signal?: AbortSignal): Promise<LoginInfo> => {
+      const ctrl = registerAuthAbort()
+      controllerRef.current = ctrl
+      if (signal != null) {
+        if (signal.aborted) ctrl.abort(signal.reason)
+        else signal.addEventListener('abort', () => { ctrl.abort(signal.reason) }, { once: true })
+      }
+
       setIsLoading(true)
       setError(null)
       try {
+        throwIfAborted(ctrl.signal)
         const client = await getOrCreateAccountClient()
         const loginInfo = await client.login(email, password)
+        throwIfAborted(ctrl.signal)
 
         if (loginInfo.tfaRequired === true) {
           // Store the restricted token in memory -- NOT in secure store
@@ -65,6 +124,8 @@ export function useLogin(): {
         setError(message)
         throw err
       } finally {
+        releaseAuthAbort(ctrl)
+        if (controllerRef.current === ctrl) controllerRef.current = null
         setIsLoading(false)
       }
     },
@@ -78,9 +139,11 @@ export function useLogin(): {
 // useOtpLogin -- OTP flow (request code, then validate)
 // ---------------------------------------------------------------------------
 
+export type OtpOrigin = 'login' | 'signup'
+
 export function useOtpLogin(): {
-  requestOtp: (email: string) => Promise<OtpInfo>
-  validateOtp: (email: string, code: string) => Promise<LoginInfo>
+  requestOtp: (email: string, signal?: AbortSignal, origin?: OtpOrigin) => Promise<OtpInfo>
+  validateOtp: (email: string, code: string, signal?: AbortSignal) => Promise<LoginInfo>
   isLoading: boolean
   error: string | null
 } {
@@ -88,29 +151,66 @@ export function useOtpLogin(): {
   const [error, setError] = useState<string | null>(null)
   const setAuth = useAuthStore((s) => s.setAuth)
   const setTfaToken = useAuthStore((s) => s.setTfaToken)
+  const activeRef = useRef<AbortController | null>(null)
 
-  const requestOtp = useCallback(async (email: string): Promise<OtpInfo> => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const client = await getOrCreateAccountClient()
-      return await client.loginOtp(email)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to send OTP'
-      setError(message)
-      throw err
-    } finally {
-      setIsLoading(false)
+  useEffect(() => {
+    return () => {
+      const ctrl = activeRef.current
+      if (ctrl != null) {
+        try { ctrl.abort('unmount') } catch { /* noop */ }
+        releaseAuthAbort(ctrl)
+        activeRef.current = null
+      }
     }
   }, [])
 
-  const validateOtp = useCallback(
-    async (email: string, code: string): Promise<LoginInfo> => {
+  const requestOtp = useCallback(
+    async (email: string, signal?: AbortSignal, origin: OtpOrigin = 'login'): Promise<OtpInfo> => {
+      const ctrl = registerAuthAbort()
+      activeRef.current = ctrl
+      if (signal != null) {
+        if (signal.aborted) ctrl.abort(signal.reason)
+        else signal.addEventListener('abort', () => { ctrl.abort(signal.reason) }, { once: true })
+      }
       setIsLoading(true)
       setError(null)
       try {
+        throwIfAborted(ctrl.signal)
+        const client = await getOrCreateAccountClient()
+        // Signup flows must resend via signUpOtp so the server knows to
+        // rotate the pending confirmation code for a not-yet-confirmed
+        // identity. loginOtp is strictly for existing confirmed accounts.
+        return origin === 'signup'
+          ? await client.signUpOtp(email, '', '')
+          : await client.loginOtp(email)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to send OTP'
+        setError(message)
+        throw err
+      } finally {
+        releaseAuthAbort(ctrl)
+        if (activeRef.current === ctrl) activeRef.current = null
+        setIsLoading(false)
+      }
+    },
+    [],
+  )
+
+  const validateOtp = useCallback(
+    async (email: string, code: string, signal?: AbortSignal): Promise<LoginInfo> => {
+      const ctrl = registerAuthAbort()
+      activeRef.current = ctrl
+      if (signal != null) {
+        if (signal.aborted) ctrl.abort(signal.reason)
+        else signal.addEventListener('abort', () => { ctrl.abort(signal.reason) }, { once: true })
+      }
+      setIsLoading(true)
+      setError(null)
+      try {
+        throwIfAborted(ctrl.signal)
         const client = await getOrCreateAccountClient()
         const loginInfo = await client.validateOtp(email, code)
+        throwIfAborted(ctrl.signal)
 
         // OTP validation can also return tfaRequired — mirror useLogin() logic
         if (loginInfo.tfaRequired === true) {
@@ -132,6 +232,8 @@ export function useOtpLogin(): {
         setError(message)
         throw err
       } finally {
+        releaseAuthAbort(ctrl)
+        if (activeRef.current === ctrl) activeRef.current = null
         setIsLoading(false)
       }
     },
@@ -146,7 +248,7 @@ export function useOtpLogin(): {
 // ---------------------------------------------------------------------------
 
 export function useTwoFactor(): {
-  verify: (code: string) => Promise<LoginInfo>
+  verify: (code: string, signal?: AbortSignal) => Promise<LoginInfo>
   isLoading: boolean
   error: string | null
 } {
@@ -154,18 +256,39 @@ export function useTwoFactor(): {
   const [error, setError] = useState<string | null>(null)
   const tfaToken = useAuthStore((s) => s.tfaToken)
   const setAuth = useAuthStore((s) => s.setAuth)
+  const activeRef = useRef<AbortController | null>(null)
+
+  useEffect(() => {
+    return () => {
+      const ctrl = activeRef.current
+      if (ctrl != null) {
+        try { ctrl.abort('unmount') } catch { /* noop */ }
+        releaseAuthAbort(ctrl)
+        activeRef.current = null
+      }
+    }
+  }, [])
 
   const verify = useCallback(
-    async (code: string): Promise<LoginInfo> => {
+    async (code: string, signal?: AbortSignal): Promise<LoginInfo> => {
       if (tfaToken == null) {
         throw new Error('No 2FA token available. Please log in first.')
+      }
+
+      const ctrl = registerAuthAbort()
+      activeRef.current = ctrl
+      if (signal != null) {
+        if (signal.aborted) ctrl.abort(signal.reason)
+        else signal.addEventListener('abort', () => { ctrl.abort(signal.reason) }, { once: true })
       }
 
       setIsLoading(true)
       setError(null)
       try {
+        throwIfAborted(ctrl.signal)
         const client = await getOrCreateAccountClient(tfaToken)
         const loginInfo = await client.verify2fa(code)
+        throwIfAborted(ctrl.signal)
         await setAuth(loginInfo)
         return loginInfo
       } catch (err) {
@@ -173,6 +296,8 @@ export function useTwoFactor(): {
         setError(message)
         throw err
       } finally {
+        releaseAuthAbort(ctrl)
+        if (activeRef.current === ctrl) activeRef.current = null
         setIsLoading(false)
       }
     },
@@ -230,24 +355,45 @@ export function isJwtShaped(token: string): boolean {
  * `setAuth` requires `LoginInfo`, not a bare JWT) and persists it.
  */
 export function useOAuthLogin(): {
-  loginWithToken: (token: string) => Promise<LoginInfo>
+  loginWithToken: (token: string, signal?: AbortSignal) => Promise<LoginInfo>
   isLoading: boolean
   error: string | null
 } {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const setAuth = useAuthStore((s) => s.setAuth)
+  const activeRef = useRef<AbortController | null>(null)
+
+  useEffect(() => {
+    return () => {
+      const ctrl = activeRef.current
+      if (ctrl != null) {
+        try { ctrl.abort('unmount') } catch { /* noop */ }
+        releaseAuthAbort(ctrl)
+        activeRef.current = null
+      }
+    }
+  }, [])
 
   const loginWithToken = useCallback(
-    async (token: string): Promise<LoginInfo> => {
+    async (token: string, signal?: AbortSignal): Promise<LoginInfo> => {
+      const ctrl = registerAuthAbort()
+      activeRef.current = ctrl
+      if (signal != null) {
+        if (signal.aborted) ctrl.abort(signal.reason)
+        else signal.addEventListener('abort', () => { ctrl.abort(signal.reason) }, { once: true })
+      }
+
       setIsLoading(true)
       setError(null)
       try {
+        throwIfAborted(ctrl.signal)
         if (!isJwtShaped(token)) {
           throw new Error('Invalid OAuth token')
         }
         const client = await getOrCreateAccountClient(token)
         const info = await client.getLoginInfoByToken()
+        throwIfAborted(ctrl.signal)
 
         if (info == null || typeof info !== 'object' || !('account' in info)) {
           throw new Error('OAuth token rejected by server')
@@ -265,6 +411,8 @@ export function useOAuthLogin(): {
         setError(message)
         throw err
       } finally {
+        releaseAuthAbort(ctrl)
+        if (activeRef.current === ctrl) activeRef.current = null
         setIsLoading(false)
       }
     },
@@ -316,6 +464,18 @@ export function useBiometricAuth(): {
   const [isLoading, setIsLoading] = useState(false)
   const setBiometricLocked = useAuthStore((s) => s.setBiometricLocked)
   const setBiometricEnabled = useAuthStore((s) => s.setBiometricEnabled)
+  const promptActiveRef = useRef(false)
+
+  // If the screen unmounts while a biometric prompt is on-screen, cancel
+  // it so we don't hold up the OS UI or the next mount's prompt.
+  useEffect(() => {
+    return () => {
+      if (promptActiveRef.current) {
+        try { LocalAuthentication.cancelAuthenticate() } catch { /* noop */ }
+        promptActiveRef.current = false
+      }
+    }
+  }, [])
 
   const promptIfNeeded = useCallback(
     async (reason: string): Promise<BiometricAttemptResult> => {
@@ -333,11 +493,13 @@ export function useBiometricAuth(): {
           return { status }
         }
 
+        promptActiveRef.current = true
         const result = await LocalAuthentication.authenticateAsync({
           promptMessage: reason,
           disableDeviceFallback: false,
           cancelLabel: 'Cancel',
         })
+        promptActiveRef.current = false
 
         if (result.success) {
           setBiometricLocked(false)
@@ -355,6 +517,7 @@ export function useBiometricAuth(): {
         }
         return { status: 'failed', error: errCode }
       } finally {
+        promptActiveRef.current = false
         setIsLoading(false)
       }
     },
@@ -376,6 +539,14 @@ export function useLogout(): () => Promise<void> {
   const queryClient = useQueryClient()
 
   return useCallback(async () => {
+    // Cancel any in-flight auth mutations before tearing down stores so
+    // their .then() cannot re-populate state we're about to clear.
+    cancelAllAuthRequests('logout')
+
+    // Also cancel any biometric prompt that's still showing so the next
+    // launch's cold-start prompt doesn't deadlock behind a stale one.
+    try { LocalAuthentication.cancelAuthenticate() } catch { /* noop */ }
+
     // Deregister push token BEFORE disconnecting (needs client to call API)
     try {
       const token = usePushStore.getState().expoPushToken
