@@ -13,7 +13,7 @@
  *   used by useSelectWorkspace).
  */
 
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import {
   View,
   Text,
@@ -37,20 +37,39 @@ export default function CreateWorkspaceScreen(): React.ReactNode {
   const [name, setName] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const submittingRef = useRef(false)
   const setWorkspace = useWorkspaceStore((s) => s.setWorkspace)
   const disconnect = useConnectionStore((s) => s.disconnect)
   const connect = useConnectionStore((s) => s.connect)
   const queryClient = useQueryClient()
 
   const handleSubmit = useCallback(async () => {
+    // Synchronous ref guard against double-tap — `disabled` prop is not
+    // applied before the next touch event in React Native.
+    if (submittingRef.current) return
     const trimmed = name.trim()
     if (trimmed.length === 0) {
       setSubmitError('Workspace name is required')
       return
     }
 
+    submittingRef.current = true
     setIsSubmitting(true)
     setSubmitError(null)
+
+    // Snapshot the current workspace so we can reconnect if the new-workspace
+    // connect fails — otherwise a server hiccup strands the user on a blank
+    // session with no workspace selected.
+    const previous = useWorkspaceStore.getState()
+    const previousSnapshot = previous.workspaceEndpoint != null &&
+      previous.selectedWorkspace != null &&
+      previous.workspaceToken != null
+      ? {
+          endpoint: previous.workspaceEndpoint,
+          workspace: previous.selectedWorkspace,
+          token: previous.workspaceToken,
+        }
+      : null
 
     try {
       // 1. Create the workspace server-side
@@ -59,15 +78,19 @@ export default function CreateWorkspaceScreen(): React.ReactNode {
       // 2. Disconnect from the current workspace
       disconnect()
 
-      // 3. Clear all cached queries from the previous workspace
-      queryClient.clear()
-
-      // 4. Connect to the new workspace FIRST -- if this fails we must not
-      //    persist workspace credentials that point to a broken connection.
+      // 3. Connect to the new workspace BEFORE persisting credentials.
+      //    If this fails we roll back to the previous workspace so the user
+      //    isn't stranded on a blank session.
       await connect(wsInfo.endpoint, wsInfo.workspace, wsInfo.token)
 
-      // 5. Persist only after connect succeeds
+      // 4. Persist the new workspace only after connect succeeds.
       await setWorkspace(wsInfo)
+
+      // 5. Invalidate the workspaces list so the new workspace surfaces in
+      //    the picker without flashing the stale cached list. Prefer
+      //    invalidate over clear() so unrelated queries are not discarded.
+      void queryClient.invalidateQueries({ queryKey: ['workspaces'] })
+      void queryClient.invalidateQueries({ queryKey: ['workspaceInfo'] })
 
       // 6. Navigate to the default tab; leaving the stack pops this screen.
       router.replace('/(app)/tracker' as Href)
@@ -75,8 +98,23 @@ export default function CreateWorkspaceScreen(): React.ReactNode {
       const message =
         err instanceof Error ? err.message : 'Failed to create workspace'
       setSubmitError(message)
+      // Best-effort rollback — reconnect to the previous workspace so the
+      // app doesn't land in a stranded empty-workspace state.
+      if (previousSnapshot != null) {
+        try {
+          await connect(
+            previousSnapshot.endpoint,
+            previousSnapshot.workspace,
+            previousSnapshot.token,
+          )
+        } catch {
+          // Rollback failed; leave the workspace cleared so the user is
+          // routed to the workspace picker on next render.
+        }
+      }
     } finally {
       setIsSubmitting(false)
+      submittingRef.current = false
     }
   }, [name, disconnect, queryClient, connect, setWorkspace])
 

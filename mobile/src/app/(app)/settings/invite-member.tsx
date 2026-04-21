@@ -9,7 +9,7 @@
  * assignment is reserved for owner-to-owner transfer handled via role change.
  */
 
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import {
   View,
   Text,
@@ -22,6 +22,7 @@ import {
   Platform,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useQueryClient } from '@tanstack/react-query'
 import { router, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 
@@ -53,17 +54,24 @@ const ROLE_OPTIONS: RoleOption[] = [
   },
 ]
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+// Loose client-side email sanity check. Intentionally allows intranet
+// hosts like `user@localhost` and internationalized TLDs — the server is
+// the authoritative validator. We only guard against obviously malformed
+// input (empty, missing '@', whitespace).
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+$/
 
 export default function InviteMemberScreen(): React.ReactNode {
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<AccountRole>(AccountRole.User)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const submittingRef = useRef(false)
+  const queryClient = useQueryClient()
   const currentRole = useWorkspaceRole()
   const canInvite = currentRole === 'owner' || currentRole === 'maintainer'
 
   const handleSubmit = useCallback(async () => {
+    if (submittingRef.current) return
     const trimmed = email.trim()
     if (trimmed.length === 0) {
       setSubmitError('Email is required')
@@ -74,10 +82,15 @@ export default function InviteMemberScreen(): React.ReactNode {
       return
     }
 
+    submittingRef.current = true
     setIsSubmitting(true)
     setSubmitError(null)
     try {
       await inviteMember(trimmed, role)
+      // Refresh the members list so pending invites surface without waiting
+      // for staleTime to elapse.
+      void queryClient.invalidateQueries({ queryKey: ['members'] })
+      void queryClient.invalidateQueries({ queryKey: ['workspaceInfo'] })
       Alert.alert('Invitation sent', `An invitation has been sent to ${trimmed}.`, [
         {
           text: 'OK',
@@ -91,8 +104,9 @@ export default function InviteMemberScreen(): React.ReactNode {
       setSubmitError(message)
     } finally {
       setIsSubmitting(false)
+      submittingRef.current = false
     }
-  }, [email, role])
+  }, [email, role, queryClient])
 
   if (!canInvite) {
     return (
