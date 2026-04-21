@@ -19,7 +19,7 @@
  *  - Wrong current password → inline error from server.
  */
 
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import {
   View,
   Text,
@@ -32,11 +32,13 @@ import {
   Platform,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useQueryClient } from '@tanstack/react-query'
 import { router, Stack, type Href } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 
 import { getOrCreateAccountClient } from '@/client/account'
 import { useAuthStore } from '@/store/auth'
+import { useLogout } from '@/hooks/use-auth'
 
 const MIN_PASSWORD_LENGTH = 8
 
@@ -47,6 +49,9 @@ export default function ChangePasswordScreen(): React.ReactNode {
   const [showPasswords, setShowPasswords] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const submittingRef = useRef(false)
+  const logout = useLogout()
+  const queryClient = useQueryClient()
 
   const canSubmit = useMemo(
     () =>
@@ -58,6 +63,9 @@ export default function ChangePasswordScreen(): React.ReactNode {
   )
 
   const handleSubmit = useCallback(async () => {
+    // Synchronous ref guard against double-tap: `disabled` is not applied
+    // before the next touch event dispatches in React Native.
+    if (submittingRef.current) return
     if (oldPassword.length === 0) {
       setSubmitError('Current password is required')
       return
@@ -81,11 +89,15 @@ export default function ChangePasswordScreen(): React.ReactNode {
       return
     }
 
+    submittingRef.current = true
     setIsSubmitting(true)
     setSubmitError(null)
     try {
       const client = await getOrCreateAccountClient(token)
       await client.changePassword(oldPassword, newPassword)
+      // Invalidate the hasPassword query so the settings row label refreshes
+      // for SSO-only accounts that just set a password.
+      void queryClient.invalidateQueries({ queryKey: ['account', 'hasPassword'] })
       Alert.alert(
         'Password updated',
         'Your password has been changed successfully.',
@@ -101,7 +113,10 @@ export default function ChangePasswordScreen(): React.ReactNode {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to change password'
       // Detect session invalidation: some backends require re-login after
-      // password rotation. Surface an explicit prompt and route to login.
+      // password rotation. Surface an explicit prompt, run full teardown
+      // (disconnect / queryClient.clear / push deregister) and route to
+      // login — just calling clearAuth leaves the transactor connected
+      // and cached queries live under a rotated token.
       if (/401|unauthorized|session/i.test(message)) {
         Alert.alert(
           'Session expired',
@@ -110,8 +125,10 @@ export default function ChangePasswordScreen(): React.ReactNode {
             {
               text: 'Sign in',
               onPress: () => {
-                void useAuthStore.getState().clearAuth()
-                router.replace('/(auth)/login' as Href)
+                void (async () => {
+                  await logout()
+                  router.replace('/(auth)/login' as Href)
+                })()
               },
             },
           ],
@@ -121,8 +138,9 @@ export default function ChangePasswordScreen(): React.ReactNode {
       setSubmitError(message)
     } finally {
       setIsSubmitting(false)
+      submittingRef.current = false
     }
-  }, [oldPassword, newPassword, confirmPassword])
+  }, [oldPassword, newPassword, confirmPassword, logout, queryClient])
 
   return (
     <SafeAreaView className="flex-1 bg-surface-primary" edges={['bottom']}>

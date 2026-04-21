@@ -21,7 +21,7 @@
  *    do NOT clear local state automatically.
  */
 
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import {
   View,
   Text,
@@ -37,7 +37,7 @@ import { router, type Href } from 'expo-router'
 
 import { useProfile } from '@/hooks/useProfile'
 import { useAuthStore } from '@/store/auth'
-import { useWorkspaceStore } from '@/store/workspace'
+import { useLogout } from '@/hooks/use-auth'
 import { deleteAccount } from '@/client/account'
 import { SettingsRow } from '@/components/features/SettingsRow'
 import type { AccountUuid } from '@hcengineering/core'
@@ -46,11 +46,13 @@ const OTP_CONFIRM_LITERAL = 'DELETE ACCOUNT'
 
 export function DeleteAccountRow(): React.ReactNode {
   const { data: profile } = useProfile()
+  const logout = useLogout()
   const [isOpen, setIsOpen] = useState(false)
   const [typed, setTyped] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [deletionInProgress, setDeletionInProgress] = useState(false)
+  const submittingRef = useRef(false)
 
   const expected = useMemo<string>(() => {
     const email = profile?.email ?? null
@@ -85,8 +87,14 @@ export function DeleteAccountRow(): React.ReactNode {
 
   const handleConfirm = useCallback(async () => {
     if (!matches) return
+    // Synchronous ref guard: React Native `disabled` prop is not applied
+    // before the next touch event dispatches, so rely on a ref to block
+    // re-entry on rapid double-taps.
+    if (submittingRef.current) return
+    submittingRef.current = true
     const accountUuid = useAuthStore.getState().account
     if (accountUuid == null) {
+      submittingRef.current = false
       setSubmitError('Not authenticated')
       return
     }
@@ -97,23 +105,28 @@ export function DeleteAccountRow(): React.ReactNode {
     try {
       await deleteAccount(accountUuid as AccountUuid)
 
-      // Success: clear local state and route to login.
-      await useAuthStore.getState().clearAuth()
-      await useWorkspaceStore.getState().clearWorkspace()
+      // Success: full teardown (disconnect, push-deregister, query cache,
+      // workspace + auth clear) via useLogout so nothing stale leaks into
+      // the next session. Then route to login.
+      await logout()
       router.replace('/(auth)/login' as Href)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete account'
       if (/deletion in progress|already.*progress|accepted/i.test(message)) {
-        // Block further retries and ask the user to contact support.
+        // Block retries and allow the user to close the modal.
         setDeletionInProgress(true)
+        setIsSubmitting(false)
+        submittingRef.current = false
         return
       }
       setSubmitError(message)
       setIsSubmitting(false)
+      submittingRef.current = false
       return
     }
     setIsSubmitting(false)
-  }, [matches])
+    submittingRef.current = false
+  }, [matches, logout])
 
   return (
     <>
