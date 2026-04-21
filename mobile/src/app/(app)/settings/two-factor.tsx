@@ -18,7 +18,7 @@
  * shows a support contact link so they can request an admin reset.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   View,
   Text,
@@ -32,13 +32,14 @@ import {
   Linking,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Stack } from 'expo-router'
+import { Stack, router, type Href } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { getOrCreateAccountClient, generate2faSecret, enable2fa, disable2fa } from '@/client/account'
 import { useAuthStore } from '@/store/auth'
+import { useLogout } from '@/hooks/use-auth'
 
 const SUPPORT_EMAIL = 'mailto:support@huly.io?subject=2FA%20device%20lost'
 
@@ -120,8 +121,17 @@ function EnableFlow({ onEnabled }: { onEnabled: () => void }): React.ReactNode {
   const [isLoadingSecret, setIsLoadingSecret] = useState(false)
   const [isVerifying, setIsVerifying] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [secretVisible, setSecretVisible] = useState(false)
+  const [otpUrlVisible, setOtpUrlVisible] = useState(false)
+  const submittingRef = useRef(false)
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const token = useAuthStore((s) => s.token)
 
   useEffect(() => {
+    // Wait for auth token restoration before firing the server call —
+    // cold-launch may mount this screen before the auth store hydrates.
+    if (!isAuthenticated || token == null) return
+
     let cancelled = false
     const load = async (): Promise<void> => {
       setIsLoadingSecret(true)
@@ -142,21 +152,27 @@ function EnableFlow({ onEnabled }: { onEnabled: () => void }): React.ReactNode {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [isAuthenticated, token])
 
   const handleCopySecret = useCallback(async () => {
     if (secret == null) return
     await Clipboard.setStringAsync(secret)
-    Alert.alert('Copied', 'Secret copied to clipboard.', [{ text: 'OK' }])
+    Alert.alert(
+      'Copied',
+      'Secret copied to clipboard. Clear the clipboard after scanning — clipboard contents do not auto-expire.',
+      [{ text: 'OK' }],
+    )
   }, [secret])
 
   const handleVerify = useCallback(async () => {
+    if (submittingRef.current) return
     if (secret == null) return
     const trimmed = code.trim()
     if (trimmed.length < 6) {
       setError('Enter the 6-digit code from your authenticator app')
       return
     }
+    submittingRef.current = true
     setIsVerifying(true)
     setError(null)
     try {
@@ -171,6 +187,7 @@ function EnableFlow({ onEnabled }: { onEnabled: () => void }): React.ReactNode {
       setError(err instanceof Error ? err.message : 'Verification failed')
     } finally {
       setIsVerifying(false)
+      submittingRef.current = false
     }
   }, [secret, code, onEnabled])
 
@@ -195,46 +212,93 @@ function EnableFlow({ onEnabled }: { onEnabled: () => void }): React.ReactNode {
             Secret
           </Text>
           <View className="bg-surface-tertiary rounded-md p-3 mb-2">
-            <Text
-              selectable
-              className="font-sans text-base text-content-primary"
-              accessibilityLabel={`2FA secret ${secret}`}
-            >
-              {secret}
-            </Text>
+            {secretVisible ? (
+              <Text
+                selectable
+                className="font-sans text-base text-content-primary"
+                accessibilityLabel="2FA secret"
+              >
+                {secret}
+              </Text>
+            ) : (
+              <Text
+                className="font-sans text-base text-content-tertiary"
+                accessibilityLabel="2FA secret hidden. Reveal to show."
+              >
+                {'•'.repeat(Math.min(secret.length, 20))}
+              </Text>
+            )}
           </View>
-          <Pressable
-            onPress={() => {
-              void handleCopySecret()
-            }}
-            className="flex-row items-center gap-2 mb-4 min-h-[44px]"
-            accessibilityRole="button"
-            accessibilityLabel="Copy secret to clipboard"
-          >
-            <Ionicons name="copy-outline" size={16} color="#205DC2" />
-            <Text className="font-sans-medium text-sm text-accent-primary">
-              Copy secret
-            </Text>
-          </Pressable>
+          <View className="flex-row gap-4 mb-4">
+            <Pressable
+              onPress={() => setSecretVisible((v) => !v)}
+              className="flex-row items-center gap-2 min-h-[44px]"
+              accessibilityRole="button"
+              accessibilityLabel={secretVisible ? 'Hide secret' : 'Reveal secret'}
+              accessibilityState={{ expanded: secretVisible }}
+            >
+              <Ionicons
+                name={secretVisible ? 'eye-off-outline' : 'eye-outline'}
+                size={16}
+                color="#205DC2"
+              />
+              <Text className="font-sans-medium text-sm text-accent-primary">
+                {secretVisible ? 'Hide' : 'Reveal'}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                void handleCopySecret()
+              }}
+              className="flex-row items-center gap-2 min-h-[44px]"
+              accessibilityRole="button"
+              accessibilityLabel="Copy secret to clipboard"
+            >
+              <Ionicons name="copy-outline" size={16} color="#205DC2" />
+              <Text className="font-sans-medium text-sm text-accent-primary">
+                Copy secret
+              </Text>
+            </Pressable>
+          </View>
 
           {otpUrl != null && (
             <>
               <Text className="font-sans-medium text-xs text-content-tertiary uppercase mb-1">
                 Or open in authenticator
               </Text>
-              <Pressable
-                onPress={() => {
-                  void Linking.openURL(otpUrl)
-                }}
-                className="bg-surface-tertiary rounded-md p-3 mb-4 min-h-[44px] justify-center"
-                accessibilityRole="link"
-                accessibilityLabel="Open in authenticator app"
-              >
-                <Text
-                  className="font-sans text-sm text-accent-primary"
-                  numberOfLines={1}
+              {otpUrlVisible ? (
+                <Pressable
+                  onPress={() => {
+                    void Linking.openURL(otpUrl)
+                  }}
+                  className="bg-surface-tertiary rounded-md p-3 mb-2 min-h-[44px] justify-center"
+                  accessibilityRole="link"
+                  accessibilityLabel="Open in authenticator app"
                 >
-                  {otpUrl}
+                  <Text
+                    className="font-sans text-sm text-accent-primary"
+                    numberOfLines={1}
+                  >
+                    {otpUrl}
+                  </Text>
+                </Pressable>
+              ) : null}
+              <Pressable
+                onPress={() => setOtpUrlVisible((v) => !v)}
+                className="flex-row items-center gap-2 mb-4 min-h-[44px]"
+                accessibilityRole="button"
+                accessibilityLabel={
+                  otpUrlVisible ? 'Hide authenticator URL' : 'Reveal authenticator URL'
+                }
+                accessibilityState={{ expanded: otpUrlVisible }}
+              >
+                <Ionicons
+                  name={otpUrlVisible ? 'eye-off-outline' : 'eye-outline'}
+                  size={16}
+                  color="#205DC2"
+                />
+                <Text className="font-sans-medium text-sm text-accent-primary">
+                  {otpUrlVisible ? 'Hide authenticator URL' : 'Show authenticator URL'}
                 </Text>
               </Pressable>
             </>
@@ -299,13 +363,19 @@ function DisableFlow({ onDisabled }: { onDisabled: () => void }): React.ReactNod
   const [code, setCode] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const submittingRef = useRef(false)
+  const logout = useLogout()
 
   const handleDisable = useCallback(async () => {
+    // Synchronous ref guard — React Native `disabled` is not applied before
+    // the next touch event dispatches, so rely on a ref to block re-entry.
+    if (submittingRef.current) return
     const trimmed = code.trim()
     if (trimmed.length < 6) {
       setError('Enter the 6-digit code from your authenticator app')
       return
     }
+    submittingRef.current = true
     setIsSubmitting(true)
     setError(null)
     try {
@@ -318,11 +388,35 @@ function DisableFlow({ onDisabled }: { onDisabled: () => void }): React.ReactNod
       )
       setCode('')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Verification failed')
+      const message = err instanceof Error ? err.message : 'Verification failed'
+      // Some backends rotate the session token after a 2FA state change.
+      // Detect a 401/session-invalidation response, run full teardown via
+      // useLogout (disconnect, push deregister, queryClient.clear, workspace
+      // reset) and route to the login screen so the user can sign in fresh.
+      if (/401|unauthorized|session/i.test(message)) {
+        Alert.alert(
+          'Session expired',
+          'Two-factor authentication was updated, but the session has ended. Please sign in again.',
+          [
+            {
+              text: 'Sign in',
+              onPress: () => {
+                void (async () => {
+                  await logout()
+                  router.replace('/(auth)/login' as Href)
+                })()
+              },
+            },
+          ],
+        )
+        return
+      }
+      setError(message)
     } finally {
       setIsSubmitting(false)
+      submittingRef.current = false
     }
-  }, [code, onDisabled])
+  }, [code, onDisabled, logout])
 
   return (
     <View className="px-4 pt-4">
