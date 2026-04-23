@@ -11,8 +11,10 @@ import { useIssue, useIssueRelations } from '@/hooks/useIssue'
 import { useUpdateIssue, useUpdateIssueField, useDeleteIssue, useSubIssues } from '@/hooks/useIssues'
 import { useComponents, useMilestones, useLabels } from '@/hooks/useProjects'
 import { useDocAttachments } from '@/hooks/useAttachments'
+import { useDeleteAttachment } from '@/hooks'
 import { useConnectionStore } from '@/store/connection'
-import { IssueDetailView } from '@/components/features/IssueDetail'
+import { showInfoToast } from '@/store/toast'
+import { IssueDetailView, type AttachmentInfo } from '@/components/features/IssueDetail'
 import { IssueComments } from '@/components/features/IssueComments'
 import { StatusPicker } from '@/components/features/StatusPicker'
 import { PriorityPicker } from '@/components/features/PriorityPicker'
@@ -47,6 +49,7 @@ export default function IssueDetailScreen(): React.ReactNode {
   const updateIssue = useUpdateIssue()
   const updateIssueField = useUpdateIssueField()
   const deleteIssueMutation = useDeleteIssue()
+  const deleteAttachment = useDeleteAttachment()
   const [refreshing, setRefreshing] = useState(false)
 
   // Date input state
@@ -246,6 +249,44 @@ export default function IssueDetailScreen(): React.ReactNode {
     []
   )
 
+  const handleAttachmentDelete = useCallback(
+    (att: AttachmentInfo) => {
+      // Defensive guard: a stale-cached AttachmentMeta from before TASK-009
+      // may not carry the doc identity needed for TxRemoveDoc. Skip the
+      // mutate call instead of issuing a malformed tx and surface a toast
+      // so the user understands why nothing happened. The next refetch
+      // repopulates the cache with the new shape.
+      if (att._id == null || att._id === '' || att.space == null || att.attachedTo == null) {
+        showInfoToast('Cannot delete this attachment')
+        return
+      }
+      const targetId = att._id
+      const targetSpace = att.space
+      const targetAttachedTo = att.attachedTo
+      Alert.alert(
+        'Delete attachment?',
+        'This cannot be undone.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => {
+              // onError on the hook surfaces the toast; success-side cache
+              // invalidation removes the row from the displayed list.
+              deleteAttachment.mutate({
+                _id: targetId,
+                space: targetSpace,
+                attachedTo: targetAttachedTo,
+              })
+            },
+          },
+        ]
+      )
+    },
+    [deleteAttachment]
+  )
+
   const handleCloseAttachmentViewer = useCallback(() => {
     setViewedAttachment(null)
   }, [])
@@ -436,6 +477,11 @@ export default function IssueDetailScreen(): React.ReactNode {
             name: a.name,
             size: a.size,
             contentType: a.contentType,
+            // Forward the doc-identity fields from TASK-009's extended
+            // AttachmentMeta so the delete handler can build TxRemoveDoc.
+            _id: a._id,
+            space: a.space,
+            attachedTo: a.attachedTo,
           }))}
           subIssues={subIssues}
           relations={relations}
@@ -453,6 +499,7 @@ export default function IssueDetailScreen(): React.ReactNode {
           onSubIssuePress={handleSubIssuePress}
           onRelationPress={handleRelationPress}
           onAttachmentPress={handleAttachmentPress}
+          onAttachmentDelete={handleAttachmentDelete}
           onTitleSave={handleTitleSave}
           onDeletePress={handleDeletePress}
           onEditPress={handleEditPress}

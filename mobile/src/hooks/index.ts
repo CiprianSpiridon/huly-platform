@@ -23,11 +23,21 @@ export {
   useCreateProject,
   useUpdateProject,
   useDeleteProject,
+  useCreateComponent,
+  useUpdateComponent,
+  useDeleteComponent,
+  useCreateMilestone,
+  useUpdateMilestone,
+  useDeleteMilestone,
 } from './useProjects'
 export type {
   CreateProjectDraft,
   UpdateProjectParams,
   DeleteProjectParams,
+  UpdateComponentParams,
+  DeleteComponentParams,
+  UpdateMilestoneParams,
+  DeleteMilestoneParams,
 } from './useProjects'
 
 // Tracker: issues
@@ -101,7 +111,7 @@ export { usePushRegistration } from './usePushRegistration'
 export { useNotificationListeners } from './useNotificationListeners'
 
 // Attachments
-export { useUploadAttachment, useAttachmentUrl, useUploadsByStatus } from './useAttachments'
+export { useUploadAttachment, useAttachmentUrl, useUploadsByStatus, useDeleteAttachment } from './useAttachments'
 export { useImagePicker } from './useImagePicker'
 export type { PickedImage } from './useImagePicker'
 

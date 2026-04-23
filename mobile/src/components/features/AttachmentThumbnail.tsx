@@ -23,6 +23,7 @@ interface AttachmentThumbnailProps {
   mimeType: string
   size: number
   onPress: (blobId: string, filename: string, mimeType: string) => void
+  onDelete?: (blobId: string) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -47,6 +48,7 @@ function AttachmentThumbnailInner({
   mimeType,
   size,
   onPress,
+  onDelete,
 }: AttachmentThumbnailProps): React.ReactNode {
   const isImage = mimeType.startsWith('image/')
   const { thumbnailSource } = useAttachmentUrl(blobId)
@@ -55,35 +57,52 @@ function AttachmentThumbnailInner({
     onPress(blobId, filename, mimeType)
   }, [blobId, filename, mimeType, onPress])
 
+  const handleDelete = useCallback(() => {
+    onDelete?.(blobId)
+  }, [blobId, onDelete])
+
   return (
-    <Pressable
-      className="bg-surface-tertiary rounded-md overflow-hidden active:opacity-80 w-[140px]"
-      onPress={handlePress}
-      accessibilityRole="button"
-      accessibilityLabel={`Attachment: ${filename}, ${formatFileSize(size)}`}
-    >
-      {isImage ? (
-        <Image
-          source={thumbnailSource}
-          className="w-full h-[100px]"
-          contentFit="cover"
-          transition={300}
-          recyclingKey={blobId}
-        />
-      ) : (
-        <View className="w-full h-[100px] items-center justify-center bg-surface-secondary">
-          <Ionicons name={getFileIcon(mimeType) as 'document-outline'} size={32} color="#77818B" />
+    <View className="w-[140px] relative">
+      <Pressable
+        className="bg-surface-tertiary rounded-md overflow-hidden active:opacity-80"
+        onPress={handlePress}
+        accessibilityRole="button"
+        accessibilityLabel={`Attachment: ${filename}, ${formatFileSize(size)}`}
+      >
+        {isImage ? (
+          <Image
+            source={thumbnailSource}
+            className="w-full h-[100px]"
+            contentFit="cover"
+            transition={300}
+            recyclingKey={blobId}
+          />
+        ) : (
+          <View className="w-full h-[100px] items-center justify-center bg-surface-secondary">
+            <Ionicons name={getFileIcon(mimeType) as 'document-outline'} size={32} color="#77818B" />
+          </View>
+        )}
+        <View className="p-2">
+          <Text className="font-sans-medium text-xs text-content-primary" numberOfLines={1}>
+            {filename}
+          </Text>
+          <Text className="font-sans text-xs text-content-tertiary">
+            {formatFileSize(size)}
+          </Text>
         </View>
-      )}
-      <View className="p-2">
-        <Text className="font-sans-medium text-xs text-content-primary" numberOfLines={1}>
-          {filename}
-        </Text>
-        <Text className="font-sans text-xs text-content-tertiary">
-          {formatFileSize(size)}
-        </Text>
-      </View>
-    </Pressable>
+      </Pressable>
+      {onDelete !== undefined ? (
+        <Pressable
+          onPress={handleDelete}
+          hitSlop={{ top: 14, right: 14, bottom: 14, left: 14 }}
+          accessibilityRole="button"
+          accessibilityLabel={`Delete attachment ${filename}`}
+          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 items-center justify-center active:opacity-80"
+        >
+          <Ionicons name="close" size={14} color="#FFFFFF" />
+        </Pressable>
+      ) : null}
+    </View>
   )
 }
 

@@ -9,13 +9,14 @@
 
 import * as FileSystem from 'expo-file-system'
 import * as Sharing from 'expo-sharing'
+import type { Class, Doc, Ref, Space } from '@hcengineering/core'
 
 import { getConfig } from '@/client/config'
 import { getClient } from '@/client'
 import { useAuthStore } from '@/store/auth'
 import { useWorkspaceStore } from '@/store/workspace'
 import { getFileUrl, getThumbnailUrl } from '@/lib/files'
-import { wrapRepositoryError } from './base'
+import { RepositoryError, wrapRepositoryError } from './base'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -29,6 +30,12 @@ export interface UploadResult {
 }
 
 export interface AttachmentMeta {
+  /** Doc identity used for TxRemoveDoc — independent of blobId. */
+  _id: Ref<Doc>
+  /** Space the attachment lives in (required for TxRemoveDoc). */
+  space: Ref<Space>
+  /** Parent doc this attachment is attached to. */
+  attachedTo: Ref<Doc>
   blobId: string
   name: string
   size: number
@@ -294,7 +301,15 @@ export async function getAttachments(
 
     return [...result].map((doc): AttachmentMeta => {
       const record = doc as unknown as Record<string, unknown>
+      // Capture doc identity BEFORE the blobId fallback chain so `_id` is the
+      // doc ref used for TxRemoveDoc, independent of the storage URI in `blobId`.
+      const id = String(record._id ?? '') as Ref<Doc>
+      const space = String(record.space ?? '') as Ref<Space>
+      const attachedTo = String(record.attachedTo ?? '') as Ref<Doc>
       return {
+        _id: id,
+        space,
+        attachedTo,
         blobId: String(record.file ?? record.uuid ?? record._id ?? ''),
         name: String(record.name ?? record.filename ?? 'file'),
         size: Number(record.size ?? 0),
@@ -304,6 +319,44 @@ export async function getAttachments(
     })
   } catch (error) {
     throw wrapRepositoryError('attachment', 'getAttachments', error)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Delete attachment
+// ---------------------------------------------------------------------------
+
+export interface DeleteAttachmentParams {
+  _id: Ref<Doc>
+  space: Ref<Space>
+  attachedTo: Ref<Doc>
+}
+
+/**
+ * Hard-delete an attachment doc via TxRemoveDoc.
+ * The parent doc's `attachments[]` collection counter is decremented by the
+ * server collection mechanic — no client-side count edit.
+ */
+export async function deleteAttachment (
+  params: DeleteAttachmentParams
+): Promise<void> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', 'attachment', 'deleteAttachment')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+    const tx = factory.createTxRemoveDoc(
+      ATTACHMENT_CLASS as unknown as Ref<Class<Doc>>,
+      params.space,
+      params._id
+    )
+    await client.tx(tx)
+  } catch (error) {
+    throw wrapRepositoryError('attachment', 'deleteAttachment', error)
   }
 }
 

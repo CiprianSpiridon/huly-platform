@@ -10,6 +10,7 @@
 import { useCallback, useState } from 'react'
 import { View, Text, Pressable, ScrollView, TextInput } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import type { Doc, Ref, Space } from '@hcengineering/core'
 import type { Issue } from '@hcengineering/tracker'
 import { getStatusName, getAssigneeName } from '@/lib/lookup'
 
@@ -24,6 +25,15 @@ interface AttachmentInfo {
   name: string
   size: number
   contentType: string
+  // Doc identity for TxRemoveDoc — optional to keep older callers compiling
+  // and to match the defensive runtime guard in tracker/issue/[id].tsx that
+  // skips delete when these fields are missing on a stale-cached attachment.
+  _id?: Ref<Doc>
+  space?: Ref<Space>
+  attachedTo?: Ref<Doc>
+  // Optional Attachment-doc readonly flag. When true the parent screen hides
+  // the delete affordance to avoid promising an action the server will reject.
+  readonly?: boolean
 }
 
 interface IssueDetailViewProps {
@@ -45,6 +55,7 @@ interface IssueDetailViewProps {
   onSubIssuePress?: (issueId: string) => void
   onRelationPress?: (issueId: string) => void
   onAttachmentPress?: (blobId: string, filename: string, mimeType: string) => void
+  onAttachmentDelete?: (att: AttachmentInfo) => void
   onTitleSave?: (title: string) => void
   onDescriptionSave?: (description: string) => void
   onDeletePress?: () => void
@@ -92,6 +103,7 @@ function IssueDetailView({
   onSubIssuePress,
   onRelationPress,
   onAttachmentPress,
+  onAttachmentDelete,
   onTitleSave,
   onDescriptionSave,
   onDeletePress,
@@ -462,16 +474,24 @@ function IssueDetailView({
             showsHorizontalScrollIndicator={false}
             contentContainerClassName="gap-2"
           >
-            {attachments.map((att) => (
-              <AttachmentThumbnail
-                key={att.blobId}
-                blobId={att.blobId}
-                filename={att.name}
-                mimeType={att.contentType}
-                size={att.size}
-                onPress={onAttachmentPress ?? (() => {})}
-              />
-            ))}
+            {attachments.map((att) => {
+              // Hide the delete affordance when the parent has not wired a
+              // delete handler OR when the attachment record itself is marked
+              // readonly — promising an action the server will reject is
+              // worse than not showing it at all.
+              const canDelete = onAttachmentDelete != null && att.readonly !== true
+              return (
+                <AttachmentThumbnail
+                  key={att.blobId}
+                  blobId={att.blobId}
+                  filename={att.name}
+                  mimeType={att.contentType}
+                  size={att.size}
+                  onPress={onAttachmentPress ?? (() => {})}
+                  onDelete={canDelete ? () => onAttachmentDelete(att) : undefined}
+                />
+              )
+            })}
           </ScrollView>
         </View>
       ) : null}
@@ -500,4 +520,4 @@ function PropertyRow({ label, children }: PropertyRowProps): React.ReactNode {
 }
 
 export { IssueDetailView }
-export type { IssueDetailViewProps }
+export type { IssueDetailViewProps, AttachmentInfo }

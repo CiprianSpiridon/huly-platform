@@ -28,12 +28,21 @@ import {
   createProject,
   updateProject,
   deleteProject,
+  createComponent,
+  updateComponent,
+  deleteComponent,
+  createMilestone,
+  updateMilestone,
+  deleteMilestone,
   type ComponentItem,
   type MilestoneItem,
   type LabelItem,
+  type CreateComponentInput,
+  type CreateMilestoneInput,
 } from '@/repositories/tracker'
 import { getClient } from '@/client'
 import { useWebSocketStore } from '@/store/websocket'
+import { showErrorToast } from '@/store/toast'
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -225,6 +234,180 @@ export function useDeleteProject(): UseMutationResult<void, Error, DeleteProject
       queryClient.removeQueries({
         queryKey: ['tracker', 'project', variables.projectId],
       })
+    },
+  })
+}
+
+// ---------------------------------------------------------------------------
+// useCreateComponent
+// ---------------------------------------------------------------------------
+
+export function useCreateComponent(): UseMutationResult<
+  Ref<Doc>,
+  Error,
+  CreateComponentInput
+> {
+  const queryClient = useQueryClient()
+
+  return useMutation<Ref<Doc>, Error, CreateComponentInput>({
+    mutationFn: async (input) => await createComponent(input),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: ['tracker', 'components', variables.space],
+      })
+    },
+    onError: (err) => {
+      showErrorToast(err)
+    },
+  })
+}
+
+// ---------------------------------------------------------------------------
+// useUpdateComponent
+// ---------------------------------------------------------------------------
+
+export interface UpdateComponentParams {
+  componentId: Ref<Doc>
+  space: Ref<Space>
+  patch: Record<string, unknown>
+}
+
+export function useUpdateComponent(): UseMutationResult<
+  void,
+  Error,
+  UpdateComponentParams
+> {
+  const queryClient = useQueryClient()
+
+  return useMutation<void, Error, UpdateComponentParams>({
+    mutationFn: async (params) => {
+      await updateComponent(params.componentId, params.patch)
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: ['tracker', 'components', variables.space],
+      })
+    },
+    onError: (err) => {
+      showErrorToast(err)
+    },
+  })
+}
+
+// ---------------------------------------------------------------------------
+// useDeleteComponent
+// ---------------------------------------------------------------------------
+
+export interface DeleteComponentParams {
+  componentId: Ref<Doc>
+  space: Ref<Space>
+}
+
+export function useDeleteComponent(): UseMutationResult<
+  void,
+  Error,
+  DeleteComponentParams
+> {
+  const queryClient = useQueryClient()
+
+  return useMutation<void, Error, DeleteComponentParams>({
+    mutationFn: async (params) => {
+      await deleteComponent(params.componentId, params.space)
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: ['tracker', 'components', variables.space],
+      })
+    },
+    onError: (err) => {
+      showErrorToast(err)
+    },
+  })
+}
+
+// ---------------------------------------------------------------------------
+// useCreateMilestone
+// ---------------------------------------------------------------------------
+
+export function useCreateMilestone(): UseMutationResult<
+  Ref<Doc>,
+  Error,
+  CreateMilestoneInput
+> {
+  const queryClient = useQueryClient()
+
+  return useMutation<Ref<Doc>, Error, CreateMilestoneInput>({
+    mutationFn: async (input) => await createMilestone(input),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: ['tracker', 'milestones', variables.space],
+      })
+    },
+    onError: (err) => {
+      showErrorToast(err)
+    },
+  })
+}
+
+// ---------------------------------------------------------------------------
+// useUpdateMilestone
+// ---------------------------------------------------------------------------
+
+export interface UpdateMilestoneParams {
+  milestoneId: Ref<Doc>
+  space: Ref<Space>
+  patch: Record<string, unknown>
+}
+
+export function useUpdateMilestone(): UseMutationResult<
+  void,
+  Error,
+  UpdateMilestoneParams
+> {
+  const queryClient = useQueryClient()
+
+  return useMutation<void, Error, UpdateMilestoneParams>({
+    mutationFn: async (params) => {
+      await updateMilestone(params.milestoneId, params.patch)
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: ['tracker', 'milestones', variables.space],
+      })
+    },
+    onError: (err) => {
+      showErrorToast(err)
+    },
+  })
+}
+
+// ---------------------------------------------------------------------------
+// useDeleteMilestone
+// ---------------------------------------------------------------------------
+
+export interface DeleteMilestoneParams {
+  milestoneId: Ref<Doc>
+  space: Ref<Space>
+}
+
+export function useDeleteMilestone(): UseMutationResult<
+  void,
+  Error,
+  DeleteMilestoneParams
+> {
+  const queryClient = useQueryClient()
+
+  return useMutation<void, Error, DeleteMilestoneParams>({
+    mutationFn: async (params) => {
+      await deleteMilestone(params.milestoneId, params.space)
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: ['tracker', 'milestones', variables.space],
+      })
+    },
+    onError: (err) => {
+      showErrorToast(err)
     },
   })
 }

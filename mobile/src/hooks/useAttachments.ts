@@ -9,7 +9,13 @@
 
 import { useCallback, useMemo } from 'react'
 
-import { useQuery, type UseQueryResult } from '@tanstack/react-query'
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseMutationResult,
+  type UseQueryResult,
+} from '@tanstack/react-query'
 
 import {
   uploadFile,
@@ -17,13 +23,16 @@ import {
   getAuthenticatedFileSource,
   getAuthenticatedThumbnailSource,
   getAttachments,
+  deleteAttachment,
   type AttachmentMeta,
   type AuthenticatedImageSource,
+  type DeleteAttachmentParams,
 } from '@/repositories/attachment'
 import { useUploadStore } from '@/store/upload'
 import type { UploadEntry, UploadStatus } from '@/store/upload'
 import { useAuthStore } from '@/store/auth'
 import { useConnectionStore } from '@/store/connection'
+import { showErrorToast } from '@/store/toast'
 import { useShallow } from 'zustand/react/shallow'
 
 // ---------------------------------------------------------------------------
@@ -185,4 +194,35 @@ export function useDocAttachments(
  */
 export function useUploadsByStatus(status: UploadStatus): UploadEntry[] {
   return useUploadStore(useShallow((s) => [...s.uploads.values()].filter(e => e.status === status)))
+}
+
+// ---------------------------------------------------------------------------
+// useDeleteAttachment -- TxRemoveDoc on an Attachment
+// ---------------------------------------------------------------------------
+
+/**
+ * Hook to delete an attachment via TxRemoveDoc.
+ *
+ * Variables shape `{_id, space, attachedTo}` mirrors `useUpdateProject`'s
+ * variables-on-mutate pattern. On success, invalidates the
+ * `['attachments', attachedTo]` query the caller renders from. On error,
+ * surfaces the wrapped error via the global toast and leaves the UI in
+ * its current state (no silent desync).
+ */
+export function useDeleteAttachment(): UseMutationResult<void, Error, DeleteAttachmentParams> {
+  const queryClient = useQueryClient()
+
+  return useMutation<void, Error, DeleteAttachmentParams>({
+    mutationFn: async (params) => {
+      await deleteAttachment(params)
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: ['attachments', variables.attachedTo],
+      })
+    },
+    onError: (err) => {
+      showErrorToast(err)
+    },
+  })
 }

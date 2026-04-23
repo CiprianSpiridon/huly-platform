@@ -16,9 +16,10 @@ import {
   type Space,
   type WithLookup,
 } from '@hcengineering/core'
-import type { Issue, IssueStatus, Project } from '@hcengineering/tracker'
+import type { Issue, IssueStatus, MilestoneStatus, Project } from '@hcengineering/tracker'
 
 import { getClient } from '@/client'
+import { MILESTONE_STATUS, type MilestoneStatusValue } from '@/lib/milestoneStatus'
 import { RepositoryError, wrapRepositoryError } from './base'
 
 // ---------------------------------------------------------------------------
@@ -474,19 +475,110 @@ export async function getComponents(
     const result = await client.findAll<Doc>(
       TRACKER_CLASS.Component,
       { space: projectId } as Record<string, unknown>,
-      { sort: { name: SortingOrder.Ascending } as Record<string, SortingOrder> }
+      { sort: { label: SortingOrder.Ascending } as Record<string, SortingOrder> }
     )
     return [...result].map((doc) => {
       const r = doc as unknown as Record<string, unknown>
       return {
         _id: String(r._id ?? ''),
-        name: String(r.name ?? ''),
+        name: String(r.label ?? r.name ?? ''),
         description: r.description != null ? String(r.description) : undefined,
         lead: r.lead != null ? String(r.lead) : undefined,
       }
     })
   } catch (error) {
     throw wrapRepositoryError(DOMAIN, 'getComponents', error)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Component CRUD
+// ---------------------------------------------------------------------------
+
+export interface CreateComponentInput {
+  label: string
+  description?: string
+  lead?: Ref<Doc> | null
+  space: Ref<Space>
+}
+
+export async function createComponent(
+  input: CreateComponentInput
+): Promise<Ref<Doc>> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'createComponent')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+    const attrs: Record<string, unknown> = {
+      label: input.label,
+      description: input.description ?? '',
+      lead: input.lead ?? null,
+      comments: 0,
+      attachments: 0,
+    }
+    const tx = factory.createTxCreateDoc(
+      TRACKER_CLASS.Component,
+      input.space,
+      attrs
+    )
+    await client.tx(tx)
+    return tx.objectId as Ref<Doc>
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'createComponent', error)
+  }
+}
+
+export async function updateComponent(
+  id: Ref<Doc>,
+  patch: Record<string, unknown>
+): Promise<void> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'updateComponent')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+    const tx = factory.createTxUpdateDoc(
+      TRACKER_CLASS.Component,
+      '' as Ref<Space>,
+      id,
+      patch
+    )
+    await client.tx(tx)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'updateComponent', error)
+  }
+}
+
+export async function deleteComponent(
+  id: Ref<Doc>,
+  space: Ref<Space>
+): Promise<void> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'deleteComponent')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+    const tx = factory.createTxRemoveDoc(
+      TRACKER_CLASS.Component,
+      space,
+      id
+    )
+    await client.tx(tx)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'deleteComponent', error)
   }
 }
 
@@ -520,6 +612,100 @@ export async function getMilestones(
     })
   } catch (error) {
     throw wrapRepositoryError(DOMAIN, 'getMilestones', error)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Milestone CRUD
+// ---------------------------------------------------------------------------
+
+export interface CreateMilestoneInput {
+  label: string
+  description?: string
+  status?: MilestoneStatusValue
+  space: Ref<Space>
+  targetDate: number
+}
+
+export async function createMilestone(
+  input: CreateMilestoneInput
+): Promise<Ref<Doc>> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'createMilestone')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+    const status = (input.status ?? MILESTONE_STATUS.Planned) as unknown as MilestoneStatus
+    const attrs: Record<string, unknown> = {
+      label: input.label,
+      description: input.description ?? '',
+      status,
+      targetDate: input.targetDate,
+      comments: 0,
+      attachments: 0,
+    }
+    const tx = factory.createTxCreateDoc(
+      TRACKER_CLASS.Milestone,
+      input.space,
+      attrs
+    )
+    await client.tx(tx)
+    return tx.objectId as Ref<Doc>
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'createMilestone', error)
+  }
+}
+
+export async function updateMilestone(
+  id: Ref<Doc>,
+  patch: Record<string, unknown>
+): Promise<void> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'updateMilestone')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+    const tx = factory.createTxUpdateDoc(
+      TRACKER_CLASS.Milestone,
+      '' as Ref<Space>,
+      id,
+      patch
+    )
+    await client.tx(tx)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'updateMilestone', error)
+  }
+}
+
+export async function deleteMilestone(
+  id: Ref<Doc>,
+  space: Ref<Space>
+): Promise<void> {
+  const client = getClient()
+  if (client === null) {
+    throw new RepositoryError('HulyClient not connected', DOMAIN, 'deleteMilestone')
+  }
+
+  try {
+    const { TxFactory } = await import('@hcengineering/core')
+    const account = await client.getAccount()
+    const factory = new TxFactory(account.primarySocialId)
+    const tx = factory.createTxRemoveDoc(
+      TRACKER_CLASS.Milestone,
+      space,
+      id
+    )
+    await client.tx(tx)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'deleteMilestone', error)
   }
 }
 

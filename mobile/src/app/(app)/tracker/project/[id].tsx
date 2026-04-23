@@ -9,6 +9,7 @@ import type { Issue } from '@hcengineering/tracker'
 import { getStatusName, getAssigneeName } from '@/lib/lookup'
 
 import { useIssues } from '@/hooks/useIssues'
+import { useComponents, useMilestones } from '@/hooks/useProjects'
 import { useTrackerStore } from '@/store/tracker'
 import { IssueRow } from '@/components/features/IssueRow'
 import { IssueFilterControls } from '@/components/features/IssueFilters'
@@ -39,6 +40,9 @@ export default function IssueListScreen(): React.ReactNode {
     isFetchingNextPage,
     fetchStatus,
   } = useIssues(id, filters, sort)
+
+  const componentsQuery = useComponents(id)
+  const milestonesQuery = useMilestones(id)
 
   const [refreshing, setRefreshing] = useState(false)
 
@@ -173,6 +177,13 @@ export default function IssueListScreen(): React.ReactNode {
           ),
         }}
       />
+        <MetadataStrip
+          projectId={id}
+          componentsCount={componentsQuery.data?.length}
+          componentsLoading={componentsQuery.isLoading}
+          milestonesCount={milestonesQuery.data?.length}
+          milestonesLoading={milestonesQuery.isLoading}
+        />
         <IssueFilterControls />
         <View className="flex-1 items-center justify-center px-4">
           <Ionicons name="document-outline" size={48} color="#77818B" />
@@ -214,6 +225,13 @@ export default function IssueListScreen(): React.ReactNode {
           ),
         }}
       />
+        <MetadataStrip
+          projectId={id}
+          componentsCount={componentsQuery.data?.length}
+          componentsLoading={componentsQuery.isLoading}
+          milestonesCount={milestonesQuery.data?.length}
+          milestonesLoading={milestonesQuery.isLoading}
+        />
         <IssueFilterControls />
         <KanbanView items={items} onIssuePress={handleIssuePress} />
       </SafeAreaView>
@@ -245,6 +263,13 @@ export default function IssueListScreen(): React.ReactNode {
           </Text>
         </View>
       ) : null}
+      <MetadataStrip
+        projectId={id}
+        componentsCount={componentsQuery.data?.length}
+        componentsLoading={componentsQuery.isLoading}
+        milestonesCount={milestonesQuery.data?.length}
+        milestonesLoading={milestonesQuery.isLoading}
+      />
       <IssueFilterControls />
       <FlashList
         data={items}
@@ -290,6 +315,71 @@ export default function IssueListScreen(): React.ReactNode {
         <Ionicons name="add" size={28} color="#FFFFFF" />
       </Pressable>
     </SafeAreaView>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Metadata strip (Components / Milestones counts + nav)
+// ---------------------------------------------------------------------------
+
+interface MetadataStripProps {
+  projectId: string
+  componentsCount: number | undefined
+  componentsLoading: boolean
+  milestonesCount: number | undefined
+  milestonesLoading: boolean
+}
+
+function MetadataStrip({
+  projectId,
+  componentsCount,
+  componentsLoading,
+  milestonesCount,
+  milestonesLoading,
+}: MetadataStripProps): React.ReactNode {
+  const handleComponentsPress = useCallback(() => {
+    router.push(`/(app)/tracker/project/${projectId}/components` as Href)
+  }, [projectId])
+
+  const handleMilestonesPress = useCallback(() => {
+    router.push(`/(app)/tracker/project/${projectId}/milestones` as Href)
+  }, [projectId])
+
+  const componentsLabel =
+    componentsLoading || componentsCount === undefined
+      ? 'Components …'
+      : `Components (${componentsCount})`
+
+  const milestonesLabel =
+    milestonesLoading || milestonesCount === undefined
+      ? 'Milestones …'
+      : `Milestones (${milestonesCount})`
+
+  return (
+    <View className="flex-row px-3 py-3 gap-2">
+      <Pressable
+        onPress={handleComponentsPress}
+        className="flex-row items-center bg-surface-accent rounded-md px-3 py-2 min-h-[36px]"
+        accessibilityRole="button"
+        accessibilityLabel={componentsLabel}
+      >
+        <Ionicons name="cube-outline" size={14} color="#A1A8B2" />
+        <Text className="font-sans-medium text-xs text-content ml-1.5">
+          {componentsLabel}
+        </Text>
+      </Pressable>
+      <Pressable
+        onPress={handleMilestonesPress}
+        className="flex-row items-center bg-surface-accent rounded-md px-3 py-2 min-h-[36px]"
+        accessibilityRole="button"
+        accessibilityLabel={milestonesLabel}
+      >
+        <Ionicons name="flag-outline" size={14} color="#A1A8B2" />
+        <Text className="font-sans-medium text-xs text-content ml-1.5">
+          {milestonesLabel}
+        </Text>
+      </Pressable>
+    </View>
   )
 }
 
