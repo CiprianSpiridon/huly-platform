@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import {
   View,
   Text,
@@ -10,13 +10,27 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 
 import { useTwoFactor } from '@/hooks/use-auth'
+import { useAuthStore } from '@/store/auth'
 
 export default function TwoFactorScreen(): React.ReactNode {
+  const { t } = useTranslation()
   const [code, setCode] = useState('')
   const { verify, isLoading, error } = useTwoFactor()
   const isSubmitting = useRef(false)
+
+  // If the user signs out (or clearAuth is called) while this screen is
+  // still mounted, the `tfaToken` transient will be wiped. Force-route
+  // back to login so we don't leave the user on a dead 2FA screen.
+  const tfaToken = useAuthStore((s) => s.tfaToken)
+  useEffect(() => {
+    if (tfaToken == null) {
+      setCode('')
+      router.replace('/(auth)/login')
+    }
+  }, [tfaToken])
 
   const handleVerify = useCallback(async () => {
     if (isSubmitting.current) return
@@ -25,11 +39,11 @@ export default function TwoFactorScreen(): React.ReactNode {
       await verify(code)
       router.replace('/(auth)/workspace-select')
     } catch {
-      Alert.alert('Error', 'Invalid verification code. Please try again.')
+      Alert.alert(t('auth.twoFactor.failureTitle'), t('auth.twoFactor.failureMessage'))
     } finally {
       isSubmitting.current = false
     }
-  }, [code, verify])
+  }, [code, verify, t])
 
   return (
     <SafeAreaView className="flex-1 bg-surface">
@@ -40,28 +54,28 @@ export default function TwoFactorScreen(): React.ReactNode {
         <View className="flex-1 justify-center px-6">
           <View className="items-center mb-8">
             <Text className="font-sans-bold text-2xl text-caption">
-              Two-factor authentication
+              {t('auth.twoFactor.title')}
             </Text>
             <Text className="font-sans text-sm text-content mt-2">
-              Enter the 6-digit code from your authenticator app
+              {t('auth.twoFactor.subtitle')}
             </Text>
           </View>
 
           <View className="gap-4">
             <View className="gap-1">
               <Text className="font-sans-medium text-sm text-content">
-                Verification code
+                {t('auth.twoFactor.codeLabel')}
               </Text>
               <TextInput
                 className="rounded-md bg-surface-panel p-3 font-sans text-base text-caption text-center tracking-widest"
                 value={code}
                 onChangeText={setCode}
-                placeholder="000000"
+                placeholder={t('auth.twoFactor.codePlaceholder')}
                 placeholderTextColor="#77818B"
                 keyboardType="number-pad"
                 maxLength={6}
                 editable={!isLoading}
-                accessibilityLabel="Two-factor authentication code"
+                accessibilityLabel={t('auth.twoFactor.codeAccessibility')}
               />
             </View>
 
@@ -76,11 +90,11 @@ export default function TwoFactorScreen(): React.ReactNode {
               onPress={handleVerify}
               disabled={code.length < 6 || isLoading}
               accessibilityRole="button"
-              accessibilityLabel="Verify"
+              accessibilityLabel={t('auth.twoFactor.submitAccessibility')}
               accessibilityState={{ disabled: code.length < 6 || isLoading }}
             >
               <Text className="font-sans-medium text-base text-white">
-                {isLoading ? 'Verifying...' : 'Verify'}
+                {isLoading ? t('auth.twoFactor.submitting') : t('auth.twoFactor.submit')}
               </Text>
             </Pressable>
 
@@ -89,10 +103,10 @@ export default function TwoFactorScreen(): React.ReactNode {
               onPress={() => { router.back() }}
               disabled={isLoading}
               accessibilityRole="button"
-              accessibilityLabel="Go back"
+              accessibilityLabel={t('auth.twoFactor.backAccessibility')}
             >
               <Text className="font-sans text-sm text-link">
-                Back to login
+                {t('auth.twoFactor.back')}
               </Text>
             </Pressable>
           </View>
