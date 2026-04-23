@@ -147,37 +147,11 @@ function setupAppStateListener(
         set({ status: 'disconnected' })
       }
     } else if (nextState === 'active' && _wasBackgrounded) {
-      // Reconnect on foreground using the CURRENT workspace endpoint + token
-      // from the workspace store. Reading module-level `_wsEndpoint` here
-      // would use a stale value after a workspace switch that happened while
-      // the app was backgrounded.
+      // Reconnect on foreground. Reads workspace state inside the helper so
+      // a workspace switch that happened while backgrounded picks up the
+      // fresh endpoint/token, not the stale module-level values.
       _wasBackgrounded = false
-      const ws = useWorkspaceStore.getState()
-      const freshEndpoint = ws.workspaceEndpoint
-      const freshToken = ws.workspaceToken
-      if (freshEndpoint !== null && freshToken !== null) {
-        // Always create a fresh connection to avoid reusing a stale socket
-        if (_connection !== null) {
-          _connection.disconnect()
-          _connection = null
-        }
-        _wsEndpoint = freshEndpoint
-        _wsToken = freshToken
-        _connection = new TransactorConnection({
-          socketFactory: RNWebSocketFactory,
-          onBroadcast: (txes) => {
-            processBroadcast(txes, queryClient)
-          },
-          onStatusChange: (status: TransactorStatus) => {
-            set({ status: status as WsStatus })
-          },
-        })
-        _connection.connect(freshEndpoint, freshToken)
-        set({ status: 'connecting' })
-
-        // Invalidate all queries on foreground return so stale data refreshes
-        void queryClient.invalidateQueries()
-      }
+      reconnectFromCurrentWorkspace(set)
     }
   })
 }
@@ -208,34 +182,60 @@ function setupNetInfoListener(
         set({ status: 'disconnected' })
       }
     } else if (wasDisconnected) {
-      // Network restored -- reconnect using the CURRENT workspace endpoint.
+      // Network restored — reconnect using the CURRENT workspace endpoint.
       wasDisconnected = false
-      const ws = useWorkspaceStore.getState()
-      const freshEndpoint = ws.workspaceEndpoint
-      const freshToken = ws.workspaceToken
-      if (freshEndpoint !== null && freshToken !== null) {
-        // Always create a fresh connection to avoid reusing a stale socket
-        if (_connection !== null) {
-          _connection.disconnect()
-          _connection = null
-        }
-        _wsEndpoint = freshEndpoint
-        _wsToken = freshToken
-        _connection = new TransactorConnection({
-          socketFactory: RNWebSocketFactory,
-          onBroadcast: (txes) => {
-            processBroadcast(txes, queryClient)
-          },
-          onStatusChange: (status: TransactorStatus) => {
-            set({ status: status as WsStatus })
-          },
-        })
-        _connection.connect(freshEndpoint, freshToken)
-        set({ status: 'connecting' })
-
-        // Invalidate all queries to refresh stale data
-        void queryClient.invalidateQueries()
-      }
+      reconnectFromCurrentWorkspace(set)
     }
   })
+}
+
+// ---------------------------------------------------------------------------
+// Reconnect helper (shared by AppState foreground + NetInfo restored paths)
+// ---------------------------------------------------------------------------
+
+// Realtime-relevant query roots — narrow invalidation prevents the
+// thundering-herd refetch that `queryClient.invalidateQueries()` (no args)
+// caused before. Anything outside this list (profile, workspaces, etc.) is
+// either static for the session or refreshed by its own focus-side hooks.
+const REALTIME_QUERY_ROOTS: Array<readonly string[]> = [
+  ['chat'],
+  ['tracker'],
+  ['attachments'],
+  ['activity'],
+  ['notifications'],
+]
+
+function reconnectFromCurrentWorkspace(
+  set: (state: Partial<WebSocketState>) => void
+): void {
+  const ws = useWorkspaceStore.getState()
+  const freshEndpoint = ws.workspaceEndpoint
+  const freshToken = ws.workspaceToken
+  if (freshEndpoint === null || freshToken === null) return
+
+  // Always tear down before rebuilding — never reuse a stale socket.
+  if (_connection !== null) {
+    _connection.disconnect()
+    _connection = null
+  }
+  _wsEndpoint = freshEndpoint
+  _wsToken = freshToken
+  _connection = new TransactorConnection({
+    socketFactory: RNWebSocketFactory,
+    onBroadcast: (txes) => {
+      processBroadcast(txes, queryClient)
+    },
+    onStatusChange: (status: TransactorStatus) => {
+      set({ status: status as WsStatus })
+    },
+  })
+  _connection.connect(freshEndpoint, freshToken)
+  set({ status: 'connecting' })
+
+  // Refresh realtime-relevant data only. Per-Tx invalidation rules
+  // (mobile/src/realtime/rules/*) handle the steady state once the WS
+  // is up; this is just the "we missed messages while disconnected" sweep.
+  for (const queryKey of REALTIME_QUERY_ROOTS) {
+    void queryClient.invalidateQueries({ queryKey })
+  }
 }

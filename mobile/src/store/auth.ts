@@ -177,11 +177,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         throw new Error('Token verification returned no login info')
       }
     } catch (err) {
-      const isNetworkError =
-        err instanceof TypeError ||
-        (err instanceof Error &&
-          /network|fetch|abort|timeout|internet/i.test(err.message))
-      if (!isNetworkError) {
+      // Only force re-login when we have STRONG evidence the server
+      // rejected this specific token (HTTP 401/403, "unauthorized",
+      // "invalid token", "revoked"). Anything else — network errors,
+      // non-Error throw shapes (some HTTP libs reject with plain
+      // objects, not Error instances), or unknown messages — falls
+      // through and trusts the cached token. restoreAuth already
+      // vetted it; we'd rather show cached data on a flaky backend
+      // than punish the user with a forced re-onboarding.
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === 'string'
+            ? err
+            : ''
+      const isLikelyAuthRejection =
+        /\b401\b|\b403\b|unauthor|invalid token|revoked/i.test(message)
+      if (isLikelyAuthRejection) {
         // Token rejected / revoked — clear everything and force re-login.
         await SecureStore.deleteItemAsync('auth_token')
         await SecureStore.deleteItemAsync('account_id')
@@ -197,10 +209,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         })
         return
       }
-      // Network error: fall through and trust the token. The offline-aware
-      // restoreAuth path has already vetted this same token; the user
-      // deserves to see cached data rather than be bounced to login when
-      // they're simply on a flaky connection.
+      // Network error / unknown shape: fall through and trust the token.
     }
 
     set({

@@ -142,8 +142,6 @@ export default function ProjectListScreen(): React.ReactNode {
           />
         )}
         keyExtractor={(item) => item._id}
-
-        estimatedItemSize={80}
         contentContainerStyle={{ paddingHorizontal: 16 }}
         refreshControl={
           <RefreshControl

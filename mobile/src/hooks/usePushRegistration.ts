@@ -9,6 +9,8 @@
  */
 
 import { useEffect, useRef } from 'react'
+import Constants from 'expo-constants'
+import * as Device from 'expo-device'
 
 import { registerForPushNotifications, getPermissionStatus } from '@/lib/notifications'
 import { registerPushToken, deregisterPushToken } from '@/repositories/push'
@@ -16,6 +18,11 @@ import { usePushStore } from '@/store/push'
 import { useAuthStore } from '@/store/auth'
 import { useWorkspaceStore } from '@/store/workspace'
 import { useConnectionStore } from '@/store/connection'
+import { showInfoToast } from '@/store/toast'
+
+// Module-level guard so a re-mount after sign-out / sign-in does not
+// surface the placeholder warning more than once per app session.
+let placeholderToastShown = false
 
 /**
  * Hook that manages the push token lifecycle:
@@ -74,9 +81,24 @@ export function usePushRegistration(): void {
         const pushToken = await registerForPushNotifications()
 
         // If push is not configured (placeholder EAS projectId or simulator),
-        // registerForPushNotifications returns null — skip silently
+        // registerForPushNotifications returns null. We surface a one-time
+        // info toast on a real device with a placeholder projectId so the
+        // misconfiguration is visible during QA — without this, push silently
+        // does nothing and the gap is only caught when users complain.
         if (pushToken == null) {
           if (!cancelled) setIsRegistered(false)
+          if (!cancelled && !placeholderToastShown && Device.isDevice) {
+            const projectId = Constants.expoConfig?.extra?.eas?.projectId as
+              | string
+              | undefined
+            if (projectId == null || projectId === 'your-eas-project-id') {
+              placeholderToastShown = true
+              showInfoToast(
+                'Push notifications disabled',
+                'EAS project ID is not configured for this build.'
+              )
+            }
+          }
           return
         }
 

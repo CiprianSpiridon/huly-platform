@@ -57,11 +57,19 @@ function chatInvalidationRule(tx: TxCUDInfo, queryClient: QueryClient): boolean 
       }
     }
 
-    // Increment unread for non-active channels on message create
+    // Refresh the unread-context query for non-active channels on message
+    // create. We invalidate instead of locally incrementing because the
+    // useChatUnreadSync poll rebuilds counts from DocNotifyContext on a
+    // 30s/2min cadence — a local increment would race against that rebuild
+    // and cause badge flicker (e.g. 3 → 1 → 2 within a single poll window).
+    // Letting useChatUnreadSync refetch here keeps the badge converged on
+    // the server's source of truth in one frame.
     if (tx.type === 'create' && tx.objectSpace !== undefined) {
       const activeChannelId = useChatStore.getState().activeChannelId
       if (activeChannelId !== tx.objectSpace) {
-        useChatStore.getState().incrementUnread(tx.objectSpace)
+        void queryClient.invalidateQueries({
+          queryKey: ['chat', 'unread-contexts'],
+        })
       }
     }
 

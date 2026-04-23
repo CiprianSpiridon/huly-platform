@@ -51,6 +51,46 @@ export default function TrackerLayout(): React.ReactNode {
         }}
       />
       <Stack.Screen name="search" options={{ title: 'Search Issues' }} />
+      <Stack.Screen
+        name="project/[id]/components"
+        options={{ title: 'Components' }}
+      />
+      <Stack.Screen
+        name="project/[id]/components/new"
+        options={{
+          title: 'New Component',
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
+      <Stack.Screen
+        name="project/[id]/components/[componentId]"
+        options={{
+          title: 'Edit Component',
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
+      <Stack.Screen
+        name="project/[id]/milestones"
+        options={{ title: 'Milestones' }}
+      />
+      <Stack.Screen
+        name="project/[id]/milestones/new"
+        options={{
+          title: 'New Milestone',
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
+      <Stack.Screen
+        name="project/[id]/milestones/[milestoneId]"
+        options={{
+          title: 'Edit Milestone',
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
     </Stack>
   )
 }

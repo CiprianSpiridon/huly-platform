@@ -285,7 +285,6 @@ export default function IssueListScreen(): React.ReactNode {
           />
         )}
         keyExtractor={(item) => item._id}
-        estimatedItemSize={64}
         drawDistance={300}
         contentContainerStyle={{ paddingHorizontal: 16 }}
         onEndReached={handleEndReached}
