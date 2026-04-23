@@ -535,6 +535,7 @@ export async function createComponent(
 
 export async function updateComponent(
   id: Ref<Doc>,
+  space: Ref<Space>,
   patch: Record<string, unknown>
 ): Promise<void> {
   const client = getClient()
@@ -548,7 +549,7 @@ export async function updateComponent(
     const factory = new TxFactory(account.primarySocialId)
     const tx = factory.createTxUpdateDoc(
       TRACKER_CLASS.Component,
-      '' as Ref<Space>,
+      space,
       id,
       patch
     )
@@ -662,6 +663,7 @@ export async function createMilestone(
 
 export async function updateMilestone(
   id: Ref<Doc>,
+  space: Ref<Space>,
   patch: Record<string, unknown>
 ): Promise<void> {
   const client = getClient()
@@ -675,7 +677,7 @@ export async function updateMilestone(
     const factory = new TxFactory(account.primarySocialId)
     const tx = factory.createTxUpdateDoc(
       TRACKER_CLASS.Milestone,
-      '' as Ref<Space>,
+      space,
       id,
       patch
     )

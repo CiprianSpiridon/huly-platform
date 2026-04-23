@@ -134,6 +134,7 @@ export default function EditMilestoneScreen(): React.ReactNode {
   )
   const [dateError, setDateError] = useState<string | undefined>(undefined)
   const [isSeeded, setIsSeeded] = useState(false)
+  const [submitAttempted, setSubmitAttempted] = useState(false)
 
   // Seed form from the milestone the first time we have data.
   useEffect(() => {
@@ -173,14 +174,16 @@ export default function EditMilestoneScreen(): React.ReactNode {
   }, [])
 
   const handleSubmit = useCallback(() => {
+    setSubmitAttempted(true)
     if (isSubmitDisabled) return
+    const trimmedDescription = description.trim()
     updateMilestone.mutate(
       {
         milestoneId: milestoneId as Ref<Doc>,
         space: projectId,
         patch: {
           label: trimmedName,
-          description: description.trim(),
+          description: trimmedDescription.length > 0 ? trimmedDescription : undefined,
           status,
           targetDate,
         },
@@ -269,7 +272,7 @@ export default function EditMilestoneScreen(): React.ReactNode {
               maxLength={NAME_MAX}
               accessibilityLabel="Milestone name"
             />
-            {isNameEmpty ? (
+            {isNameEmpty && submitAttempted ? (
               <Text className="font-sans text-xs text-negative mt-1">
                 Name required
               </Text>

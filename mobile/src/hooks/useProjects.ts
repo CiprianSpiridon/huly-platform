@@ -281,7 +281,7 @@ export function useUpdateComponent(): UseMutationResult<
 
   return useMutation<void, Error, UpdateComponentParams>({
     mutationFn: async (params) => {
-      await updateComponent(params.componentId, params.patch)
+      await updateComponent(params.componentId, params.space, params.patch)
     },
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({
@@ -368,7 +368,7 @@ export function useUpdateMilestone(): UseMutationResult<
 
   return useMutation<void, Error, UpdateMilestoneParams>({
     mutationFn: async (params) => {
-      await updateMilestone(params.milestoneId, params.patch)
+      await updateMilestone(params.milestoneId, params.space, params.patch)
     },
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({

@@ -50,6 +50,11 @@ export default function IssueDetailScreen(): React.ReactNode {
   const updateIssueField = useUpdateIssueField()
   const deleteIssueMutation = useDeleteIssue()
   const deleteAttachment = useDeleteAttachment()
+  // Gate against double-tap on the X overlay before the confirmation Alert
+  // is dismissed: without this, two taps stack two Alerts and the second
+  // confirm fires a duplicate TxRemoveDoc that returns "not found", showing
+  // the user a spurious error toast for a delete that succeeded.
+  const deleteAlertOpenRef = useRef(false)
   const [refreshing, setRefreshing] = useState(false)
 
   // Date input state
@@ -251,27 +256,45 @@ export default function IssueDetailScreen(): React.ReactNode {
 
   const handleAttachmentDelete = useCallback(
     (att: AttachmentInfo) => {
+      // Skip if a confirmation Alert is already showing (prevents stacking
+      // multiple Alerts on rapid double-tap) or if a delete is already in
+      // flight (prevents firing a second TxRemoveDoc on a different
+      // attachment while the first hasn't resolved).
+      if (deleteAlertOpenRef.current || deleteAttachment.isPending) {
+        return
+      }
       // Defensive guard: a stale-cached AttachmentMeta from before TASK-009
-      // may not carry the doc identity needed for TxRemoveDoc. Skip the
-      // mutate call instead of issuing a malformed tx and surface a toast
-      // so the user understands why nothing happened. The next refetch
-      // repopulates the cache with the new shape.
-      if (att._id == null || att._id === '' || att.space == null || att.attachedTo == null) {
+      // may not carry the doc identity needed for TxRemoveDoc. The mapper
+      // writes empty-string fallbacks for missing fields, so we check for
+      // both null/undefined AND empty strings before issuing the tx.
+      if (
+        att._id == null || att._id === '' ||
+        att.space == null || att.space === '' ||
+        att.attachedTo == null || att.attachedTo === ''
+      ) {
         showInfoToast('Cannot delete this attachment')
         return
       }
       const targetId = att._id
       const targetSpace = att.space
       const targetAttachedTo = att.attachedTo
+      deleteAlertOpenRef.current = true
       Alert.alert(
         'Delete attachment?',
         'This cannot be undone.',
         [
-          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Cancel',
+            style: 'cancel',
+            onPress: () => {
+              deleteAlertOpenRef.current = false
+            },
+          },
           {
             text: 'Delete',
             style: 'destructive',
             onPress: () => {
+              deleteAlertOpenRef.current = false
               // onError on the hook surfaces the toast; success-side cache
               // invalidation removes the row from the displayed list.
               deleteAttachment.mutate({
@@ -281,7 +304,12 @@ export default function IssueDetailScreen(): React.ReactNode {
               })
             },
           },
-        ]
+        ],
+        {
+          onDismiss: () => {
+            deleteAlertOpenRef.current = false
+          },
+        }
       )
     },
     [deleteAttachment]
