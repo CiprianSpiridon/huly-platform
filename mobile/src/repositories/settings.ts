@@ -6,16 +6,22 @@
  * Uses `import type` for core types to avoid pulling in svelte.
  */
 
-import type {
-  Person,
-  WorkspaceInfoWithStatus,
-  WorkspaceMemberInfo,
+import {
+  TxFactory,
+  type Class,
+  type Doc,
+  type Person,
+  type Ref,
+  type WorkspaceInfoWithStatus,
+  type WorkspaceMemberInfo,
 } from '@hcengineering/core'
 import type { WorkspaceLoginInfo, SocialId } from '@hcengineering/account-client'
 
 import { getOrCreateAccountClient } from '@/client/account'
+import { getClient } from '@/client'
 import { useAuthStore } from '@/store/auth'
 import { useWorkspaceStore } from '@/store/workspace'
+import { uploadFile } from './attachment'
 import { RepositoryError, wrapRepositoryError } from './base'
 
 const DOMAIN = 'settings'
@@ -59,6 +65,85 @@ export async function getProfile(): Promise<UserProfile> {
     }
   } catch (error) {
     throw wrapRepositoryError(DOMAIN, 'getProfile', error)
+  }
+}
+
+const CONTACT_PERSON_CLASS = 'contact:class:Person' as Ref<Class<Doc>>
+
+/**
+ * Uploads an image to the datalake and sets it as the current user's avatar.
+ *
+ * 1. Upload file to datalake via `uploadFile` (returns a blob uuid).
+ * 2. Look up the current user's Person doc.
+ * 3. Build a `TxUpdateDoc<Person>` patching the `avatar` field and apply via
+ *    the workspace transactor.
+ *
+ * The caller is responsible for invalidating the `['profile']` query so the
+ * avatar rendering picks up the new blob.
+ */
+export async function updateAvatar(
+  localUri: string,
+  filename: string,
+  mimeType: string
+): Promise<void> {
+  const wsClient = getClient()
+  if (wsClient === null) {
+    throw new RepositoryError('Workspace client not connected', DOMAIN, 'updateAvatar')
+  }
+
+  try {
+    const upload = await uploadFile(localUri, filename, mimeType)
+
+    const account = await wsClient.getAccount()
+    const person = await wsClient.findOne<Doc>(
+      CONTACT_PERSON_CLASS,
+      { personUuid: account.uuid } as Record<string, unknown>
+    )
+    if (person == null) {
+      throw new RepositoryError(
+        'Current user has no Person document',
+        DOMAIN,
+        'updateAvatar'
+      )
+    }
+
+    const factory = new TxFactory(account.primarySocialId)
+    const tx = factory.createTxUpdateDoc(
+      person._class,
+      person.space,
+      person._id,
+      { avatar: upload.uuid } as Record<string, unknown>
+    )
+    await wsClient.tx(tx)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'updateAvatar', error)
+  }
+}
+
+/**
+ * Updates the current user's first and last name.
+ *
+ * Uses `AccountClient.changeUsername` (NOT `ensurePerson`, which is a
+ * signup-time upsert only). The caller is responsible for invalidating
+ * the `['profile']` query so the UI refreshes.
+ */
+export async function changeUsername(first: string, last: string): Promise<void> {
+  const token = useAuthStore.getState().token
+  if (token == null) {
+    throw new RepositoryError('Not authenticated', DOMAIN, 'changeUsername')
+  }
+
+  const trimmedFirst = first.trim()
+  const trimmedLast = last.trim()
+  if (trimmedFirst.length === 0 || trimmedLast.length === 0) {
+    throw new RepositoryError('First and last name are required', DOMAIN, 'changeUsername')
+  }
+
+  try {
+    const client = await getOrCreateAccountClient(token)
+    await client.changeUsername(trimmedFirst, trimmedLast)
+  } catch (error) {
+    throw wrapRepositoryError(DOMAIN, 'changeUsername', error)
   }
 }
 
