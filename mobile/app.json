@@ -101,6 +101,12 @@
       },
       "router": {
         "origin": "https://huly.app"
+      },
+      "legal": {
+        "privacyPolicyUrl": "https://huly.app/legal/privacy",
+        "termsOfServiceUrl": "https://huly.app/legal/terms",
+        "supportUrl": "https://huly.app/support",
+        "supportEmail": "support@huly.app"
       }
     }
   }

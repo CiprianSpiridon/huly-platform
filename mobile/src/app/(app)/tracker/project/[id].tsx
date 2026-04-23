@@ -414,7 +414,7 @@ function KanbanView({ items, onIssuePress }: KanbanViewProps): React.ReactNode {
       contentContainerStyle={{ paddingHorizontal: 16 }}
     >
       {groups.map(([status, statusItems]) => (
-        <View key={status} className="w-72 mr-3">
+        <View key={status} className="w-72 mr-3 flex-1">
           <View className="bg-surface-accent rounded-sm px-3 py-2 mb-2">
             <Text className="font-sans-semibold text-xs text-caption">
               {status}
@@ -423,17 +423,28 @@ function KanbanView({ items, onIssuePress }: KanbanViewProps): React.ReactNode {
               {statusItems.length} issue{statusItems.length !== 1 ? 's' : ''}
             </Text>
           </View>
-          {statusItems.map((item) => (
-            <IssueRow
-              key={item._id}
-              id={item._id}
-              identifier={item.identifier}
-              title={item.title}
-              priority={item.priority}
-              statusName={status}
-              onPress={onIssuePress}
-            />
-          ))}
+          {/* Each column scrolls vertically inside the horizontal kanban
+              ScrollView. Without this, columns with more issues than fit
+              on screen render their overflow off-screen with no way to
+              reach the clipped rows. */}
+          <ScrollView
+            className="flex-1"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 16 }}
+            nestedScrollEnabled
+          >
+            {statusItems.map((item) => (
+              <IssueRow
+                key={item._id}
+                id={item._id}
+                identifier={item.identifier}
+                title={item.title}
+                priority={item.priority}
+                statusName={status}
+                onPress={onIssuePress}
+              />
+            ))}
+          </ScrollView>
         </View>
       ))}
     </ScrollView>

@@ -36,6 +36,11 @@ const NOTIFICATION_CLASS = 'notification:class:InboxNotification' as Ref<Class<D
 export default function NotificationDetailScreen(): React.ReactNode {
   const { id } = useLocalSearchParams<{ id: string }>()
   const markAsReadMutation = useMarkAsRead()
+  // `mutate` is a stable callback identity from useMutation across renders,
+  // so capturing it in the effect's deps avoids the stale-closure risk that
+  // listing the whole `markAsReadMutation` object would have triggered (its
+  // identity changes on every render).
+  const markAsRead = markAsReadMutation.mutate
   const hasMarkedRead = useRef(false)
 
   const { data: notification, isLoading, error } = useHulyFindOne(
@@ -45,13 +50,15 @@ export default function NotificationDetailScreen(): React.ReactNode {
 
   const record = notification as unknown as Record<string, unknown> | undefined
 
-  // Mark as read on mount (once)
+  // Mark as read on mount (once per notification id). The hasMarkedRead
+  // ref dedupes against re-renders; the deps array now includes `markAsRead`
+  // so any future hook-identity change is captured cleanly.
   useEffect(() => {
     if (id && !hasMarkedRead.current) {
       hasMarkedRead.current = true
-      markAsReadMutation.mutate([id])
+      markAsRead([id])
     }
-  }, [id])
+  }, [id, markAsRead])
 
   // Try to navigate to the source document
   const handleNavigateToSource = useCallback(() => {

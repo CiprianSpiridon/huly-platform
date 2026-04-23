@@ -83,7 +83,14 @@ export function useSendThreadReply(): UseMutationResult<MessageItem, Error, Send
       await queryClient.cancelQueries({ queryKey: ['chat', 'thread', variables.messageId] })
       const previousData = queryClient.getQueryData<ThreadData>(['chat', 'thread', variables.messageId])
 
-      const currentSocialId = useConnectionStore.getState().currentSocialId ?? 'unknown'
+      // Skip optimistic write when we don't yet know who's authoring it.
+      // Stamping with 'unknown' would cause MessageBubble's "is this mine?"
+      // sender comparison to mis-classify the reply (mirrors useMessages's
+      // guard at the same boundary).
+      const currentSocialId = useConnectionStore.getState().currentSocialId
+      if (currentSocialId == null) {
+        return { previousData }
+      }
 
       // Optimistically add the reply
       if (previousData != null) {

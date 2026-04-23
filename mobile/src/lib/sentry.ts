@@ -7,6 +7,7 @@
  */
 
 import * as Sentry from '@sentry/react-native'
+import Constants from 'expo-constants'
 
 const EMAIL_RE = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi
 // Bearer-style tokens or long token-ish hex/base64 strings.
@@ -116,10 +117,20 @@ export function initSentry(): void {
     return
   }
   try {
+    // Tag every event with the running app version so source maps and
+    // native symbol bundles uploaded per release line up correctly.
+    // Format: `huly-mobile@<version>` matches Sentry's release-name
+    // convention and lets the dashboard group crashes by build.
+    const appVersion =
+      (Constants.expoConfig?.version as string | undefined) ?? '0.0.0'
+    const release = `huly-mobile@${appVersion}`
+
     Sentry.init({
       dsn,
       enabled: true,
       debug: false,
+      release,
+      dist: appVersion,
       sendDefaultPii: false,
       attachStacktrace: true,
       tracesSampleRate: 0.0,

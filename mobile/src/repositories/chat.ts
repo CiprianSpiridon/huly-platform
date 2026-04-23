@@ -18,6 +18,7 @@ import {
 } from '@hcengineering/core'
 
 import { getClient } from '@/client'
+import { useConnectionStore } from '@/store/connection'
 import { RepositoryError, wrapRepositoryError } from './base'
 
 // ---------------------------------------------------------------------------
@@ -107,18 +108,25 @@ export interface CursorPaginatedResult<T> {
 // ---------------------------------------------------------------------------
 
 /**
- * Fetch all channels the current user has access to.
+ * Fetch channels the current user is a member of.
+ *
+ * Filters by `members: currentSocialId` so a workspace-wide query never
+ * leaks channels the user can't access. Returns an empty list when the
+ * social id isn't yet hydrated (callers see "no channels" instead of
+ * "every channel in the workspace").
  */
 export async function getChannels(): Promise<ChannelItem[]> {
   const client = getClient()
   if (client === null) {
     throw new RepositoryError('HulyClient not connected', DOMAIN, 'getChannels')
   }
+  const currentSocialId = useConnectionStore.getState().currentSocialId
+  if (currentSocialId == null) return []
 
   try {
     const result = await client.findAll<Doc>(
       CHUNTER_CLASS.Channel,
-      {},
+      { members: currentSocialId } as Record<string, unknown>,
       {
         sort: { modifiedOn: SortingOrder.Descending } as Record<string, SortingOrder>,
         limit: 100,
@@ -132,18 +140,24 @@ export async function getChannels(): Promise<ChannelItem[]> {
 }
 
 /**
- * Fetch all direct message conversations the current user is part of.
+ * Fetch direct message conversations the current user is part of.
+ *
+ * Filters by `members: currentSocialId` so the query never returns DMs
+ * the user isn't a participant in. Returns an empty list when the
+ * social id isn't yet hydrated.
  */
 export async function getDirectMessages(): Promise<ChannelItem[]> {
   const client = getClient()
   if (client === null) {
     throw new RepositoryError('HulyClient not connected', DOMAIN, 'getDirectMessages')
   }
+  const currentSocialId = useConnectionStore.getState().currentSocialId
+  if (currentSocialId == null) return []
 
   try {
     const result = await client.findAll<Doc>(
       CHUNTER_CLASS.DirectMessage,
-      {},
+      { members: currentSocialId } as Record<string, unknown>,
       {
         sort: { modifiedOn: SortingOrder.Descending } as Record<string, SortingOrder>,
         limit: 100,

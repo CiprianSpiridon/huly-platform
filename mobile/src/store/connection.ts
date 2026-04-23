@@ -47,23 +47,27 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     try {
       const client = await HulyClient.connect(endpoint, workspaceId, token)
 
-      // Store singleton and credentials
+      // Resolve the authenticated user's primarySocialId BEFORE we mark
+      // ourselves connected. Every optimistic mutation in the app gates on
+      // currentSocialId — a successful connect with a null socialId
+      // silently degrades reactions, sender attribution, member-filtered
+      // queries (chat channels/DMs), and unread tracking. Treat a missing
+      // social id as a hard connect failure so the UI surfaces the
+      // problem and offers a retry path instead of silent breakage.
+      const account = await client.getAccount()
+      const socialId = account.primarySocialId
+      if (socialId == null) {
+        throw new Error('Account has no primary social id')
+      }
+
+      // Store singleton and credentials only after the account check passed.
       setClient(client)
       _credentials = { endpoint, workspaceId, token }
 
-      // Get the authenticated user's primarySocialId for reaction/tx authoring
-      let socialId: string | null = null
-      try {
-        const account = await client.getAccount()
-        socialId = account.primarySocialId
-      } catch {
-        // Non-fatal — socialId stays null, reactions won't highlight correctly
-      }
-
       set({ status: 'connected', error: null, currentSocialId: socialId })
 
-      // Auto-connect WebSocket sidecar for real-time broadcasts
-      // The endpoint is the WS URL; the token is the workspace JWT
+      // Auto-connect WebSocket sidecar for real-time broadcasts.
+      // The endpoint is the WS URL; the token is the workspace JWT.
       useWebSocketStore.getState().connectWs(endpoint, token)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Connection failed'
