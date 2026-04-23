@@ -1,0 +1,62 @@
+name: Mobile CI
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Runs only on PRs that touch the mobile app or shared deps it consumes,
+# plus pushes to long-lived branches. The main repo workflow does not
+# cover mobile, so this is the only signal for mobile correctness.
+on:
+  push:
+    branches: [develop, staging, react-native-app]
+  pull_request:
+    branches: [develop, staging, react-native-app]
+    paths:
+      - 'mobile/**'
+      - 'packages/mobile-design-tokens/**'
+      - 'foundations/core/**'
+      - 'plugins/notification/**'
+      - 'plugins/tracker/**'
+      - 'plugins/chunter/**'
+      - 'plugins/attachment/**'
+      - '.github/workflows/mobile-ci.yml'
+  workflow_dispatch:
+
+jobs:
+  mobile-checks:
+    name: Lint, typecheck, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install Rush
+        run: npm install -g @microsoft/rush
+
+      # Rush is the source-of-truth installer for the monorepo. The mobile
+      # app pulls workspace:^ packages from foundations/, plugins/, etc.
+      - name: Rush install
+        working-directory: ${{ github.workspace }}
+        run: rush install
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test -- --ci --reporters=default
