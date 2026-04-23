@@ -22,7 +22,17 @@ import { ErrorBoundary } from '@/components/features/ErrorBoundary'
  */
 export default function AppLayout(): React.ReactNode {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const biometricLocked = useAuthStore((s) => s.biometricLocked)
+  const biometricEnabled = useAuthStore((s) => s.biometricEnabled)
   const hasWorkspace = useWorkspaceStore((s) => s.selectedWorkspace)
+
+  // Foreground re-lock: even if the user is otherwise authenticated and
+  // has a selected workspace, keep them out of the protected UI until
+  // they re-auth via biometrics. The login screen picks up the stored
+  // token + `biometricLocked` flag and shows the unlock button.
+  if (biometricLocked && biometricEnabled) {
+    return <Redirect href="/(auth)/login" />
+  }
 
   if (!isAuthenticated) {
     return <Redirect href="/(auth)/login" />

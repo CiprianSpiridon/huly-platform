@@ -21,7 +21,8 @@
       ],
       "infoPlist": {
         "NSCameraUsageDescription": "Huly needs camera access to take photos for attachments.",
-        "NSPhotoLibraryUsageDescription": "Huly needs photo library access to attach images to issues and messages."
+        "NSPhotoLibraryUsageDescription": "Huly needs photo library access to attach images to issues and messages.",
+        "NSFaceIDUsageDescription": "Unlock Huly quickly with Face ID."
       }
     },
     "android": {
@@ -51,6 +52,12 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow $(PRODUCT_NAME) to use Face ID for quick login."
+        }
+      ],
       [
         "expo-splash-screen",
         {
